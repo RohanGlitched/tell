@@ -14,9 +14,7 @@ for (const c of ['ballot-leaky', 'ballot-fixed']) {
 const out = path.resolve(here, '../data/deployments.json');
 const pick = ['preprod', 'preview']
   .map((n) => [n, path.resolve(here, '../../chain', n === 'preview' ? 'deployments.json' : `deployments-${n}.json`)])
-  .find(([, f]) => fs.existsSync(f));
-if (pick) fs.writeFileSync(out, JSON.stringify({ network: pick[0], contracts: JSON.parse(fs.readFileSync(pick[1], 'utf8')) }, null, 2) + '
-');
-else if (!fs.existsSync(out)) fs.writeFileSync(out, '{}
-');
+  .find(([, f]) => fs.existsSync(f) && Object.keys(JSON.parse(fs.readFileSync(f, 'utf8'))).length > 0);
+if (pick) fs.writeFileSync(out, JSON.stringify({ network: pick[0], contracts: JSON.parse(fs.readFileSync(pick[1], 'utf8')) }, null, 2) + '\n');
+else if (!fs.existsSync(out)) fs.writeFileSync(out, '{}\n');
 console.log('contracts copied');
