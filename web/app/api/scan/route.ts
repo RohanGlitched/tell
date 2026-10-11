@@ -3,24 +3,41 @@
 
 import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { scanRepo, scanSource, UserError } from '@/lib/scan';
+import { checkSource, parseRepo, scanRepo, scanSource, sourceFileName, UserError, type ScanResponse } from '@/lib/scan';
 import precomputed from '@/data/sample-results.json';
 
 // The sample contracts' results, made by scripts/sample-results.ts with the same engine.
-const SAMPLES = precomputed as Record<string, unknown>;
+const SAMPLES = precomputed as unknown as Record<string, ScanResponse>;
 const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Best effort, per instance: 30 scans per visitor per 10 minutes.
+// Best effort, per instance: 30 scans per visitor per 10 minutes. Only scans that run the
+// compiler count: not samples answered from SAMPLES, malformed requests, or refused ones.
+const WINDOW = 600_000;
+const LIMIT = 30;
 const hits = new Map<string, number[]>();
-function limited(ip: string): boolean {
+function recent(ip: string): number[] {
   const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 600_000);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > 30;
+  const r = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW);
+  if (r.length) hits.set(ip, r);
+  else hits.delete(ip);
+  return r;
+}
+// Seconds until this visitor may scan again; 0 when a scan may run now (and is counted).
+function take(ip: string): number {
+  const r = recent(ip);
+  if (r.length >= LIMIT) return Math.max(1, Math.ceil((r[0] + WINDOW - Date.now()) / 1000));
+  hits.set(ip, [...r, Date.now()]);
+  return 0;
+}
+function tooMany(wait: number) {
+  const min = Math.ceil(wait / 60);
+  return NextResponse.json(
+    { error: `That is a lot of scans from one address. Try again in ${min} minute${min === 1 ? '' : 's'}, or run the CLI from github.com/RohanGlitched/tell.` },
+    { status: 429, headers: { 'retry-after': String(wait) } },
+  );
 }
 
 export function GET() {
@@ -32,7 +49,6 @@ export function GET() {
 
 export async function POST(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
-  if (limited(ip)) return NextResponse.json({ error: 'That is a lot of scans. Wait a few minutes, or use the CLI.' }, { status: 429 });
   let body: { source?: unknown; repo?: unknown; name?: unknown };
   try {
     body = await req.json();
@@ -40,14 +56,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Send JSON: { "source": "…" } or { "repo": "owner/name" }.' }, { status: 400 });
   }
   try {
-    const out =
-      typeof body.repo === 'string' && body.repo.trim()
-        ? await scanRepo(body.repo)
-        : typeof body.source === 'string'
-          ? ((typeof body.name !== 'string' ? SAMPLES[sha(body.source)] : undefined) as Awaited<ReturnType<typeof scanSource>> | undefined) ??
-            (await scanSource(body.source, typeof body.name === 'string' ? body.name : undefined))
-          : null;
-    if (!out) return NextResponse.json({ error: 'Send a contract (`source`) or a repository (`repo`).' }, { status: 400 });
+    let out: ScanResponse;
+    if (typeof body.repo === 'string' && body.repo.trim()) {
+      if (!parseRepo(body.repo)) throw new UserError('Give a public GitHub repository, like `github.com/owner/repo`.');
+      const wait = take(ip);
+      if (wait) return tooMany(wait);
+      out = await scanRepo(body.repo);
+    } else if (typeof body.source === 'string') {
+      const name = typeof body.name === 'string' ? body.name : undefined;
+      const sample = SAMPLES[sha(body.source)];
+      if (sample) {
+        // A sample button: answer from the precomputed result, under the sample's own file name.
+        out = { ...sample, contracts: sample.contracts.map((c) => ({ ...c, file: sourceFileName(name) })) };
+      } else {
+        checkSource(body.source);
+        const wait = take(ip);
+        if (wait) return tooMany(wait);
+        out = await scanSource(body.source, name);
+      }
+    } else {
+      return NextResponse.json({ error: 'Send a contract (`source`) or a repository (`repo`).' }, { status: 400 });
+    }
     return new NextResponse(JSON.stringify(out, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)), {
       headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });

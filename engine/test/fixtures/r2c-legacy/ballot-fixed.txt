@@ -1,0 +1,50 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%voters.4 (0) (Set (tbytes 32)))
+      (%ballots.0 (1) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.8
+    ((%value.9 (tunsigned 255)) (%rand.10 (tbytes 32)))
+    (tbytes 32))
+  (witness %voterKey.11 () (tbytes 32))
+  (witness %choice.12 () (tunsigned 255))
+  (witness %ballotSalt.13 () (tbytes 32))
+  (circuit %register.2 () (ttuple) (= %sk.21 (call #t %voterKey.11))
+    (= %t.23
+       (tuple
+         #vu8(98 97 108 108 111 116 58 118 111 116 101 114 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.21))
+    (= %tmp.19 (call #t %persistentHash.6 %t.23))
+    (= %t.24 (public-ledger #t %voters.4 (0) insert %tmp.19))
+    (= %t.25 (tuple)) %t.25)
+  (circuit %vote.3 () (ttuple)
+   (= %sk.22 (call #t %voterKey.11))
+   (= %t.26
+      (tuple
+        #vu8(98 97 108 108 111 116 58 118 111 116 101 114 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.22))
+   (= %tag.17 (call #t %persistentHash.6 %t.26))
+   (= %t.27 (public-ledger #t %voters.4 (0) member %tag.17))
+   (= %t.28 (select #t %t.27 #t))
+   (assert %t.28 "not a registered voter") (= %t.29 (tuple))
+   (= %t.30 (public-ledger #t %ballots.0 (1) member %tag.17))
+   (= %t.31 (select %t.30 #t #f))
+   (= %t.32 (select %t.30 #f #t))
+   (= %t.33 (select %t.30 #f #t))
+   (= %t.34 (select #t %t.33 #t))
+   (assert %t.34 "already voted") (= %t.35 (tuple))
+   (= %c.18 (call #t %choice.12)) (= %t.36 (< 8 %c.18 4))
+   (= %t.37 (select #t %t.36 #t))
+   (assert %t.37 "there are four candidates") (= %t.38 (tuple))
+   (= %t.39 (call #t %ballotSalt.13))
+   (= %tmp.20 (call #t %persistentCommit.8 %c.18 %t.39))
+   (= %t.40
+      (public-ledger #t %ballots.0 (1) insert %tag.17 %tmp.20))
+   (= %t.41 (tuple)) %t.41))

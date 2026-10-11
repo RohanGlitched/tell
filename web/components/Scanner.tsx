@@ -2,8 +2,9 @@
 // Copyright (C) 2026 Rohan Borade
 // SPDX-License-Identifier: Apache-2.0
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Transcript from './Transcript';
+import { plain, Ticks } from './Ticks';
 import { GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type ContractResult, type Finding, type ScanResponse, type Severity } from '@/lib/types';
 
 type Sample = { id: string; label: string; note: string; source: string };
@@ -16,26 +17,62 @@ const SEV_STYLE: Record<Severity, string> = {
   info: 'bg-[var(--paper)] text-[var(--graphite)] ring-1 ring-[var(--rule)]',
 };
 
-export default function Scanner({ samples, initial }: { samples: Sample[]; initial?: string }) {
+const MODES = ['source', 'repo'] as const;
+const MAX_SOURCE = 200_000;
+
+// Smooth scrolling unless the visitor asked for less motion.
+const behavior = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+
+// The API answers JSON; a platform error in front of it (413, 504) may not.
+async function readError(res: Response): Promise<string> {
+  const json = await res.json().catch(() => null);
+  if (json?.error) return json.error;
+  if (res.status === 413) return 'That request is too large. The limit for a pasted contract is 200 kB.';
+  if (res.status === 504) return 'The scan took too long. Large repositories are best scanned with the CLI from github.com/RohanGlitched/tell.';
+  if (res.status === 429) return 'That is a lot of scans from one address. Wait a few minutes, or run the CLI from github.com/RohanGlitched/tell.';
+  return `The scan failed (${res.status}). Try again in a moment.`;
+}
+
+// `sample`: the id of a sample to load and scan at once (deep links from the leak zoo).
+export default function Scanner({ samples, sample }: { samples: Sample[]; sample?: string }) {
+  const linked = samples.find((s) => s.id === sample);
   const [mode, setMode] = useState<'source' | 'repo'>('source');
-  const [source, setSource] = useState(initial ?? samples[0]?.source ?? '');
+  const [source, setSource] = useState(linked?.source ?? samples[0]?.source ?? '');
   const [repo, setRepo] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResponse | null>(null);
   const [scanned, setScanned] = useState<string>('');
   const resultsRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const autoran = useRef(false);
 
-  async function run(body: object, text = '') {
-    setBusy(true);
+  // Bring the results area on screen if it is below the fold (phones), so a scan visibly starts.
+  function reveal() {
+    requestAnimationFrame(() => {
+      const el = resultsRef.current;
+      if (el && el.getBoundingClientRect().top > window.innerHeight - 120) el.scrollIntoView({ behavior: behavior(), block: 'start' });
+    });
+  }
+
+  async function run(body: { source?: string; repo?: string; name?: string }, text = '') {
     setError(null);
+    if (body.source && body.source.length > MAX_SOURCE) {
+      setResult(null);
+      setError(`That contract is ${Math.round(body.source.length / 1000)} kB; the limit is 200 kB.`);
+      return;
+    }
+    setBusy(true);
+    reveal();
     try {
       const res = await fetch('/api/scan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? `Scan failed (${res.status}).`);
+      if (!res.ok) throw new Error(await readError(res));
+      const json = (await res.json().catch(() => {
+        throw new Error('The scanner sent back something unreadable. Try again in a moment.');
+      })) as ScanResponse;
       setResult(json);
       setScanned(text);
-      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: behavior(), block: 'start' }));
     } catch (e) {
       setResult(null);
       setError((e as Error).message === 'Failed to fetch' ? 'Could not reach the scanner. Check your connection and try again.' : (e as Error).message);
@@ -44,16 +81,41 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
     }
   }
 
+  // A deep link with ?sample= scans that sample straight away (its result is precomputed).
+  useEffect(() => {
+    if (!linked || autoran.current) return;
+    autoran.current = true;
+    void run({ source: linked.source, name: `${linked.id}.compact` }, linked.source);
+  }, []);
+
+  // Arrow keys, Home and End move between the two tabs (WAI-ARIA tabs pattern).
+  function onTabKey(e: KeyboardEvent<HTMLButtonElement>, i: number) {
+    const next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? MODES.length - 1 : null;
+    if (next === null) return;
+    e.preventDefault();
+    const j = (next + MODES.length) % MODES.length;
+    setMode(MODES[j]);
+    tabRefs.current[j]?.focus();
+  }
+
   return (
     <div>
       <div className="sheet rounded-md">
         <div role="tablist" aria-label="What to scan" className="flex border-b border-[var(--rule)] text-[14px]">
-          {(['source', 'repo'] as const).map((m) => (
+          {MODES.map((m, i) => (
             <button
               key={m}
+              ref={(el) => {
+                tabRefs.current[i] = el;
+              }}
+              type="button"
               role="tab"
+              id={`scan-tab-${m}`}
               aria-selected={mode === m}
+              aria-controls={mode === m ? `scan-panel-${m}` : undefined}
+              tabIndex={mode === m ? 0 : -1}
               onClick={() => setMode(m)}
+              onKeyDown={(e) => onTabKey(e, i)}
               className={`min-h-[44px] px-4 font-medium ${mode === m ? 'border-b-2 border-[var(--ink)] text-[var(--ink)]' : 'text-[var(--graphite)] hover:text-[var(--ink)]'}`}
             >
               {m === 'source' ? 'Paste a contract' : 'GitHub repository'}
@@ -63,13 +125,16 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
 
         {mode === 'source' ? (
           <form
+            id="scan-panel-source"
+            role="tabpanel"
+            aria-labelledby="scan-tab-source"
             className="p-4 sm:p-5"
             onSubmit={(e) => {
               e.preventDefault();
               void run({ source }, source);
             }}
           >
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-[13px]">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[14px]">
               <span className="text-[var(--graphite)]">Try:</span>
               {samples.map((s) => (
                 <button
@@ -79,7 +144,7 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
                     setSource(s.source);
                     void run({ source: s.source, name: `${s.id}.compact` }, s.source);
                   }}
-                  className="min-h-[36px] rounded border border-[var(--rule)] bg-[var(--paper)] px-2.5 py-1 hover:border-[var(--ink)]"
+                  className="min-h-[44px] rounded border border-[var(--rule)] bg-[var(--paper)] px-3 py-1 hover:border-[var(--ink)] sm:min-h-[36px] sm:px-2.5"
                   title={s.note}
                 >
                   {s.label}
@@ -102,11 +167,14 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
               <button disabled={busy || !source.trim()} className="min-h-[44px] rounded bg-[var(--ink)] px-5 font-medium text-[var(--paper)] disabled:opacity-50">
                 {busy ? 'Compiling and tracing…' : 'Scan this contract'}
               </button>
-              <span className="text-[13px] text-[var(--graphite)]">Compiled by the real Compact compiler, matched to your pragma. Nothing is stored.</span>
+              <span className="text-[14px] text-[var(--graphite)]">Compiled by the real Compact compiler, matched to your pragma. Nothing is stored.</span>
             </div>
           </form>
         ) : (
           <form
+            id="scan-panel-repo"
+            role="tabpanel"
+            aria-labelledby="scan-tab-repo"
             className="p-4 sm:p-5"
             onSubmit={(e) => {
               e.preventDefault();
@@ -129,7 +197,7 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
                 {busy ? 'Fetching and scanning…' : 'Scan repository'}
               </button>
             </div>
-            <p className="mt-2 text-[13px] text-[var(--graphite)]">Every .compact contract in the default branch, up to 30. Larger repositories: use the CLI.</p>
+            <p className="mt-2 text-[14px] text-[var(--graphite)]">Every .compact contract in the default branch, up to 30. Larger repositories: use the CLI.</p>
             <div className="mt-3 flex flex-wrap gap-2 text-[13px]">
               {['midnightntwrk/example-bboard', 'midnightntwrk/example-zkloan', 'midnightntwrk/example-battleship'].map((r) => (
                 <button
@@ -139,7 +207,7 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
                     setRepo(r);
                     void run({ repo: r });
                   }}
-                  className="mono min-h-[36px] rounded border border-[var(--rule)] bg-[var(--paper)] px-2.5 py-1 hover:border-[var(--ink)]"
+                  className="mono min-h-[44px] rounded border border-[var(--rule)] bg-[var(--paper)] px-3 py-1 hover:border-[var(--ink)] sm:min-h-[36px] sm:px-2.5"
                 >
                   {r}
                 </button>
@@ -152,7 +220,7 @@ export default function Scanner({ samples, initial }: { samples: Sample[]; initi
       <div ref={resultsRef} aria-live="polite" className="scroll-mt-20">
         {error && (
           <div role="alert" className="mt-5 rounded border border-[var(--red)] bg-[var(--red-soft)] px-4 py-3 text-[14px] text-[var(--red)]">
-            {error}
+            <Ticks text={error} />
           </div>
         )}
         {busy && <Skeleton />}
@@ -172,6 +240,19 @@ function Skeleton() {
   );
 }
 
+// The whole scan result as a file, to keep or attach to a review.
+function download(result: ScanResponse) {
+  const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `tell-${result.repo ? result.repo.replace(/\//g, '-') : (result.contracts[0]?.file ?? 'contract').replace(/\.compact$/, '')}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// The compiler prefixes its messages with the exception class; the message is enough.
+const compileError = (e?: string) => (e ?? '').replace(/^Exception:\s*/gm, '');
+
 function Results({ result, source }: { result: ScanResponse; source: string }) {
   const contracts = result.contracts;
   const counts = contracts.filter((c) => c.ok).length;
@@ -188,10 +269,17 @@ function Results({ result, source }: { result: ScanResponse; source: string }) {
             'Your contract'
           )}
         </h2>
-        <span className="text-[13px] text-[var(--graphite)] num">
-          {counts} of {contracts.length} contract{contracts.length === 1 ? '' : 's'} analyzed in {(result.ms / 1000).toFixed(1)} s
+        <span className="text-[14px] text-[var(--graphite)] num">
+          {counts} of {contracts.length} contract{contracts.length === 1 ? '' : 's'} analyzed in {(result.ms / 1000).toFixed(1)} s{result.precomputed ? ' (sample, scanned ahead of time; edit any line to scan it live)' : ''}
           {result.skipped ? `, ${result.skipped} more not scanned` : ''}
         </span>
+        <button
+          type="button"
+          onClick={() => download(result)}
+          className="ml-auto inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 text-[14px] hover:border-[var(--ink)] sm:min-h-[36px]"
+        >
+          Download JSON
+        </button>
       </div>
       {contracts.length === 0 && (
         <p className="mt-4 text-[var(--graphite)]">No Compact contracts in this repository. Tell looks for .compact files with a pragma and an exported circuit.</p>
@@ -213,7 +301,7 @@ function ContractView({ c, source, repo, commit }: { c: ContractResult; source?:
       <section className="pt-6">
         <h3 className="mono text-[15px]">{c.file}</h3>
         <p className="mt-2 text-[14px] text-[var(--graphite)]">This contract did not compile, so there is nothing to trace yet:</p>
-        <pre className="mono mt-2 overflow-x-auto whitespace-pre-wrap rounded border border-[var(--rule)] bg-[var(--sheet)] p-3 text-[12.5px]">{c.error}</pre>
+        <pre className="mono mt-2 overflow-x-auto whitespace-pre-wrap rounded border border-[var(--rule)] bg-[var(--sheet)] p-3 text-[12.5px]">{compileError(c.error)}</pre>
       </section>
     );
   const findings = c.report!.findings.filter((f) => !f.suppressed);
@@ -257,8 +345,8 @@ function ContractView({ c, source, repo, commit }: { c: ContractResult; source?:
           )}
         </h4>
         {hidden > 0 && (
-          <label className="flex min-h-[36px] items-center gap-2 text-[13px] text-[var(--graphite)]">
-            <input type="checkbox" checked={showInfo} onChange={(e) => setShowInfo(e.target.checked)} />
+          <label className="flex min-h-[44px] cursor-pointer items-center gap-2 text-[14px] text-[var(--graphite)] sm:min-h-[36px]">
+            <input type="checkbox" checked={showInfo} onChange={(e) => setShowInfo(e.target.checked)} className="h-4 w-4 accent-[var(--ink)]" />
             Show {hidden} info-level disclosure{hidden === 1 ? '' : 's'}
           </label>
         )}
@@ -322,7 +410,7 @@ function LeakMap({ c, focus, onFocus }: { c: ContractResult; focus: { circuit: s
         <table className="w-full border-collapse text-[12.5px]">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-[var(--sheet)] px-3 py-2 text-left font-medium text-[var(--graphite)]">circuit ↓ field →</th>
+              <th className="sticky left-0 z-10 whitespace-nowrap bg-[var(--sheet)] px-3 py-2 text-left font-medium text-[var(--graphite)]">circuit ↓ field →</th>
               {fields.map((f) => (
                 <th key={f} className="mono whitespace-nowrap px-2 py-2 text-left font-medium">
                   {f}
@@ -345,9 +433,9 @@ function LeakMap({ c, focus, onFocus }: { c: ContractResult; focus: { circuit: s
                       {touched ? (
                         <button
                           onClick={() => onFocus(active ? null : { circuit: ci.name, field: fl })}
-                          className={`block h-7 w-full min-w-[54px] rounded-sm text-[11px] font-medium ${f ? SEV_STYLE[f.severity] : 'bg-[var(--paper)] text-[var(--faint)] ring-1 ring-[var(--rule)]'} ${active ? 'outline outline-2 outline-[var(--ink)]' : ''}`}
+                          className={`block h-7 w-full min-w-[54px] rounded-sm text-[11px] font-medium pointer-coarse:h-11 ${f ? SEV_STYLE[f.severity] : 'bg-[var(--paper)] text-[var(--faint)] ring-1 ring-[var(--rule)]'} ${active ? 'outline outline-2 outline-[var(--ink)]' : ''}`}
                           aria-label={`${ci.name} → ${fl}: ${f ? `${f.severity}, ${KIND_LABEL[f.kind]}` : 'public data only'}`}
-                          title={f ? f.title : 'Touched with public data only'}
+                          title={f ? plain(f.title) : 'Touched with public data only'}
                         >
                           {f ? (f.bits > 0 ? `${f.bits}b` : '·') : '—'}
                         </button>
@@ -374,8 +462,11 @@ function Legend() {
         </span>
       ))}
       <span className="flex items-center gap-1">
-        <span className="inline-block h-3 w-4 rounded-sm bg-[var(--paper)] ring-1 ring-[var(--rule)]" />
+        <span className="inline-grid h-3 w-4 place-items-center rounded-sm bg-[var(--paper)] text-[9px] leading-none text-[var(--faint)] ring-1 ring-[var(--rule)]">—</span>
         public data only
+      </span>
+      <span>
+        <b className="mono font-medium text-[var(--ink)]">8b</b> bits given away, <b className="mono font-medium text-[var(--ink)]">·</b> a finding with no bits counted
       </span>
     </span>
   );
@@ -398,8 +489,12 @@ function FindingCard({ f, lines, href }: { f: Finding; lines?: string[]; href?: 
           <span className="mono ml-auto text-[var(--graphite)]">line {f.line}</span>
         ))}
       </div>
-      <p className="hand mt-2 text-[19px] leading-snug">{f.title}</p>
-      <p className="mt-1.5 max-w-[78ch] text-[14.5px] text-[var(--ink)]">{f.detail}</p>
+      <p className="hand mt-2 text-[19px] leading-snug">
+        <Ticks text={f.title} />
+      </p>
+      <p className="mt-1.5 max-w-[78ch] text-[14.5px] text-[var(--ink)]">
+        <Ticks text={f.detail} />
+      </p>
       {excerpt && (
         <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--paper)] py-2 text-[12.5px] leading-[1.6]">
           {excerpt.map((l) => (
@@ -415,7 +510,7 @@ function FindingCard({ f, lines, href }: { f: Finding; lines?: string[]; href?: 
       )}
       <p className="mt-2 text-[14px]">
         <span className="font-semibold">Fix: </span>
-        {f.fix}
+        <Ticks text={f.fix} />
       </p>
     </li>
   );

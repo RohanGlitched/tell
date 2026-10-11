@@ -54,12 +54,12 @@ export default function Transcript({ circuits }: { circuits: CircuitReport[] }) 
       <figcaption className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
         <span className="font-semibold text-[var(--ink)]">Public transcript</span>
         <span className="text-[var(--graphite)]">What a chain observer sees when this circuit runs.</span>
-        <span className="no-scrollbar ml-auto flex max-w-full gap-1 overflow-x-auto">
+        <span className="ml-auto flex max-w-full flex-wrap gap-1">
           {withOps.map((c) => (
             <button
               key={c.name}
               onClick={() => setSel(c.name)}
-              className={`mono min-h-[32px] whitespace-nowrap rounded-sm px-2 text-[12px] ${c.name === cur.name ? 'bg-[var(--ink)] text-[var(--paper)]' : 'border border-[var(--rule)] text-[var(--graphite)] hover:border-[var(--ink)]'}`}
+              className={`mono min-h-[32px] whitespace-nowrap rounded-sm px-2 text-[12px] pointer-coarse:min-h-[44px] ${c.name === cur.name ? 'bg-[var(--ink)] text-[var(--paper)]' : 'border border-[var(--rule)] text-[var(--graphite)] hover:border-[var(--ink)]'}`}
             >
               {c.name}
             </button>

@@ -19,6 +19,24 @@ jobs:
         run: npm test -w engine
       - name: Zoo attack tests
         run: npm test -w zoo
+  compilers:
+    # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
+    # contract must have a finding at medium or worse, each fix none. Catches IR format changes.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compact: ['0.30.0', '0.31.1', '0.34.0', '0.35.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        with: { compact-version: '${{ matrix.compact }}' }
+      - run: npm ci --no-audit --no-fund --workspace engine --include-workspace-root
+      - name: Zoo, contract by contract, with compiler ${{ matrix.compact }}
+        working-directory: engine
+        run: npx tsx scripts/zoo-check.ts --compiler ${{ matrix.compact }}
   scan-zoo:
     # Tell scanning its own leak zoo: every fixed contract passes at medium, every leaky one fails.
     runs-on: ubuntu-latest

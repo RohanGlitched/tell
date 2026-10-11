@@ -6,6 +6,15 @@ import hero from '@/data/hero.json';
 import samples from '@/data/samples.json';
 import survey from '@/data/survey.json';
 
+// Lines the compiler accepts, and what Tell says about each.
+const COMPILER_ROWS = [
+  ['disclose(hash(vote))', 'accepted', '8 bits, four guesses recover it'],
+  ['disclose(hash(id, salary))', 'accepted', 'id is public in the same call; salary falls to brute force'],
+  ['if (disclose(bid ≥ reserve)) a.insert(t) else b.insert(t)', 'accepted', 'which set was written shows the bid’s side'],
+  ['posts.insert(n, disclose(hash(key)))', 'accepted', 'same tag on every post: one identified post unmasks all'],
+  ['owner = disclose(degradeToTransient(sk))', 'accepted', 'a cast, not a hash: the key is on the ledger'],
+];
+
 export default function Home() {
   const rows = hero.rows as HeroRow[];
   const analyzed = survey.projectsAnalyzed;
@@ -42,13 +51,13 @@ export default function Home() {
           </h2>
           <p className="text-[17px] text-[var(--graphite)]">
             All {survey.repositoriesListed} public repositories linked from the buildathon, {survey.contractsAnalyzed} contracts compiled with the
-            compiler each one asks for. Every serious finding was read by hand against the source. No team is named, and each team gets its findings privately before anything more is said.
+            compiler each one asks for. Every finding at medium or worse was read by hand against the source. No team is named; findings are for the team concerned.
           </p>
         </div>
         <dl className="mt-10 grid gap-6 sm:grid-cols-3">
           <Big n={`${analyzed}`} label="projects analyzed, circuit by circuit" />
-          <Big n={`${linkPct}%`} label="publish a fixed tag that ties each user’s transactions together" />
-          <Big n={`${serious}`} label="leak something private at medium severity or worse" circled />
+          <Big n={`${linkPct}%`} label="publish a fixed tag that can tie a user’s transactions together; usually by design, so reported as info or low" />
+          <Big n={`${serious}`} label="have a finding at medium or worse, each read by hand against the source" circled />
         </dl>
         <div className="mt-14">
           <Census projects={survey.projects as CensusProject[]} />
@@ -73,8 +82,21 @@ export default function Home() {
               competing with it, and could run as one of its passes.
             </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[14.5px]">
+          <div>
+            {/* phones: one card per line; the three columns do not fit */}
+            <ol className="border-t-2 border-[var(--ink)] sm:hidden">
+              {COMPILER_ROWS.map(([code, c, t]) => (
+                <li key={code} className="border-b border-[var(--rule)] py-3">
+                  <code className="block break-words text-[13px] leading-[1.5]">{code}</code>
+                  <p className="mt-1.5 text-[14px] text-[var(--graphite)]">Compiler: {c}</p>
+                  <p className="mt-0.5 text-[15px]">
+                    <span className="font-semibold">Tell: </span>
+                    {t}
+                  </p>
+                </li>
+              ))}
+            </ol>
+            <table className="hidden w-full border-collapse text-[14.5px] sm:table">
               <thead>
                 <tr className="border-b-2 border-[var(--ink)] text-left">
                   <th className="py-2 pr-3 font-semibold">This line</th>
@@ -83,15 +105,9 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="align-top">
-                {[
-                  ['disclose(hash(vote))', 'accepted', '8 bits, four guesses recover it'],
-                  ['disclose(hash(id, salary))', 'accepted', 'id is public in the same call; salary falls to brute force'],
-                  ['if (disclose(bid ≥ reserve)) a.insert(t) else b.insert(t)', 'accepted', 'which set was written shows the bid’s side'],
-                  ['posts.insert(n, disclose(hash(key)))', 'accepted', 'same tag on every post: one identified post unmasks all'],
-                  ['owner = disclose(degradeToTransient(sk))', 'accepted', 'a cast, not a hash: the key is on the ledger'],
-                ].map(([code, c, t]) => (
+                {COMPILER_ROWS.map(([code, c, t]) => (
                   <tr key={code} className="border-b border-[var(--rule)]">
-                    <td className="mono py-2.5 pr-3 text-[12.5px]">{code}</td>
+                    <td className="mono break-words py-2.5 pr-3 text-[12.5px]">{code}</td>
                     <td className="py-2.5 pr-3 text-[var(--graphite)]">{c}</td>
                     <td className="py-2.5">{t}</td>
                   </tr>
@@ -117,7 +133,7 @@ export default function Home() {
       <section className="border-y border-[var(--rule)] bg-[var(--sheet)]">
         <div className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6">
           <h2 className="text-[34px] font-extrabold sm:text-[40px]">Put your contract under the lamp</h2>
-          <p className="mt-2 max-w-[62ch] text-[16px] text-[var(--graphite)]">Pick a sample or paste your own. The real Compact compiler runs on every scan.</p>
+          <p className="mt-2 max-w-[62ch] text-[16px] text-[var(--graphite)]">Pick a sample or paste your own. The real Compact compiler runs on every contract you paste.</p>
           <div className="mt-8">
             <Scanner samples={samples} />
           </div>
@@ -139,7 +155,7 @@ export default function Home() {
           <li className="sheet flex flex-col rounded-sm p-5">
             <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">2</span>
             <h3 className="mt-3 text-[19px] font-bold">Run it in CI</h3>
-            <pre className="mono mt-3 overflow-x-auto rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`- uses: RohanGlitched/tell@v1
+            <pre className="mono mt-3 whitespace-pre-wrap break-words rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`- uses: RohanGlitched/tell@v1
   with:
     path: contract
     fail-on: high`}</pre>
@@ -148,7 +164,7 @@ export default function Home() {
           <li className="sheet flex flex-col rounded-sm p-5">
             <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">3</span>
             <h3 className="mt-3 text-[19px] font-bold">Mark what you meant</h3>
-            <pre className="mono mt-3 overflow-x-auto rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`// the reveal publishes the seed
+            <pre className="mono mt-3 whitespace-pre-wrap break-words rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`// the reveal publishes the seed
 seeds.insert(slot, s); // tell:allow secret-published`}</pre>
             <p className="mt-3 text-[15px] text-[var(--graphite)]">Some disclosures are the point. Say so once and Tell stops reporting them.</p>
           </li>
@@ -183,13 +199,24 @@ seeds.insert(slot, s); // tell:allow secret-published`}</pre>
           <div>
             <h2 className="text-[30px] font-extrabold leading-[1.08] sm:text-[38px]">Where Tell goes next</h2>
             <p className="mt-4 text-[16px] text-[var(--graphite)]">
-              Tell stays free and open source: the scanner, the command line and the GitHub Action. Its rules come from reading real contracts, and they get
-              better with every one it reads.
+              The scanner, the command line, the GitHub Action, every rule and the leak zoo stay free and open source. On other chains, analyzers like this are
+              kept alive by audit work, ecosystem grants, or by becoming part of the chain’s own toolchain. Hosted-only analysis has the weakest record. Tell
+              follows that pattern:
             </p>
-            <p className="mt-3 text-[16px] text-[var(--graphite)]">
-              It pays for itself the way developer tools on other chains do. An ecosystem tooling grant funds the rule research. Teams that want history and
-              dashboards pay for hosted checks. Audit firms add a privacy section to their Compact reviews.
-            </p>
+            <ol className="mt-4 list-decimal space-y-2 pl-5 text-[15.5px]">
+              <li>
+                <b>An ecosystem tooling grant</b> pays for rule research and for keeping up with every compiler release.
+              </li>
+              <li>
+                <b>Audit firms</b> use Tell’s per-circuit disclosure map as the privacy section of a Compact review.
+              </li>
+              <li>
+                <b>The compiler.</b> Tell already reads the compiler’s own output; running as one of its passes is the goal, not a threat.
+              </li>
+              <li>
+                <b>Production teams, later:</b> history and dashboards for private repositories, once mainnet has the teams for it. Public repositories stay free.
+              </li>
+            </ol>
           </div>
           <ol className="grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2">
             {[
@@ -204,6 +231,19 @@ seeds.insert(slot, s); // tell:allow secret-published`}</pre>
               </li>
             ))}
           </ol>
+        </div>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {[
+            ['What exists today', 'The compiler says whether data goes public. OpenZeppelin’s Compact security detectors check loop bounds and assertion messages. Nothing measures how much a disclosure gives away. Tell does, and its rules could feed those tools.'],
+            ['If the compiler absorbs it', 'That is the plan. Tell reads the compiler’s own reduce-to-circuit form and is built to run as a pass.'],
+            ['Undocumented compiler output', 'Tell reads compilers 0.29 to 0.35 and normalises both output shapes they print. Tracking each new release is the maintenance a grant pays for.'],
+            ['A small developer base', 'Running costs are near zero: the scanner is one serverless function. Tell can live on grant scale until mainnet usage grows.'],
+          ].map(([t, d]) => (
+            <div key={t} className="border-t border-[var(--rule)] pt-4">
+              <h3 className="text-[17px] font-bold">{t}</h3>
+              <p className="mt-1.5 text-[15px] text-[var(--graphite)]">{d}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

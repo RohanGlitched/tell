@@ -92,7 +92,9 @@ const words = (n: string) =>
     .replace(/\[\d+\]/g, '')
     .split(/[._\s]+|(?<=[a-z0-9])(?=[A-Z])/)
     .map((w) => w.toLowerCase())
-    .filter(Boolean);
+    .filter(Boolean)
+    // plurals read as their singular: `admins`, `certEphemerals`
+    .map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
 const lastWord = (n: string) => words(n).at(-1) ?? '';
 const isSecretish = (n: string) => {
   const w = words(n);
@@ -104,19 +106,45 @@ const isHint = (n: string) => {
   return w.some((x) => ['divmod', 'quotient', 'remainder', 'sqrt', 'hint', 'inverse', 'timestamp', 'clock'].includes(x)) || ['div', 'mod', 'now', 'time'].includes(lastWord(n));
 };
 // Arguments are usually public inputs the caller chose; these names say the value is personal.
-const isPersonal = (n: string) =>
-  words(n).some((x) =>
-    ['vote', 'ballot', 'choice', 'option', 'bid', 'offer', 'amount', 'salary', 'wage', 'income', 'balance', 'age', 'score', 'answer', 'guess', 'move', 'pick', 'selection', 'rating', 'location', 'gps', 'lat', 'lon', 'coords', 'birth', 'dob', 'secret'].includes(x),
+const isPersonal = (n: string) => {
+  const w = words(n);
+  if (isFresh(n)) return false; // a ballotSalt is randomness, not a ballot
+  return (
+    w.some((x) =>
+      ['vote', 'ballot', 'choice', 'option', 'bid', 'offer', 'amount', 'salary', 'wage', 'income', 'balance', 'age', 'score', 'answer', 'guess', 'move', 'pick', 'selection', 'rating', 'location', 'gps', 'lat', 'lon', 'coords', 'coord', 'birth', 'dob', 'pin', 'ssn', 'phone', 'email', 'zip', 'postcode', 'diagnosis', 'diagnosi', 'gender', 'nationality', 'secret'].includes(x),
+    ) || (w.includes('name') && w.some((x) => ['full', 'first', 'last', 'given', 'family', 'legal', 'real', 'user', 'person'].includes(x)))
   );
+};
+// Written in the clear, these are a leak whatever the design: identity and life facts.
+// (Amounts, bids and votes are revealed on purpose all the time; a hash of one is still caught.)
+const isSensitive = (n: string) => {
+  const w = words(n);
+  if (isFresh(n)) return false;
+  return (
+    w.some((x) => ['salary', 'wage', 'income', 'age', 'birth', 'dob', 'ssn', 'gps', 'location', 'coords', 'coord', 'lat', 'lon', 'diagnosis', 'diagnosi', 'gender', 'nationality', 'email', 'phone', 'pin', 'postcode', 'zip'].includes(x)) ||
+    (w.includes('name') && w.some((x) => ['full', 'first', 'last', 'given', 'family', 'legal', 'real', 'person'].includes(x)))
+  );
+};
+// Key material by name: a seed or a private key, not a public key, an id or a commitment.
+const isKeyish = (n: string) => {
+  const w = words(rootName(n));
+  if (w.some((x) => ['pub', 'public', 'pk', 'id', 'commitment', 'commit', 'root', 'hash', 'digest'].includes(x))) return false;
+  return w.some((x) => ['seed', 'sk', 'secret', 'priv', 'private', 'mnemonic', 'passphrase', 'password', 'signing', 'master', 'key'].includes(x));
+};
+// Personal values hold far fewer real values than their type allows (an age, a name, a PIN).
+const PERSONAL_BITS = 40;
 // Fields that hold a contract's own officers: publishing an admin's key there is the usual design.
 const isRoleField = (n: string) =>
-  words(n).some((x) => ['owner', 'admin', 'authority', 'operator', 'issuer', 'governor', 'manager', 'treasury', 'recipient', 'deployer', 'controller', 'organizer', 'organiser', 'platform', 'pool'].includes(x));
+  words(n).some((x) =>
+    ['owner', 'admin', 'authority', 'operator', 'issuer', 'governor', 'manager', 'treasury', 'recipient', 'deployer', 'controller', 'organizer', 'organiser', 'platform', 'pool', 'approval', 'signer', 'guardian', 'validator', 'committee', 'registrar', 'moderator'].includes(x),
+  );
 const isSetup = (circuit: string) => ['init', 'initialize', 'initialise', 'setup', 'constructor', 'bootstrap'].includes(words(circuit)[0] ?? '');
-const isFresh = (n: string) => words(n).some((x) => ['nonce', 'salt', 'rand', 'random', 'randomness', 'fresh', 'blind', 'blinding', 'ephemeral', 'entropy'].includes(x));
+const isFresh = (n: string) => words(n).some((x) => ['nonce', 'salt', 'rand', 'random', 'randomnes', 'randomness', 'fresh', 'blind', 'blinding', 'unblinding', 'ephemeral', 'entropy', 'scalar'].includes(x));
 // Shielded-token plumbing: coin commitments and nullifiers are the protocol's own privacy.
 // Kernel operations of the shielded token protocol carry commitments and nullifiers by design.
 // Every other kernel operation (unshielded spends, mints, balance and time checks) is public.
-const SHIELDED_KERNEL_OPS = new Set(['claimZswapCoinReceive', 'claimZswapCoinSpend', 'claimZswapNullifier', 'self', 'mintShielded']);
+// A mint's amount is an operand like any other, so mintShielded is analysed; only its coin is private.
+const SHIELDED_KERNEL_OPS = new Set(['claimZswapCoinReceive', 'claimZswapCoinSpend', 'claimZswapNullifier', 'self']);
 const READ_OPS = new Set(['read', 'member', 'lookup', 'size', 'isEmpty', 'checkRoot', 'checkRootHistoric', 'isFull', 'head', 'length', 'balance', 'balanceLessThan', 'balanceGreaterThan']);
 // A preimage needs this many unknown bits before brute force is hopeless.
 const SAFE_BITS = 112;
@@ -126,6 +154,9 @@ const SAFE_BITS = 112;
 // A literal's identity for tag fingerprints: byte strings by content, not length.
 const litKey = (a: SExpr): string => (!Array.isArray(a) && a.t === 'bytes' ? Buffer.from(a.v).toString('hex') : show(a));
 const rootName = (n: string) => n.replace(/[.[].*$/, '');
+// The name a projected value carries itself: `rec.salary` is a salary; `salaryAttestation[1]`
+// is some element of an attestation (its expiry, here), so it says nothing.
+const ownName = (n: string) => (/\[\d+\]$/.test(n) ? '' : n.includes('.') ? n.slice(n.lastIndexOf('.') + 1) : n);
 
 const empty = (): Val => ({ label: new Map() });
 
@@ -163,26 +194,47 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
         const op = isSym(l[3]) ? l[3].v : '';
         if (!READ_OPS.has(op)) mutated.add(symName(l[1]));
       }
-  for (const c of p.circuits) {
-    // Pass 1 finds inputs this circuit publishes outright; an attacker knows those,
-    // so pass 2 does not count them as secret when judging a hash's strength.
-    const first = analyzeCircuit(p, c, new Set(), new Set(), mutated);
-    const known = new Set(first.findings.filter((f) => f.kind === 'published' || f.kind === 'secret-published').flatMap((f) => f.sources.map((s) => s.name)));
-    circuits.push(analyzeCircuit(p, c, unknown, known, mutated));
-  }
+  // Pass 1 finds inputs each circuit publishes outright (an attacker knows those, so pass 2
+  // does not count them as secret when judging a hash's strength), and the private values the
+  // contract uses as key material in an identity hash anywhere.
+  const keyed = new Set<string>();
+  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set()));
+  p.circuits.forEach((c, i) => {
+    const known = new Set(firsts[i].findings.filter((f) => f.kind === 'published' || f.kind === 'secret-published').flatMap((f) => f.sources.map((s) => s.name)));
+    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed));
+  });
   const findings = circuits.flatMap((c) => c.findings);
-  if (opts.sourceText) locate(findings, opts.sourceText);
+  if (opts.sourceText) {
+    locate(findings, opts.sourceText);
+    declaredPublic(findings, opts.sourceText);
+  }
   linkAcrossCircuits(findings);
   return { circuits, findings, unknownForms: [...unknown].sort() };
 }
 
-function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set<string>, mutated: Set<string>): CircuitReport {
+function analyzeCircuit(
+  p: Program,
+  c: Circuit,
+  unknown: Set<string>,
+  known: Set<string>,
+  mutated: Set<string>,
+  keyed: Set<string>,
+  hiddenElsewhere: Set<string>,
+): CircuitReport {
   const env = new Map<string, Val>();
   const sources = new Map<string, Source>();
   const findings = new Map<string, Finding>();
   const proves: Proof[] = [];
   const touches = new Set<string>();
   const ops: TranscriptOp[] = [];
+  // field|op -> each guarded run of it: the private sources guarding it, and its public operands
+  // (private operands count as '*': a hidden commitment looks the same on either path).
+  const guarded = new Map<string, { keys: Set<string>; sig: string }[]>();
+  const recordGuard = (field: string, op: string, g: Label, operands: Val[], exprs: SExpr[]) => {
+    if (!g.size) return;
+    const sig = operands.map((v, i) => (flat(v).size ? '*' : show(resolve(exprs[i] ?? { t: 'sym', v: '' } as SExpr)))).join('|');
+    guarded.set(`${field}|${op}`, [...(guarded.get(`${field}|${op}`) ?? []), { keys: new Set(g.keys()), sig }]);
+  };
 
   const addSource = (kind: SourceKind, name: string, type: Type): string => {
     const key = `${kind === 'witness' ? 'w' : 'a'}:${name}`;
@@ -214,8 +266,10 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
       } else if (f.flow === 'predicate') bits += 1;
       else if (f.flow === 'guessable') bits += f.preimageBits ?? s.bits;
       else {
-        bits += s.bits;
-        if (hasBytes(s.type) && s.bits >= SAFE_BITS) strong = true;
+        const b = isPersonal(s.name) && !isSecretish(s.name) ? Math.min(s.bits, PERSONAL_BITS) : s.bits;
+        bits += b;
+        // Personal values are already capped below SAFE_BITS above, so a Field named `age` is not a salt.
+        if (hasBytes(s.type) && b >= SAFE_BITS) strong = true;
       }
     }
     return { bits, strong };
@@ -233,10 +287,18 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
     // A secret named like per-use randomness makes the output a one-time value.
     const freshType = (t: Type): boolean => (t.k === 'struct' ? t.fields.some((x) => isFresh(x.name) || freshType(x.type)) : t.k === 'tuple' ? t.items.some(freshType) : false);
     if ([...all].some(([k, f]) => f.flow !== 'hidden' && (isFresh(sources.get(k)!.name) || freshType(sources.get(k)!.type)))) varying = true;
+    // A caller-chosen argument mixed in (a room id, a poll id) scopes the tag to it: hash(roomId, sk)
+    // differs from room to room, so it is not one identity across actions.
+    if ([...all].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument')) varying = true;
     for (const [k, f] of all) {
       if (known.has(sources.get(k)!.name)) continue; // already public in this call
       if (f.flow === 'hidden') out.set(k, { ...f, idTag: f.idTag && idTag, fp: f.fp ?? fp });
-      else if (secure) out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp });
+      else if (secure) {
+        out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp });
+        // Only private data counts: public ids (arguments) are hashed into keys all the time.
+        if (f.flow === 'reveal' && !salt && idTag && !varying && sources.get(k)!.kind === 'witness' && rootName(sources.get(k)!.name) !== 'ownPublicKey')
+          keyed.add(sources.get(k)!.name);
+      }
       else out.set(k, { flow: 'guessable', via, preimageBits: bits, choice: f.flow === 'predicate' || (f.flow === 'guessable' && !!f.choice) });
     }
     return { label: out, varying };
@@ -403,17 +465,22 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
       if (f.flow === 'guessable') {
         const bits = f.preimageBits ?? s.bits;
         // Arguments are usually public inputs the caller chose; witnesses are the private data.
+        // Witnesses are the private data. Arguments are just as private in Compact, but usually carry
+        // public inputs the caller chose, so they rank one step lower, and only when they are small
+        // or named like personal data; a source that writes disclose(arg) marks them public.
+        const witnessSev: Severity = bits <= 40 ? 'critical' : 'high';
+        const publicHint = isPositional(s.name) || isHint(s.name);
         const severity: Severity = f.choice
-          ? isPositional(s.name) || isHint(s.name) || s.kind === 'argument'
+          ? publicHint || s.kind === 'argument'
             ? 'low'
             : 'medium'
-          : s.kind === 'argument' && !isSecretish(s.name)
-            ? isPersonal(s.name) && !isPositional(s.name) && !isHint(s.name)
-              ? 'medium'
-              : 'low'
-            : bits <= 40
-              ? 'critical'
-              : 'high';
+          : s.kind === 'witness' || isSecretish(s.name)
+            ? witnessSev
+            : !publicHint && (s.bits <= 16 || isPersonal(s.name))
+              ? bits <= 40
+                ? 'high'
+                : 'medium'
+              : 'low';
         report({
           circuit: c.name,
           kind: 'guessable-hash',
@@ -435,7 +502,9 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
         });
       } else if (f.flow === 'reveal') {
         const looksSecret = isSecretish(s.name) && hasBytes(s.type);
-        if (s.name === 'ownPublicKey')
+        // 128+ bits of private bytes written as-is: a key, a seed or a credential, whatever it is called.
+        const keyMaterial = s.kind === 'witness' && s.type.k === 'bytes' && s.bits >= 128 && isKeyish(s.name) && !isFresh(s.name);
+        if (rootName(s.name) === 'ownPublicKey')
           report({
             circuit: c.name,
             kind: 'published',
@@ -449,18 +518,37 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
             detail: `\`${field}\` ${op} receives ownPublicKey(), the caller's Zswap coin public key. Every call that does this ties the contract activity to the same wallet. ownPublicKey() is also supplied by the prover, so it does not authenticate the caller by itself.`,
             fix: `Identify users by persistentHash([domain, secret]) from private state; never authorise on ownPublicKey() alone.`,
           });
-        else if (looksSecret)
+        else if (looksSecret || hiddenElsewhere.has(s.name))
           report({
             circuit: c.name,
             kind: 'secret-published',
-            severity: s.kind === 'argument' ? 'low' : 'critical',
+            severity: looksSecret && s.kind === 'witness' ? 'critical' : 'high',
             field,
             op,
             sources: src,
             bits: s.bits,
-            title: `${who} looks like a secret key, and it is published`,
-            detail: `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) in a form anyone can read back. Anyone who sees this transaction can act as its owner.`,
-            fix: `Publish persistentHash([domain, key]) as a public identifier instead, and keep the key itself in private state.`,
+            title: looksSecret ? `${who} looks like a secret key, and it is published` : `${who} is hidden behind a hash elsewhere, and published in the clear here`,
+            detail: looksSecret
+              ? `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) in a form anyone can read back. Anyone who sees this transaction can act as its owner.`
+              : `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) as a readable value, while another circuit of this contract hashes it to keep it secret. Whatever that hash protects is public once this runs.`,
+            fix: looksSecret
+              ? `Publish persistentHash([domain, key]) as a public identifier instead, and keep the key itself in private state.`
+              : `Keep the value in private state and publish only its hash. If this is the reveal step of a commit-reveal, mark the line with // tell:allow secret-published.`,
+          });
+        else if (keyMaterial || (s.kind === 'witness' && isSensitive(ownName(s.name))))
+          report({
+            circuit: c.name,
+            kind: 'published',
+            severity: 'medium',
+            field,
+            op,
+            sources: src,
+            bits: s.bits,
+            title: keyMaterial ? `${who}, ${s.bits} bits of private bytes, is published as-is` : `${who}, a personal value, is published in the clear`,
+            detail: keyMaterial
+              ? `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) unchanged. Private bytes this size are usually a key, a seed or a credential; if this one is, anyone who reads the chain can use it.`
+              : `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) as a readable value. Its name says it is personal data; once written, it is public forever.`,
+            fix: `If it should stay private, store a commitment instead: persistentCommit(value, salt) with a random salt from private state. If it is meant to be public, mark the line with // tell:allow published.`,
           });
         else
           report({
@@ -489,12 +577,14 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
           detail: `\`${field}\` ${op} depends on a comparison involving ${who}. Observers learn one bit about it per call.`,
           fix: `Usually intended (e.g. "age ≥ 18"). Prove it with assert() instead of storing it if the chain does not need to remember it.`,
         });
-      } else if (f.flow === 'hidden' && f.tag && f.idTag && role === 'value' && perAction) {
+      } else if (f.flow === 'hidden' && f.tag && f.idTag && role === 'value' && perAction && [...flat(operand)].some(([k]) => isKeyish(sources.get(k)!.name) || isSecretish(sources.get(k)!.name))) {
+        // Only identity material (a key, a secret) makes a signature; a hash of content does not.
         // The tag is stored next to each action: every action is signed with it.
         report({
           circuit: c.name,
           kind: 'attributable',
-          severity: s.kind === 'argument' ? 'low' : 'medium',
+          // an officer (issuer, registrar) signing each record is usually the design
+          severity: s.kind === 'argument' || isRoleField(field) || isRoleField(rootName(s.name)) ? 'low' : 'medium',
           field,
           op,
           sources: src,
@@ -524,6 +614,8 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
     for (const [k, f] of guard) {
       if (f.flow === 'hidden' && !f.tag) continue;
       const s = sources.get(k)!;
+      // The circuit writes this value in the clear anyway: which path ran adds nothing.
+      if (known.has(s.name)) continue;
       const who = whoOf(s);
       report({
         circuit: c.name,
@@ -547,14 +639,40 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
     }
   };
 
+  // The expression each temporary was bound to, so asserts can be read for range bounds.
+  const exprOf = new Map<string, SExpr>();
+  const resolve = (x: SExpr, depth = 0): SExpr => (isVar(x) && depth < 8 && exprOf.has(x.v) ? resolve(exprOf.get(x.v)!, depth + 1) : x);
+  // assert(x < N) or assert(x <= N): x has at most log2(N) bits, whatever its type allows.
+  const boundFrom = (x: SExpr, depth = 0) => {
+    const e = resolve(x);
+    if (!isList(e) || depth > 6) return;
+    const h = head(e);
+    if ((h === '<' || h === '<=') && e.length === 4) {
+      const lim = e[3];
+      const v = val(e[2]);
+      const l = flat(v);
+      if (!Array.isArray(lim) && lim.t === 'num' && l.size === 1) {
+        const [[k, f]] = [...l];
+        const n = Number(lim.v) + (h === '<=' ? 1 : 0);
+        if (f.flow === 'reveal' && n >= 1 && n < 2 ** 52) {
+          const s = sources.get(k)!;
+          s.bits = Math.min(s.bits, Math.max(1, Math.ceil(Math.log2(n))));
+        }
+      }
+      return;
+    }
+    if (h === 'select' || h === 'and') for (const y of e.slice(1)) boundFrom(y, depth + 1);
+  };
   for (const st of c.steps) {
     if (st.k === 'assert') {
+      boundFrom(st.cond);
       const l = union(val(st.cond));
       const secret = [...l].filter(([, f]) => !(f.flow === 'hidden' && !f.tag)).map(([k]) => sources.get(k)!.name);
       if (secret.length) proves.push({ circuit: c.name, message: st.message, sources: [...new Set(secret)] });
       continue;
     }
     const { guard, target, expr } = st.b;
+    exprOf.set(target, expr);
     const g = union(val(guard));
     if (head(expr) === 'public-ledger') {
       const l = expr as SExpr[];
@@ -563,10 +681,18 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
       const op = isSym(l[3]) ? l[3].v : 'op';
       // Ledger results are public, and may differ from call to call.
       env.set(target, { label: new Map(), varying: mutated.has(fid) || field === 'kernel' });
-      if (field === 'kernel' && SHIELDED_KERNEL_OPS.has(op)) continue;
+      if (field === 'kernel' && SHIELDED_KERNEL_OPS.has(op)) {
+        // The coin itself is private, but whether a receive or spend happened at all is public.
+        if (op !== 'self') {
+          recordGuard(field, op, g, [], []);
+          sink(field, op, empty(), g);
+        }
+        continue;
+      }
       touches.add(field);
       // A Merkle root that must match the public root reveals nothing new.
       const operands = /^checkRoot/.test(op) ? [] : l.slice(4).map(val);
+      recordGuard(field, op, g, operands, l.slice(4));
       const note = (v: Val): OperandNote[] =>
         [...flat(v)].map(([k, f]) => {
           const s = sources.get(k)!;
@@ -579,7 +705,9 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
       const gs: Label = shown.size ? new Map([...g].filter(([k]) => !shown.has(k))) : g;
       if (operands.length === 2 && /^(insert|write)/.test(op)) {
         sink(field, op, operands[0], gs, 'key');
-        sink(field, op, operands[1], new Map(), 'value', anyVarying([operands[0]]));
+        // Per action: the key changes between calls (a counter) or the caller picks it (a post id).
+        const perAction = anyVarying([operands[0]]) || [...flat(operands[0])].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument');
+        sink(field, op, operands[1], new Map(), 'value', perAction);
       } else sink(field, op, { label: union(...operands) }, gs, op === 'write' ? 'value' : 'key');
       continue;
     }
@@ -591,7 +719,40 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
     } else env.set(target, v);
   }
 
+  // An exported circuit's result is part of the public transaction, like a ledger write.
+  if (c.ret) {
+    const r = val(c.ret);
+    if (flat(r).size) {
+      ops.push({ field: 'return', op: 'value', operands: [[...flat(r)].map(([k, f]) => ({ source: sources.get(k)!.name, kind: sources.get(k)!.kind, flow: f.flow, via: f.via, bits: f.flow === 'reveal' ? sources.get(k)!.bits : f.flow === 'guessable' ? (f.preimageBits ?? sources.get(k)!.bits) : f.flow === 'predicate' ? 1 : 0, tag: f.tag }))], guardedBy: [] });
+      sink('return', 'value', r, new Map(), 'value');
+    }
+  }
+  // A branch that runs the same operation on the same field on both paths shows nothing:
+  // the transcript looks the same either way.
+  const balanced = (f: Finding) => {
+    const keys = f.sources.map((x) => `${x.kind === 'witness' ? 'w' : 'a'}:${x.name}`);
+    const runs = (guarded.get(`${f.field}|${f.op}`) ?? []).filter((r) => keys.some((k) => r.keys.has(k)));
+    return runs.length >= 2 && runs.every((r) => r.sig === runs[0].sig);
+  };
+  for (const [id, f] of findings) if (f.kind === 'branch' && balanced(f)) findings.delete(id);
   const list = [...findings.values()];
+  // Nothing in this circuit ties the transaction to its caller (no reusable tag, no wallet key):
+  // a branch then publishes an anonymous choice, like a public tally.
+  const opsOn = (field: string) => new Set(ops.filter((o) => o.field === field).map((o) => o.op));
+  const oneTime = (field: string) => opsOn(field).has('member') && opsOn(field).has('insert');
+  const identified = list.some(
+    (f) =>
+      ((f.kind === 'linkable' || f.kind === 'attributable') && !oneTime(f.field)) ||
+      // the wallet key, or a private identifier (16+ bytes) written in the clear
+      (f.kind === 'published' && f.sources.some((x) => rootName(x.name) === 'ownPublicKey' || (x.kind === 'witness' && /^Bytes<(1[6-9]|[2-9]\d|\d{3,})>$/.test(x.type)))),
+  );
+  // ...unless the guarded operation itself writes an identity tag (a bidder filed under one set).
+  const tagged = (field: string) => ops.some((o) => o.field === field && o.guardedBy.length && o.operands.some((xs) => xs.some((x) => x.tag)));
+  for (const f of list)
+    if (f.kind === 'branch' && f.severity === 'medium' && !identified && !tagged(f.field)) {
+      f.severity = 'low';
+      f.detail += ` Nothing else this circuit publishes ties the transaction to its caller, so this reads like a public tally of anonymous choices.`;
+    }
   for (const f of list) {
     const roots = [...new Set(f.sources.map((x) => rootName(x.name)))];
     if (f.kind === 'branch' && f.sources.length > 1 && roots.length === 1) {
@@ -661,6 +822,21 @@ function linkAcrossCircuits(findings: Finding[]) {
         f.severity = 'low';
         f.detail += ` The same tag appears in ${circuits.map((c) => `\`${c}\``).join(', ')}, so those transactions can be tied to one person.`;
       }
+  }
+}
+
+// `const r = disclose(role);` marks an argument public in so many words: a hash of it hides nothing
+// the author meant to hide.
+export function declaredPublic(findings: Finding[], src: string) {
+  for (const f of findings) {
+    if (f.kind !== 'guessable-hash' || f.severity === 'low' || f.severity === 'info') continue;
+    const args = f.sources.filter((s) => s.kind === 'argument');
+    if (args.length === 0 || args.length !== f.sources.length) continue;
+    const esc = (n: string) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (args.every((a) => new RegExp(`disclose\\(\\s*${esc(a.name)}\\s*\\)`).test(src))) {
+      f.severity = 'low';
+      f.detail += ' The source discloses this argument directly, so it is treated as public on purpose.';
+    }
   }
 }
 

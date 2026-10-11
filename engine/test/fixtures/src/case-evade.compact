@@ -1,0 +1,38 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+
+export ledger owner: Bytes<32>;
+export ledger payroll: Map<Uint<32>, Uint<32>>;
+export ledger names: Set<Bytes<32>>;
+export ledger votes: Map<Bytes<32>, Bytes<32>>;
+export ledger ages: Set<Bytes<32>>;
+
+witness ownerSeed(): Bytes<32>;
+witness salary(): Uint<32>;
+witness fullName(): Bytes<32>;
+witness age(): Field;
+
+// 1. the owner's seed stored raw (same bug as the zoo vault, different name)
+export circuit claim(): [] {
+  owner = disclose(ownerSeed());
+}
+
+// 2. a salary stored in the clear
+export circuit file(employee: Uint<32>): [] {
+  payroll.insert(disclose(employee), disclose(salary()));
+}
+
+// 3. a hash of a person's name (a dictionary attack recovers it)
+export circuit enrol(): [] {
+  names.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "app:name"), fullName()])));
+}
+
+// 4. a vote passed as an argument named v, hashed
+export circuit cast(tag: Bytes<32>, v: Uint<8>): [] {
+  votes.insert(disclose(tag), disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "app:v"), (v as Field) as Bytes<32>])));
+}
+
+// 5. an age typed as Field, hashed
+export circuit prove(): [] {
+  ages.insert(disclose(persistentHash<Vector<2, Field>>([0, age()])));
+}

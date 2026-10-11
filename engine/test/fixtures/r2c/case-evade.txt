@@ -1,0 +1,59 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.10 () (Kernel)))
+  (public-ledger-declaration
+    ((%owner.6 (0) (__compact_Cell (tbytes 32)))
+      (%payroll.7
+        (1)
+        (Map (tunsigned 4294967295) (tunsigned 4294967295)))
+      (%names.5 (2) (Set (tbytes 32)))
+      (%votes.9 (3) (Map (tbytes 32) (tbytes 32)))
+      (%ages.0 (4) (Set (tbytes 32)))))
+  (native
+    %persistentHash.11
+    ((%value.12 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentHash.13
+    ((%value.14 (tvector 2 (tfield))))
+    (tbytes 32))
+  (witness %ownerSeed.15 () (tbytes 32))
+  (witness %salary.16 () (tunsigned 4294967295))
+  (witness %fullName.17 () (tbytes 32))
+  (witness %age.18 () (tfield))
+  (circuit %claim.2 () (ttuple) (= #t %tmp.22 (call %ownerSeed.15))
+    (= #t %t.27 (public-ledger %owner.6 (0) write %tmp.22))
+    (= #t %t.28 (tuple)) %t.28)
+  (circuit %file.4 ((%employee.19 (tunsigned 4294967295))) (ttuple)
+    (= #t %tmp.23 (call %salary.16))
+    (= #t
+       %t.29
+       (public-ledger %payroll.7 (1) insert %employee.19 %tmp.23))
+    (= #t %t.30 (tuple)) %t.30)
+  (circuit %enrol.3 () (ttuple) (= #t %t.31 (call %fullName.17))
+    (= #t
+       %t.32
+       (tuple
+         #vu8(97 112 112 58 110 97 109 101 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0)
+         %t.31))
+    (= #t %tmp.24 (call %persistentHash.11 %t.32))
+    (= #t %t.33 (public-ledger %names.5 (2) insert %tmp.24))
+    (= #t %t.34 (tuple)) %t.34)
+  (circuit %cast.1 ((%tag.20 (tbytes 32)) (%v.21 (tunsigned 255)))
+    (ttuple) (= #t %t.35 (field->bytes 32 %v.21))
+    (= #t
+       %t.36
+       (tuple
+         #vu8(97 112 112 58 118 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0)
+         %t.35))
+    (= #t %tmp.25 (call %persistentHash.11 %t.36))
+    (= #t
+       %t.37
+       (public-ledger %votes.9 (3) insert %tag.20 %tmp.25))
+    (= #t %t.38 (tuple)) %t.38)
+  (circuit %prove.8 () (ttuple) (= #t %t.39 (call %age.18))
+    (= #t %t.40 (tuple 0 %t.39))
+    (= #t %tmp.26 (call %persistentHash.13 %t.40))
+    (= #t %t.41 (public-ledger %ages.0 (4) insert %tmp.26))
+    (= #t %t.42 (tuple)) %t.42))

@@ -116,7 +116,6 @@ const out = {
     return {
       p: label.get(r.repo)!,
       grade: live.map((c) => c.grade!).sort((a, b) => rank(b) - rank(a))[0],
-      contracts: live.length,
       worst: worst && SEV.indexOf(worst.severity) <= 3 ? { severity: worst.severity, kind: worst.kind } : null,
     };
   }),

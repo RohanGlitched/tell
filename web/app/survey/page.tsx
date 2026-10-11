@@ -39,15 +39,33 @@ export default function SurveyPage() {
         <div className="mt-5 flex h-12 w-full overflow-hidden rounded-sm border border-[var(--rule)]" role="img" aria-label={Object.entries(s.grades).map(([g, n]) => `${g}: ${n}`).join(', ')}>
           {Object.entries(s.grades)
             .filter(([, n]) => n > 0)
-            .map(([g, n]) => (
-              <div key={g} className="grid place-items-center text-[13px] font-semibold text-[var(--paper)]" style={{ width: `${(n / total) * 100}%`, background: GRADE_COLOR[g] }}>
-                {(n / total) * 100 > 6 ? `${g} · ${n}` : g}
-              </div>
-            ))}
+            .map(([g, n]) => {
+              // A label only where it fits; the list below gives every count.
+              const pct = (n / total) * 100;
+              return (
+                <div
+                  key={g}
+                  className="grid place-items-center overflow-hidden whitespace-nowrap text-[13px] font-semibold text-[var(--paper)]"
+                  style={{ width: `${pct}%`, background: GRADE_COLOR[g] }}
+                >
+                  {pct >= 16 ? (
+                    `${g} · ${n}`
+                  ) : pct >= 6 ? (
+                    <>
+                      <span className="sm:hidden">{g}</span>
+                      <span className="hidden sm:inline">{`${g} · ${n}`}</span>
+                    </>
+                  ) : pct >= 3 ? (
+                    <span className="hidden sm:inline">{g}</span>
+                  ) : null}
+                </div>
+              );
+            })}
         </div>
-        <ul className="mt-3 grid gap-1 text-[14px] sm:grid-cols-5">
+        <ul className="mt-3 grid grid-cols-2 gap-1 text-[14px] sm:grid-cols-5">
           {Object.entries(s.grades).map(([g, n]) => (
-            <li key={g}>
+            <li key={g} className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 rounded-[2px]" style={{ background: GRADE_COLOR[g] }} aria-hidden="true" />
               <span className="font-semibold" style={{ color: GRADE_COLOR[g] }}>
                 {g}
               </span>{' '}
@@ -108,15 +126,15 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-[13px] text-[var(--graphite)]">Counts are projects, not findings. Info-level rows are values published on purpose, listed so nothing is hidden.</p>
+          <p className="mt-3 text-[14px] text-[var(--graphite)]">Counts are projects, not findings. Info-level rows are values published on purpose, listed so nothing is hidden.</p>
         </div>
       </section>
 
       <section className="mt-16">
         <h2 className="text-[24px] font-semibold">The serious ones</h2>
         <p className="mt-2 max-w-[66ch] text-[15px] text-[var(--graphite)]">
-          Every finding at medium or above was read by hand against the source before it was counted. Each team gets its findings privately; none is named here
-          without their agreement.
+          Every finding at medium or above was read by hand against the source before it was counted. No team is named here; findings are for the team concerned,
+          and a team is named only with its agreement.
         </p>
         <ol className="mt-5 space-y-2">
           {s.cases.map((c, i) => (
@@ -124,9 +142,9 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
               <span className={`rounded-sm px-2 py-0.5 text-[12px] font-semibold uppercase ${c.severity === 'high' || c.severity === 'critical' ? 'bg-[var(--red)] text-white' : 'bg-[var(--hi)] text-[#151b2c]'}`}>
                 {c.severity}
               </span>
-              <span className="mono text-[13px] text-[var(--graphite)]">{c.project}</span>
+              <span className="mono text-[14px] text-[var(--graphite)]">{c.project}</span>
               <span className="text-[15px]">{c.title}</span>
-              {'count' in c && (c as { count: number }).count > 1 && <span className="text-[13px] text-[var(--graphite)]">in {(c as { count: number }).count} contracts</span>}
+              {'count' in c && (c as { count: number }).count > 1 && <span className="text-[14px] text-[var(--graphite)]">in {(c as { count: number }).count} contracts</span>}
             </li>
           ))}
         </ol>
@@ -141,7 +159,7 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
           <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px]">
             {s.contractsNotCompiled.map((c) => (
               <li key={c.cause}>
-                <span className="num">{c.n}</span> {c.cause === 'other' ? 'are experiments, test fixtures or include files that do not compile on their own' : c.cause}
+                <span className="num">{c.n}</span> {c.cause === 'other' ? 'are experiments, test fixtures or include files that do not compile on their own' : plural(c.cause, c.n)}
               </li>
             ))}
           </ul>
@@ -152,10 +170,10 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
         </div>
         <div>
           <h2 className="text-[24px] font-semibold">Reproduce it</h2>
-          <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
+          <pre className="mono mt-3 whitespace-pre-wrap break-words rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
             {`git clone https://github.com/RohanGlitched/tell
 cd tell && npm install
-# clone the repositories listed in survey/repos.txt into ~/survey
+# clone the public repositories linked from AKINDO submissions into ~/survey
 npx tsx engine/scripts/survey.ts ~/survey survey/results.json
 npx tsx engine/scripts/summarize.ts survey/results.json web/data/survey.json`}
           </pre>
@@ -165,6 +183,9 @@ npx tsx engine/scripts/summarize.ts survey/results.json web/data/survey.json`}
     </div>
   );
 }
+
+// The summary's causes are written for one file ("does not compile"); agree with the count.
+const plural = (cause: string, n: number) => (n === 1 ? cause : cause.replace(/^does not /, 'do not ').replace(/^targets /, 'target '));
 
 function Fig({ n, label, circled }: { n: number | string; label: string; circled?: boolean }) {
   return (

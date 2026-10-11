@@ -47,6 +47,8 @@ export type ScanResponse = {
   skipped?: number;
   compilers: string[];
   ms: number;
+  // a sample's result, made ahead of time by the same engine and compiler
+  precomputed?: boolean;
 };
 
 export const SEVERITY_ORDER: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];

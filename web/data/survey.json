@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-11T19:34:57.262Z",
+  "generatedAt": "2026-10-11T21:07:30.317Z",
   "method": "Every public GitHub repository linked from a Midnight Buildathon submission on AKINDO, cloned at its default branch and scanned with Tell. Compiler chosen per contract from its pragma, preferring 0.31.1 (the compiler for the ledger live today).",
   "repositoriesListed": 111,
   "repositoriesWithCompact": 101,
@@ -21,48 +21,48 @@
     }
   ],
   "grades": {
-    "A": 48,
-    "B": 37,
-    "C": 10,
-    "D": 1,
-    "F": 0
+    "A": 47,
+    "B": 34,
+    "C": 14,
+    "D": 0,
+    "F": 1
   },
   "kinds": {
     "linkable": {
-      "info": 52,
-      "low": 22
+      "info": 29,
+      "low": 19
     },
     "published": {
       "info": 86,
       "low": 39,
       "medium": 2
     },
-    "branch": {
-      "info": 18,
-      "low": 6,
-      "medium": 4
-    },
     "predicate": {
-      "info": 30
+      "info": 35
     },
     "attributable": {
-      "medium": 5,
-      "low": 1
+      "low": 5,
+      "medium": 10
+    },
+    "branch": {
+      "info": 11,
+      "low": 10,
+      "medium": 2
     },
     "guessable-hash": {
       "low": 4,
-      "high": 1
+      "critical": 1
     }
   },
-  "linkableProjects": 64,
-  "publishedValues": 2801,
+  "linkableProjects": 44,
+  "publishedValues": 2842,
   "cases": [
     {
       "project": "Project 04",
-      "severity": "high",
+      "severity": "critical",
       "kind": "guessable-hash",
       "title": "A private value sits behind a hash with too few possible inputs; brute force recovers it",
-      "bits": 64,
+      "bits": 40,
       "count": 4
     },
     {
@@ -71,7 +71,7 @@
       "kind": "branch",
       "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
       "bits": 16,
-      "count": 3
+      "count": 2
     },
     {
       "project": "Project 17",
@@ -82,12 +82,12 @@
       "count": 1
     },
     {
-      "project": "Project 21",
+      "project": "Project 33",
       "severity": "medium",
-      "kind": "branch",
-      "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
-      "bits": 1,
-      "count": 1
+      "kind": "attributable",
+      "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
+      "bits": 0,
+      "count": 2
     },
     {
       "project": "Project 37",
@@ -95,14 +95,6 @@
       "kind": "branch",
       "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
       "bits": 8,
-      "count": 1
-    },
-    {
-      "project": "Project 45",
-      "severity": "medium",
-      "kind": "branch",
-      "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
-      "bits": 4,
       "count": 1
     },
     {
@@ -123,6 +115,14 @@
     },
     {
       "project": "Project 58",
+      "severity": "medium",
+      "kind": "attributable",
+      "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
+      "bits": 0,
+      "count": 1
+    },
+    {
+      "project": "Project 61",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
@@ -152,19 +152,41 @@
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
       "bits": 0,
       "count": 2
+    },
+    {
+      "project": "Project 84",
+      "severity": "medium",
+      "kind": "attributable",
+      "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
+      "bits": 0,
+      "count": 1
+    },
+    {
+      "project": "Project 91",
+      "severity": "medium",
+      "kind": "attributable",
+      "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
+      "bits": 0,
+      "count": 1
+    },
+    {
+      "project": "Project 92",
+      "severity": "medium",
+      "kind": "attributable",
+      "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
+      "bits": 0,
+      "count": 7
     }
   ],
   "projects": [
     {
       "p": "Project 01",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 02",
       "grade": "B",
-      "contracts": 3,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -173,22 +195,19 @@
     {
       "p": "Project 03",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 04",
-      "grade": "D",
-      "contracts": 9,
+      "grade": "F",
       "worst": {
-        "severity": "high",
+        "severity": "critical",
         "kind": "guessable-hash"
       }
     },
     {
       "p": "Project 05",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -197,7 +216,6 @@
     {
       "p": "Project 06",
       "grade": "B",
-      "contracts": 5,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -206,25 +224,24 @@
     {
       "p": "Project 07",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 08",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 09",
-      "grade": "A",
-      "contracts": 1,
-      "worst": null
+      "grade": "B",
+      "worst": {
+        "severity": "low",
+        "kind": "attributable"
+      }
     },
     {
       "p": "Project 10",
       "grade": "B",
-      "contracts": 3,
       "worst": {
         "severity": "low",
         "kind": "branch"
@@ -233,7 +250,6 @@
     {
       "p": "Project 11",
       "grade": "B",
-      "contracts": 3,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -242,7 +258,6 @@
     {
       "p": "Project 12",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
         "kind": "branch"
@@ -251,7 +266,6 @@
     {
       "p": "Project 13",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -260,13 +274,11 @@
     {
       "p": "Project 14",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 15",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -275,13 +287,11 @@
     {
       "p": "Project 16",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 17",
       "grade": "C",
-      "contracts": 12,
       "worst": {
         "severity": "medium",
         "kind": "published"
@@ -290,7 +300,6 @@
     {
       "p": "Project 18",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -299,7 +308,6 @@
     {
       "p": "Project 19",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -308,28 +316,24 @@
     {
       "p": "Project 20",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 21",
-      "grade": "C",
-      "contracts": 1,
+      "grade": "B",
       "worst": {
-        "severity": "medium",
+        "severity": "low",
         "kind": "branch"
       }
     },
     {
       "p": "Project 22",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 23",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -338,19 +342,16 @@
     {
       "p": "Project 24",
       "grade": "A",
-      "contracts": 3,
       "worst": null
     },
     {
       "p": "Project 25",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 26",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -359,25 +360,21 @@
     {
       "p": "Project 27",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 28",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 29",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 30",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -386,7 +383,6 @@
     {
       "p": "Project 31",
       "grade": "B",
-      "contracts": 49,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -395,22 +391,19 @@
     {
       "p": "Project 32",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 33",
-      "grade": "B",
-      "contracts": 2,
+      "grade": "C",
       "worst": {
-        "severity": "low",
-        "kind": "linkable"
+        "severity": "medium",
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 34",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -419,19 +412,16 @@
     {
       "p": "Project 35",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 36",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 37",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
         "kind": "branch"
@@ -440,7 +430,6 @@
     {
       "p": "Project 38",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -449,7 +438,6 @@
     {
       "p": "Project 39",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -458,16 +446,14 @@
     {
       "p": "Project 40",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
-        "kind": "linkable"
+        "kind": "published"
       }
     },
     {
       "p": "Project 41",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -476,34 +462,29 @@
     {
       "p": "Project 42",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 43",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 44",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 45",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
-        "kind": "branch"
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 46",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -512,13 +493,11 @@
     {
       "p": "Project 47",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 48",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -527,13 +506,11 @@
     {
       "p": "Project 49",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 50",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -542,7 +519,6 @@
     {
       "p": "Project 51",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -551,7 +527,6 @@
     {
       "p": "Project 52",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -560,7 +535,6 @@
     {
       "p": "Project 53",
       "grade": "C",
-      "contracts": 3,
       "worst": {
         "severity": "medium",
         "kind": "published"
@@ -569,13 +543,11 @@
     {
       "p": "Project 54",
       "grade": "A",
-      "contracts": 3,
       "worst": null
     },
     {
       "p": "Project 55",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -584,13 +556,11 @@
     {
       "p": "Project 56",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 57",
       "grade": "B",
-      "contracts": 2,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -599,7 +569,6 @@
     {
       "p": "Project 58",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
         "kind": "attributable"
@@ -608,13 +577,11 @@
     {
       "p": "Project 59",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 60",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -622,35 +589,30 @@
     },
     {
       "p": "Project 61",
-      "grade": "B",
-      "contracts": 3,
+      "grade": "C",
       "worst": {
-        "severity": "low",
-        "kind": "linkable"
+        "severity": "medium",
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 62",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 63",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 64",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 65",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
         "kind": "attributable"
@@ -659,7 +621,6 @@
     {
       "p": "Project 66",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -668,37 +629,31 @@
     {
       "p": "Project 67",
       "grade": "A",
-      "contracts": 3,
       "worst": null
     },
     {
       "p": "Project 68",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 69",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 70",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 71",
       "grade": "A",
-      "contracts": 3,
       "worst": null
     },
     {
       "p": "Project 72",
       "grade": "C",
-      "contracts": 1,
       "worst": {
         "severity": "medium",
         "kind": "attributable"
@@ -707,31 +662,26 @@
     {
       "p": "Project 73",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 74",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 75",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 76",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 77",
       "grade": "B",
-      "contracts": 31,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -740,19 +690,16 @@
     {
       "p": "Project 78",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     },
     {
       "p": "Project 79",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 80",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "published"
@@ -761,13 +708,11 @@
     {
       "p": "Project 81",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 82",
       "grade": "C",
-      "contracts": 2,
       "worst": {
         "severity": "medium",
         "kind": "attributable"
@@ -776,7 +721,6 @@
     {
       "p": "Project 83",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -784,17 +728,15 @@
     },
     {
       "p": "Project 84",
-      "grade": "B",
-      "contracts": 1,
+      "grade": "C",
       "worst": {
-        "severity": "low",
-        "kind": "linkable"
+        "severity": "medium",
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 85",
       "grade": "B",
-      "contracts": 4,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -803,61 +745,52 @@
     {
       "p": "Project 86",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 87",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 88",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 89",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 90",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 91",
-      "grade": "B",
-      "contracts": 4,
+      "grade": "C",
       "worst": {
-        "severity": "low",
-        "kind": "linkable"
+        "severity": "medium",
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 92",
-      "grade": "B",
-      "contracts": 11,
+      "grade": "C",
       "worst": {
-        "severity": "low",
-        "kind": "published"
+        "severity": "medium",
+        "kind": "attributable"
       }
     },
     {
       "p": "Project 93",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 94",
       "grade": "B",
-      "contracts": 1,
       "worst": {
         "severity": "low",
         "kind": "linkable"
@@ -866,13 +799,11 @@
     {
       "p": "Project 95",
       "grade": "A",
-      "contracts": 1,
       "worst": null
     },
     {
       "p": "Project 96",
       "grade": "A",
-      "contracts": 2,
       "worst": null
     }
   ]

@@ -1,0 +1,9 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// A member tag that mixes in the room id is different in every room: one identity per room, not across rooms.
+export ledger rooms: Map<Bytes<32>, Bytes<32>>;
+witness playerSecret(): Bytes<32>;
+export circuit join(roomId: Bytes<32>): [] {
+  const id = disclose(roomId);
+  rooms.insert(id, disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, "room:member"), id, playerSecret()])));
+}

@@ -35,9 +35,10 @@ const STEPS = [
 ];
 
 const KINDS = [
-  ['Guessable hash', 'critical / high', 'A hash or commitment whose only unknown input is small: a vote, an age, a salary, a location. Brute force recovers it. Critical up to 40 bits.'],
-  ['Secret in the clear', 'critical', 'A value that looks like a secret key reaches the ledger as a readable value.'],
-  ['Secret-dependent branch', 'medium', 'Which ledger operations run depends on a private value. Includes count leaks: a fixed-size loop that only touches the ledger for used slots.'],
+  ['Guessable hash', 'critical / high', 'A hash or commitment whose only unknown input is small: a vote, an age, a salary, a location. Brute force recovers it. Critical up to 40 bits. assert(x < N) counts: a vote among four candidates is 2 bits, whatever its type.'],
+  ['Secret in the clear', 'critical / high', 'A secret key reaches the ledger as a readable value, or is returned from a circuit; or a value the contract hashes as a key somewhere is written raw somewhere else.'],
+  ['Private bytes or personal data in the clear', 'medium', 'A seed or private key written as-is (seed, key, secret, sk: not a public key, id or commitment); a salary, an age or a location written as a readable value.'],
+  ['Secret-dependent branch', 'medium / low', 'Which ledger operations run depends on a private value. Includes count leaks: a fixed-size loop that only touches the ledger for used slots. Low when nothing in the circuit identifies the caller (an anonymous tally).'],
   ['Same tag on every action', 'medium', 'Each repeated action stores the same hash of a key, so one identified action unmasks the rest.'],
   ['Wallet key published', 'medium / low', 'A user’s ownPublicKey() is stored, tying all their activity to one wallet. Low when it is an officer key set once (owner, authority).'],
   ['Linkable tag', 'low / info', 'The same hash of a key is published by several circuits, tying a user’s transactions together. Fine for registrations and nullifiers.'],
@@ -47,18 +48,20 @@ const KINDS = [
 
 const QUIET = [
   'An officer key set once (owner, authority) and access checks against it: the usual admin design.',
-  'A branch on a value the same operation already publishes in the clear: nothing new is learned.',
+  'A branch that runs the same operation, with the same public operands, on both paths: the transcript looks the same either way.',
+  'A branch on a value the circuit already publishes in the clear: nothing new is learned.',
   'A commitment whose randomness is a strong private value: hiding and unlinkable.',
-  'Shielded-coin plumbing (coin commitments, nullifiers): the protocol’s own privacy.',
+  'Shielded-coin plumbing (coin commitments, nullifiers): the protocol’s own privacy. Whether a receive or spend happened at all is still checked, and a mint’s amount is public.',
   'A Merkle root passed to checkRoot: it must equal a public root anyway.',
   'An input the same call already publishes: it adds no secrecy to a hash, and is not reported twice.',
   'Hashes that mix in a per-use nonce, salt or a changing counter: one-time values link nothing.',
   'Branches on tree positions, division hints and the current time: public in practice, reported as low.',
-  'Caller-supplied arguments: Compact treats them as private, but they are usually public inputs, so they are reported low unless the name says the value is personal (a vote, a bid, an amount, a location).',
+  'Caller-supplied arguments: as private as witnesses in Compact, but usually public inputs, so they rank one step lower. A hash of a small or personal argument is still high; one the source writes as disclose(arg) is public on purpose.',
 ];
 
 const CHANGELOG = [
-  ['2026-10-12', 'Live demo on Midnight Preprod. Unshielded transfers, mints and ownPublicKey() analysed; casts are no longer read as hashes; officer keys, access checks and public arguments reported low; a branch on a value the same operation publishes is not reported.'],
+  ['2026-10-12', 'Severity follows what is revealed, not names: assert bounds, raw private bytes and personal data, circuit return values, guarded shielded receives, balanced and anonymous branches. Regression tests from three reviews; the zoo is checked under compilers 0.30 to 0.35 in CI; SARIF severity on rules for GitHub.'],
+  ['2026-10-12', 'Unshielded transfers, mints and ownPublicKey() analysed; casts are no longer read as hashes; officer keys and access checks reported low.'],
   ['2026-10-12', 'Survey of every public Midnight Buildathon repository; compiler fallback across pragma ranges; count-leak wording; per-use nonce and struct-field rules.'],
   ['2026-10-12', 'Web scanner with leak map; SARIF export; suppression comments.'],
   ['2026-10-11', 'Engine: compiler trace reader, information flow, five finding kinds; leak zoo with attack tests.'],
@@ -129,8 +132,9 @@ export default function HowPage() {
           <ul className="mt-3 list-disc space-y-2 pl-5 text-[15px]">
             <li>Tell sees the contract, not the dApp around it. A frontend that logs a secret, or a server that sees it, is out of scope.</li>
             <li>It cannot read intent. A value published on purpose looks like a leak; that is why published values are info and why suppression exists.</li>
-            <li>Entropy comes from types. A Bytes&lt;32&gt; that holds a short name is treated as 256 bits; a Uint&lt;64&gt; amount is treated as guessable in practice.</li>
-            <li>Range asserts over a secret narrow its domain further than Tell assumes; real brute force can be cheaper than the bits shown.</li>
+            <li>Entropy comes from types, narrowed by assert(x &lt; N) bounds and by names that mark personal data. A Bytes&lt;32&gt; with an unremarkable name that holds a short string is still treated as 256 bits.</li>
+            <li>Constructors are not analysed yet; circuits and their return values are.</li>
+            <li>Names still matter at the edges: officer fields (owner, authority) and personal words (salary, age) adjust severity. Raw private bytes are always listed, but are raised to medium only when the name reads as key material (seed, key, secret); a key under a neutral name shows as a published value.</li>
             <li>Contracts must compile with a released compiler. Unreleased language versions are reported, not guessed at.</li>
           </ul>
         </div>
@@ -183,7 +187,7 @@ seeds.insert(slot, s); // tell:allow secret-published`}
         <ul className="mt-3 space-y-2 text-[15px]">
           {CHANGELOG.map(([d, t], i) => (
             <li key={i} className="grid gap-1 sm:grid-cols-[120px_1fr]">
-              <span className="mono text-[13px] text-[var(--graphite)]">{d}</span>
+              <span className="mono text-[14px] text-[var(--graphite)]">{d}</span>
               <span>{t}</span>
             </li>
           ))}

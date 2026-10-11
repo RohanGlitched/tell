@@ -1,0 +1,44 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.3 () (Kernel)))
+  (public-ledger-declaration
+    ((%reserve.2
+       (0)
+       (__compact_Cell (tunsigned 18446744073709551615)))
+      (%bids.1 (1) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.4
+    ((%value.5 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.6
+    ((%value.7 (tunsigned 18446744073709551615))
+      (%rand.8 (tbytes 32)))
+    (tbytes 32))
+  (witness %bidderKey.9 () (tbytes 32))
+  (witness %amount.10 () (tunsigned 18446744073709551615))
+  (witness %bidSalt.11 () (tbytes 32))
+  (circuit %bid.0 () (ttuple) (= %sk.18 (call #t %bidderKey.9))
+   (= %t.19
+      (tuple
+        #vu8(115 97 108 101 58 98 105 100 100 101 114 0 0 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.18))
+   (= %tag.15 (call #t %persistentHash.4 %t.19))
+   (= %t.20 (public-ledger #t %bids.1 (1) member %tag.15))
+   (= %t.21 (select %t.20 #t #f))
+   (= %t.22 (select %t.20 #f #t))
+   (= %t.23 (select %t.20 #f #t))
+   (= %t.24 (select #t %t.23 #t))
+   (assert %t.24 "one bid per bidder") (= %t.25 (tuple))
+   (= %a.16 (call #t %amount.10))
+   (= %t.26 (public-ledger #t %reserve.2 (0) read))
+   (= %t.27 (< 64 %a.16 %t.26)) (= %t.28 (select %t.27 #t #f))
+   (= %t.29 (select %t.27 #f #t))
+   (= %t.30 (select %t.27 #f #t))
+   (= %t.31 (select #t %t.30 #t))
+   (assert %t.31 "bids below the reserve are not accepted")
+   (= %t.32 (tuple)) (= %t.33 (call #t %bidSalt.11))
+   (= %tmp.17 (call #t %persistentCommit.6 %a.16 %t.33))
+   (= %t.34
+      (public-ledger #t %bids.1 (1) insert %tag.15 %tmp.17))
+   (= %t.35 (tuple)) %t.35))

@@ -1,6 +1,10 @@
+import crypto from 'node:crypto';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import CodePane from '@/components/CodePane';
 import zoo from '@/data/zoo.json';
+import precomputed from '@/data/sample-results.json';
+import type { ScanResponse } from '@/lib/types';
 
 export const metadata: Metadata = {
   title: 'Leak zoo',
@@ -82,7 +86,7 @@ export default function ZooPage() {
       </p>
       <nav aria-label="Cases" className="mt-6 flex flex-wrap gap-2 text-[14px]">
         {CASES.map((c) => (
-          <a key={c.id} href={`#${c.id}`} className="rounded border border-[var(--rule)] px-3 py-1.5 no-underline hover:border-[var(--ink)]">
+          <a key={c.id} href={`#${c.id}`} className="inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 no-underline hover:border-[var(--ink)] sm:min-h-[36px]">
             {c.name}
           </a>
         ))}
@@ -91,6 +95,8 @@ export default function ZooPage() {
       <div className="mt-12 space-y-20">
         {CASES.map((c, i) => {
           const s = src.get(c.id)!;
+          const leaky = trim(s.leaky);
+          const fixed = trim(s.fixed);
           return (
             <section key={c.id} id={c.id} className="scroll-mt-20">
               <div className="flex flex-wrap items-baseline gap-3">
@@ -103,16 +109,21 @@ export default function ZooPage() {
               </div>
               <p className="mt-2 max-w-[70ch] text-[16px]">{c.story}</p>
               <div className="mt-5 grid gap-4 lg:grid-cols-2">
-                <Code title={`${c.id}-leaky.compact`} code={trim(s.leaky)} tone="red" />
-                <Code title={`${c.id}-fixed.compact`} code={trim(s.fixed)} tone="ink" />
+                <CodePane title={`${c.id}-leaky.compact`} code={leaky} tone="red" marks={leakLines(s.leaky)} />
+                <CodePane title={`${c.id}-fixed.compact`} code={fixed} tone="ink" marks={changedLines(leaky, fixed)} />
               </div>
               <dl className="mt-5 grid gap-4 text-[15px] md:grid-cols-3">
                 <Note term="Tell reports" text={c.finding} />
                 <Note term="The attack test" text={c.attack} />
                 <Note term="The fix" text={c.fix} />
               </dl>
-              <p className="mt-4 text-[14px]">
-                <Link href={`/scan?sample=${c.id}-leaky`}>Scan the leaky version yourself</Link>
+              <p className="mt-5">
+                <Link
+                  href={`/scan?sample=${c.id}-leaky`}
+                  className="inline-flex min-h-[44px] items-center rounded-sm border border-[var(--ink)] px-4 text-[15px] font-semibold no-underline hover:bg-[var(--sheet)]"
+                >
+                  Scan the leaky version yourself →
+                </Link>
               </p>
             </section>
           );
@@ -125,23 +136,32 @@ export default function ZooPage() {
 // Drop the licence header so the code that matters fits the card.
 const trim = (code: string) => code.replace(/^(\/\/.*\n)+\n?/, '').trim();
 
-function Code({ title, code, tone }: { title: string; code: string; tone: 'red' | 'ink' }) {
-  return (
-    <figure className="min-w-0">
-      <figcaption className={`mono mb-1 text-[12.5px] ${tone === 'red' ? 'text-[var(--red)]' : 'text-[var(--graphite)]'}`}>{title}</figcaption>
-      <pre
-        className={`mono max-h-[420px] overflow-auto rounded-sm border bg-[var(--sheet)] p-3 text-[12.5px] leading-[1.6] ${tone === 'red' ? 'border-[var(--red)]' : 'border-[var(--rule)]'}`}
-      >
-        {code}
-      </pre>
-    </figure>
-  );
+// The precomputed scan of each leaky contract (the same engine as the scanner) says which
+// lines leak at medium or worse; shift them by the header that trim() drops.
+const RESULTS = precomputed as unknown as Record<string, ScanResponse>;
+function leakLines(full: string): number[] {
+  const res = RESULTS[crypto.createHash('sha256').update(full).digest('hex')];
+  const kept = full.replace(/^(\/\/.*\n)+\n?/, '').trimStart();
+  const dropped = full.slice(0, full.length - kept.length).split('\n').length - 1;
+  const lines = (res?.contracts[0]?.report?.findings ?? [])
+    .filter((f) => !f.suppressed && f.line && ['critical', 'high', 'medium'].includes(f.severity))
+    .map((f) => f.line! - dropped);
+  return [...new Set(lines)].filter((n) => n > 0);
+}
+
+// Lines of the fix that do not appear in the leaky version.
+function changedLines(leaky: string, fixed: string): number[] {
+  const before = new Set(leaky.split('\n').map((l) => l.trim()));
+  return fixed
+    .split('\n')
+    .map((l, i) => (l.trim() && !before.has(l.trim()) ? i + 1 : 0))
+    .filter((n) => n > 0);
 }
 
 function Note({ term, text }: { term: string; text: string }) {
   return (
     <div className="border-t border-[var(--rule)] pt-3">
-      <dt className="text-[13px] font-semibold">{term}</dt>
+      <dt className="text-[14px] font-semibold">{term}</dt>
       <dd className="mt-1 text-[var(--ink)]">{text}</dd>
     </div>
   );

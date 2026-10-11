@@ -44,6 +44,19 @@ function prepareCompilers(): Promise<Compiler[]> {
   return compilers;
 }
 
+// `include "…"` and `import "…"` make the compiler read another file. A pasted contract may not
+// read any file; a repository's contracts may only read files inside the repository.
+const FILE_REFS = /^\s*(?:include|import)\s+"([^"]*)"/gm;
+function unsafeRefs(src: string, file: string, root: string | null): string[] {
+  return [...src.matchAll(FILE_REFS)]
+    .map((m) => m[1])
+    .filter((ref) => {
+      if (root === null || path.isAbsolute(ref) || ref.includes(String.fromCharCode(0))) return true;
+      const target = path.resolve(path.dirname(file), ref);
+      return target !== root && !target.startsWith(root + path.sep);
+    });
+}
+
 export type ScanResponse = {
   kind: 'source' | 'repo';
   repo?: string;
@@ -52,17 +65,31 @@ export type ScanResponse = {
   skipped?: number;
   compilers: string[];
   ms: number;
+  // a sample's result, made ahead of time by the same engine and compiler
+  precomputed?: boolean;
 };
+
+// The cheap checks on a pasted contract, before any compiler runs. Throws a UserError.
+export function checkSource(source: string) {
+  if (source.length > MAX_SOURCE) throw new UserError(`That contract is ${Math.round(source.length / 1000)} kB; the limit is 200 kB.`);
+  if (!/pragma\s+language_version/.test(source)) throw new UserError('Paste a whole Compact contract, starting with `pragma language_version …;`.');
+  if (unsafeRefs(source, '', null).length)
+    throw new UserError('A pasted contract cannot include or import other files. Scan its GitHub repository instead, or paste it with the included code inlined.');
+}
+
+// The file name a pasted contract is scanned under.
+export function sourceFileName(name = 'contract.compact') {
+  const safe = name.replace(/[^\w.-]/g, '_').replace(/^\.+/, '') || 'contract.compact';
+  return safe.endsWith('.compact') ? safe : safe + '.compact';
+}
 
 export async function scanSource(source: string, name = 'contract.compact'): Promise<ScanResponse> {
   const t = Date.now();
-  if (source.length > MAX_SOURCE) throw new UserError(`That contract is ${Math.round(source.length / 1000)} kB; the limit is 200 kB.`);
-  if (!/pragma\s+language_version/.test(source)) throw new UserError('Paste a whole Compact contract, starting with `pragma language_version …;`.');
+  checkSource(source);
   const list = await prepareCompilers();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-src-'));
   try {
-    const safe = name.replace(/[^\w.-]/g, '_').replace(/^\.+/, '') || 'contract.compact';
-    const file = path.join(dir, safe.endsWith('.compact') ? safe : safe + '.compact');
+    const file = path.join(dir, sourceFileName(name));
     fs.writeFileSync(file, source);
     const r = await scanFile(file, list);
     r.file = path.basename(file);
@@ -110,11 +137,21 @@ export async function scanRepo(input: string): Promise<ScanResponse> {
       if (seen > MAX_TARBALL) body.destroy(new UserError('That repository is over 25 MB; scan it with the CLI instead.'));
     });
     // Only Compact sources matter; skip everything else while extracting.
-    await pipeline(body, untar({ cwd: dir, filter: (p) => p.endsWith('.compact') || /\/$/.test(p) }));
+    // Regular files and folders only: a symlink in the archive could point anywhere on this server.
+    await pipeline(
+      body,
+      untar({
+        cwd: dir,
+        filter: (p, e) => {
+          const type = (e as unknown as { type?: string }).type;
+          return type === 'Directory' || ((type === 'File' || type === 'OldFile' || type === 'ContiguousFile') && p.endsWith('.compact'));
+        },
+      }),
+    );
     const top = fs.readdirSync(dir)[0];
     const root = top ? path.join(dir, top) : dir;
     const commit = sha ?? top?.match(/-([0-9a-f]{40})$/)?.[1] ?? null;
-    const files = findContracts(root);
+    const files = findContracts(root).filter((f) => unsafeRefs(fs.readFileSync(f, 'utf8'), f, root).length === 0);
     const contracts: ContractResult[] = [];
     for (const f of files.slice(0, MAX_CONTRACTS)) {
       if (Date.now() - t > 45_000) break;

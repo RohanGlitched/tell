@@ -1,0 +1,26 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%results.1 (0) (Set (tbytes 32)))))
+  (native
+    %persistentCommit.3
+    ((%value.4 (tboolean)) (%rand.5 (tbytes 32)))
+    (tbytes 32))
+  (witness %score.6 () (tunsigned 65535))
+  (witness %resultSalt.7 () (tbytes 32))
+  (circuit %grade.0 () (ttuple) (= #t %s.8 (call %score.6))
+    (= #t %t.11 (< 16 %s.8 50))
+    (= #t %t.12 (select %t.11 #t #f))
+    (= #t %t.13 (select %t.11 #f #t))
+    (= #t %t.14 (select %t.11 #f #t))
+    (= #t %t.15 (select %t.14 #t #f))
+    (= #t %t.16 (select %t.14 #f #t))
+    (= %t.15 %t.17 (call %resultSalt.7))
+    (= %t.15 %tmp.9 (call %persistentCommit.3 #t %t.17))
+    (= %t.15 %t.18 (public-ledger %results.1 (0) insert %tmp.9))
+    (= %t.16 %t.19 (call %resultSalt.7))
+    (= %t.16 %tmp.10 (call %persistentCommit.3 #f %t.19))
+    (= %t.16
+       %t.20
+       (public-ledger %results.1 (0) insert %tmp.10))
+    (= #t %t.21 (tuple)) %t.21))

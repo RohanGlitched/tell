@@ -1,0 +1,37 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%owner.1 (0) (__compact_Cell (tbytes 32)))
+      (%withdrawals.4 (1) (Counter))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %secretKey.8 () (tbytes 32))
+  (circuit %claim.0 () (ttuple)
+    (= %t.14 (public-ledger #t %owner.1 (0) read))
+    (= %t.15 (default (tbytes 32))) (= %t.16 (== %t.14 %t.15))
+    (= %t.17 (select #t %t.16 #t))
+    (assert %t.17 "already claimed") (= %t.18 (tuple))
+    (= %sk.12 (call #t %secretKey.8))
+    (= %t.19
+       (tuple
+         #vu8(118 97 117 108 116 58 111 119 110 101 114 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.12))
+    (= %tmp.10 (call #t %persistentHash.6 %t.19))
+    (= %t.20 (public-ledger #t %owner.1 (0) write %tmp.10))
+    (= %t.21 (tuple)) %t.21)
+  (circuit %withdraw.3 () (ttuple)
+    (= %t.22 (public-ledger #t %owner.1 (0) read))
+    (= %sk.13 (call #t %secretKey.8))
+    (= %t.23
+       (tuple
+         #vu8(118 97 117 108 116 58 111 119 110 101 114 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.13))
+    (= %t.24 (call #t %persistentHash.6 %t.23))
+    (= %t.25 (== %t.22 %t.24)) (= %t.26 (select #t %t.25 #t))
+    (assert %t.26 "not the owner") (= %t.27 (tuple))
+    (= %t.28 (public-ledger #t %withdrawals.4 (1) increment 1))
+    (= %t.29 (tuple)) %t.29))

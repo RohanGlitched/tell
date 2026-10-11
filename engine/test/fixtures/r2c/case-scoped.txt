@@ -1,0 +1,23 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%rooms.1 (0) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.3
+    ((%value.4 (tvector 3 (tbytes 32))))
+    (tbytes 32))
+  (witness %playerSecret.5 () (tbytes 32))
+  (circuit %join.0 ((%roomId.6 (tbytes 32))) (ttuple)
+    (= #t %t.9 (call %playerSecret.5))
+    (= #t
+       %t.10
+       (tuple
+         #vu8(114 111 111 109 58 109 101 109 98 101 114 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %roomId.6
+         %t.9))
+    (= #t %tmp.8 (call %persistentHash.3 %t.10))
+    (= #t
+       %t.11
+       (public-ledger %rooms.1 (0) insert %roomId.6 %tmp.8))
+    (= #t %t.12 (tuple)) %t.12))

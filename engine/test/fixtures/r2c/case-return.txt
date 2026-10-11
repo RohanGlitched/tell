@@ -1,0 +1,8 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration ((%calls.0 (0) (Counter))))
+  (witness %secretKey.3 () (tbytes 32))
+  (circuit %leakKey.1 () (tbytes 32)
+    (= #t %t.5 (public-ledger %calls.0 (0) increment 1))
+    (= #t %t.6 (call %secretKey.3)) %t.6))

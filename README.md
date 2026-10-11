@@ -38,15 +38,21 @@ Tell starts where `disclose()` stops. It works on the compiler's own output, so 
 
 | Finding | Severity | Example |
 |---|---|---|
-| Guessable hash | critical / high | `ballots.insert(tag, persistentHash(choice))`: four candidates, four guesses |
-| Secret in the clear | critical | `owner = disclose(secretKey())` |
+| Guessable hash | critical / high | `ballots.insert(tag, persistentHash(choice))` after `assert(choice < 4)`: 2 bits, four guesses |
+| Secret in the clear | critical / high | `owner = disclose(secretKey())`; a value hashed as a key in one circuit and written raw in another; a secret returned from a circuit |
 | Secret-dependent branch | medium | writing `qualified` or `belowReserve` depending on a hidden bid; count leaks in fixed-size loops |
 | Same tag on every action | medium | every post stores `hash(memberKey)`, so one identified post unmasks the rest |
 | Wallet key published | medium | a user's `ownPublicKey()` stored in a record ties all their activity to one wallet |
+| Private bytes or personal data in the clear | medium | a seed or private key written as-is; a salary or a location written to a map |
 | Linkable tag | low / info | the same `hash(sk)` in register, commit and reveal |
 | Published value / yes-no fact | info | values written on purpose, listed so nothing is hidden |
 
-Grades run from A (nothing above info) to F (anything critical). Officer keys set once (`owner`, `authority`), access checks and public arguments are reported low, because that is how most contracts are meant to work.
+Grades run from A (nothing above info) to F (anything critical). Severity follows what is revealed; names only adjust it at the edges (officer fields, personal data, key material):
+
+- `assert(x < N)` bounds a value to log2(N) bits, so a vote among four candidates is 2 bits, whatever its type.
+- Circuit arguments are as private as witnesses in Compact, but usually carry public inputs, so they rank one step lower; a hash of a small argument is still high. An argument the source writes as `disclose(arg)` is public on purpose.
+- A branch is not reported when both paths run the same operation, when the value is published anyway, or (as low) when nothing in the circuit identifies the caller: a public tally of anonymous votes.
+- Officer keys set once (`owner`, `authority`) and access checks against them are low: that is the usual admin design.
 
 ## How it works
 
@@ -58,8 +64,8 @@ Grades run from A (nothing above info) to F (anything critical). Officer keys se
 ## Evidence
 
 - **Leak zoo** ([`zoo/`](zoo)): five leaky contracts and their fixes. Each leak is carried out by an attack test that reads the secret back out of public ledger state; each fix stops it. Ten attack tests in CI.
-- **Precision tests** ([`engine/test`](engine/test)): 60 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
-- **Survey** ([`survey/`](survey)): every public repository linked from the buildathon on AKINDO, 365 contracts, each compiled with the compiler its pragma asks for. Every medium-or-worse finding was read by hand against the source. Results are published in aggregate under salted numbers; no team is named, and each team gets its findings privately.
+- **Precision tests** ([`engine/test`](engine/test)): 83 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
+- **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json)): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed circuit by circuit. Every medium-or-worse finding was read by hand against the source. Results are published in aggregate under salted numbers; no team is named, and findings are for the team concerned.
 - **Live on Midnight** ([`chain/`](chain)): the leaky and fixed ballots deployed on Midnight Preprod with the same votes. The site reads both from the indexer and runs the attack Tell predicted.
 
 ## Run it
@@ -102,7 +108,14 @@ seeds.insert(slot, s); // tell:allow secret-published
 | Next | A VS Code extension that marks leaking lines as you type; a Tell check in Midnight's project templates |
 | Later | Hosted checks with history per contract, team dashboards, and a privacy report auditors can attach |
 
-Tell stays free and open source. An ecosystem tooling grant funds the rule research; teams that want history and dashboards pay for hosted checks; audit firms add a privacy section to their Compact reviews.
+The CLI, the Action, every rule and the leak zoo stay free and open source (Apache-2.0). On other chains, analyzers are kept alive by audit work (Slither, Aderyn), ecosystem grants (Certora) or by joining the chain's toolchain (Move Prover); hosted-only analysis has the weakest record (MythX was shut down). Tell follows that pattern, in this order:
+
+1. **An ecosystem tooling grant** pays for rule research and for tracking each compiler release.
+2. **Audit firms** use Tell's per-circuit disclosure map as the privacy section of a Compact review.
+3. **The compiler**: Tell reads the compiler's own output, and running as one of its passes is the goal.
+4. **Production teams, later**: history and dashboards for private repositories once mainnet has the teams for it; public repositories stay free.
+
+What exists today: the compiler checks *whether* data is disclosed; OpenZeppelin's Compact security detectors check loop bounds and assertion messages. Nothing else measures *how much* a disclosure gives away.
 
 ## Layout
 
@@ -116,7 +129,7 @@ Tell stays free and open source. An ecosystem tooling grant funds the rule resea
 
 ## Limits
 
-Tell is static analysis of what the compiler builds. It reports what the public transcript *can* reveal, not proof that anyone has read it. It does not yet analyse constructors or circuit return values, and it estimates brute-force cost from types, not from the real distribution of values. See [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).
+Tell is static analysis of what the compiler builds. It reports what the public transcript *can* reveal, not proof that anyone has read it. It does not yet analyse constructors, and outside `assert` bounds and personal-data names it estimates brute-force cost from types, not from the real distribution of values. See [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).
 
 ## License
 

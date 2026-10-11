@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { KIND_LABEL, type FindingKind } from '@/lib/types';
 
-export type CensusProject = { p: string; grade: string; contracts: number; worst: { severity: string; kind: string } | null };
+export type CensusProject = { p: string; grade: string; worst: { severity: string; kind: string } | null };
 
 const ORDER = 'ABCDF';
 const INK: Record<string, string> = { A: 'var(--ink)', B: 'var(--graphite)', C: 'var(--amber)', D: 'var(--red)', F: 'var(--red)' };
@@ -64,9 +64,6 @@ export default function Census({ projects }: { projects: CensusProject[] }) {
             <p className="display mt-2 text-[44px] font-extrabold leading-none" style={{ color: INK[sel.grade] }}>
               {sel.grade}
             </p>
-            <p className="mt-3 text-[15px]">
-              {sel.contracts} contract{sel.contracts === 1 ? '' : 's'} analyzed.
-            </p>
             <p className="hand mt-2 text-[19px] leading-snug">
               {sel.worst ? `Worst finding: ${sel.worst.severity}, ${KIND_LABEL[sel.worst.kind as FindingKind].toLowerCase()}.` : 'Nothing beyond what it means to publish.'}
             </p>
@@ -74,7 +71,7 @@ export default function Census({ projects }: { projects: CensusProject[] }) {
         ) : (
           <p className="text-[15px] text-[var(--graphite)]">Select a folder.</p>
         )}
-        <p className="mt-4 border-t border-[var(--rule)] pt-3 text-[13px] text-[var(--graphite)]">
+        <p className="mt-4 border-t border-[var(--rule)] pt-3 text-[14px] text-[var(--graphite)]">
           Folders are numbered in an order fixed by a secret kept out of the repository, so a number says nothing about the team.
         </p>
       </aside>

@@ -1,0 +1,11 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// The coin is private, but whether the contract accepted it is not.
+export ledger deposits: Counter;
+witness accept(): Boolean;
+export circuit deposit(coin: ShieldedCoinInfo): [] {
+  if (disclose(accept())) {
+    receiveShielded(disclose(coin));
+  }
+  deposits.increment(1);
+}

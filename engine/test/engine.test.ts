@@ -7,6 +7,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { analyzeIr, gradeOf, pragmaAccepts, isContractFile, type Finding } from '../src/index.js';
+import { declaredPublic as declaredPublicForTest } from '../src/analyze.js';
+import { toSarif } from '../src/sarif.js';
+import { spawnSync } from 'node:child_process';
+import os from 'node:os';
+
+// Installed compilers, without the async API: ~/.compact/versions or TELL_COMPILERS.
+const findCompilersSync = () =>
+  process.env.TELL_COMPILERS
+    ? process.env.TELL_COMPILERS.split(',')
+    : fs.existsSync(path.join(os.homedir(), '.compact', 'versions'))
+      ? fs.readdirSync(path.join(os.homedir(), '.compact', 'versions'))
+      : [];
 
 const dir = path.join(__dirname, 'fixtures');
 const load = (name: string) =>
@@ -51,8 +63,9 @@ describe('the leak zoo', () => {
 
   it('guessable hashes say how many tries recover the value', () => {
     const f = load('ballot-leaky').findings.find((f) => f.kind === 'guessable-hash')!;
-    expect(f.bits).toBe(8);
-    expect(f.detail).toContain('256 tries');
+    // assert(c < 4) bounds the Uint<8>: 2 bits, four tries
+    expect(f.bits).toBe(2);
+    expect(f.detail).toContain('at most 4 tries');
   });
 
   it('an input the same call publishes adds no secrecy to a hash', () => {
@@ -86,9 +99,10 @@ describe('official Midnight examples', () => {
     expect(pub.every((f) => f.bits === 16)).toBe(true);
   });
 
-  it('shielded-coin plumbing is not reported as a leak', () => {
+  it('shielded-coin plumbing is not reported as a leak; a mint amount is public', () => {
     for (const n of ['chips', 'token-transfers', 'private-tip-jar'])
-      expect(load(n).findings.filter((f) => (f.fields ?? []).some((x) => /claimZswap|kernel\.self|mintShielded/.test(x)))).toEqual([]);
+      expect(load(n).findings.filter((f) => (f.fields ?? []).some((x) => /claimZswap|kernel\.self/.test(x)))).toEqual([]);
+    expect(load('token-transfers').findings.some((f) => (f.fields ?? []).includes('kernel.mintShielded') && f.kind === 'published')).toBe(true);
   });
 
   it('unshielded transfers publish their amount and recipient', () => {
@@ -108,13 +122,49 @@ describe('review cases', () => {
     expect(one('case-degrade')).toMatchObject([{ kind: 'secret-published', severity: 'critical' }]);
   });
   it('names are read by words: individualIncome is not a division hint', () => {
-    expect(one('case-income')).toMatchObject([{ kind: 'branch', severity: 'medium', sources: [{ name: 'individualIncome' }] }]);
+    // reported as a branch, not waved through as a hint; low because nothing identifies the caller
+    const [f] = one('case-income');
+    expect(f).toMatchObject({ kind: 'branch', severity: 'low', sources: [{ name: 'individualIncome' }] });
+    expect(f.detail).toContain('anonymous');
   });
   it('a membership leaf and a nullifier from the same key are not linked', () => {
     expect(load('case-nullifier').findings.filter((f) => f.kind === 'linkable' && f.severity !== 'info')).toEqual([]);
   });
   it('a guessable hash of a circuit argument is not waved through', () => {
-    expect(one('case-vote-arg')).toMatchObject([{ kind: 'guessable-hash', severity: 'medium', sources: [{ name: 'choice' }] }]);
+    expect(one('case-vote-arg')).toMatchObject([{ kind: 'guessable-hash', severity: 'high', sources: [{ name: 'choice' }] }]);
+  });
+  it('renaming a variable does not hide a leak (review: five evasions)', () => {
+    const by = (c: string) => one('case-evade').filter((f) => f.circuit === c);
+    expect(by('claim')).toMatchObject([{ kind: 'published', severity: 'medium', sources: [{ name: 'ownerSeed' }] }]);
+    expect(by('file')).toMatchObject([{ kind: 'published', severity: 'medium', sources: [{ name: 'salary' }] }]);
+    expect(by('enrol')).toMatchObject([{ kind: 'guessable-hash', severity: 'critical' }]);
+    expect(by('cast')).toMatchObject([{ kind: 'guessable-hash', severity: 'high', sources: [{ name: 'v' }] }]);
+    expect(by('prove')).toMatchObject([{ kind: 'guessable-hash', severity: 'critical', sources: [{ name: 'age' }] }]);
+  });
+  it('an anonymous poll: the tally branch is low, the nullifier links nothing', () => {
+    const fs = one('case-anonvote');
+    expect(fs.every((f) => f.severity === 'low')).toBe(true);
+    expect(fs.some((f) => f.kind === 'branch' && f.detail.includes('anonymous'))).toBe(true);
+  });
+  it('the same operation on both paths of a branch is not reported', () => {
+    expect(one('case-balanced')).toEqual([]);
+  });
+  it('a tag scoped by a caller-chosen id is not one identity across actions', () => {
+    expect(load('case-scoped').findings.filter((f) => f.kind === 'attributable')).toEqual([]);
+  });
+  it('a circuit result is public, like a ledger write', () => {
+    expect(one('case-return')).toMatchObject([{ kind: 'secret-published', severity: 'critical', field: 'return' }]);
+  });
+  it('a shielded receive that only runs on a private condition shows the condition', () => {
+    expect(one('case-shielded-guard')).toMatchObject([{ kind: 'branch', sources: [{ name: 'accept' }] }]);
+  });
+  it('an argument the source discloses directly is public on purpose', () => {
+    const src = `pragma language_version 0.23;
+export circuit f(role: Uint<8>): [] { const r = disclose(role); }`;
+    const f = { kind: 'guessable-hash', severity: 'high', sources: [{ name: 'role', kind: 'argument' }], detail: '' } as unknown as Finding;
+    const g = { ...f, sources: [{ name: 'v', kind: 'argument' }] } as unknown as Finding;
+    declaredPublicForTest([f, g], src);
+    expect([f.severity, g.severity]).toEqual(['low', 'high']);
   });
   it('an officer key set in setup, an access check and a public epoch argument stay low', () => {
     const r = load('case-admin');
@@ -152,4 +202,44 @@ describe('pragmas and contract files', () => {
     expect(isContractFile('pragma language_version 0.23;\nexport circuit f(): [] {}')).toBe(true);
     expect(isContractFile('module Util { export circuit f(): [] {} }')).toBe(false);
   });
+});
+
+describe('older compilers', () => {
+  // test/fixtures/r2c-legacy: the zoo compiled with 0.30.0, whose output binds `(= target expr)`
+  // with guards inside calls. Findings must not depend on which compiler built the circuit.
+  const sig = (fs: Finding[]) =>
+    fs
+      .filter((f) => f.severity !== 'info')
+      .map((f) => `${f.circuit}/${f.kind}/${f.severity}/${f.field}`)
+      .sort();
+  for (const f of fs.readdirSync(path.join(dir, 'r2c-legacy')).map((f) => f.replace('.txt', '')))
+    it(`${f}: 0.30.0 and 0.31.1 agree`, () => {
+      const src = fs.readFileSync(path.join(dir, 'src', f + '.compact'), 'utf8');
+      const legacy = analyzeIr(fs.readFileSync(path.join(dir, 'r2c-legacy', f + '.txt'), 'utf8'), src);
+      expect(legacy.unknownForms).toEqual([]);
+      expect(sig(legacy.findings)).toEqual(sig(load(f).findings));
+    });
+});
+
+describe('SARIF', () => {
+  it('puts security severity on the rule, where GitHub reads it', () => {
+    const report = load('ballot-leaky');
+    const sarif = toSarif([{ file: path.join(dir, 'src', 'ballot-leaky.compact'), ok: true, report, grade: 'F' } as never], dir);
+    const run = sarif.runs[0];
+    const crit = run.tool.driver.rules.find((r) => r.id === 'tell/guessable-hash/critical')!;
+    expect(crit.properties.tags).toContain('security');
+    expect(crit.properties['security-severity']).toBe('9.5');
+    for (const r of run.results) expect(run.tool.driver.rules[r.ruleIndex].id).toBe(r.ruleId);
+    expect(run.results.find((r) => r.ruleId === crit.id)!.locations[0].physicalLocation.region.startLine).toBe(36);
+  });
+});
+
+describe('command line', () => {
+  // Needs the Compact compiler (CI installs 0.31.1).
+  const cli = (args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { encoding: 'utf8', cwd: path.join(dir, '..', '..') });
+  const has = findCompilersSync().length > 0;
+  it.runIf(has)('exits 1 when a finding reaches --fail-on, 0 otherwise', () => {
+    expect(cli(['../zoo/contracts/ballot-leaky.compact', '--fail-on', 'high']).status).toBe(1);
+    expect(cli(['../zoo/contracts/ballot-fixed.compact', '--fail-on', 'medium']).status).toBe(0);
+  }, 120_000);
 });

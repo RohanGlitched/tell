@@ -48,8 +48,11 @@ const RULES: Record<FindingKind, { name: string; short: string; help: string }> 
 const LEVEL: Record<Severity, 'error' | 'warning' | 'note'> = { critical: 'error', high: 'error', medium: 'warning', low: 'note', info: 'note' };
 const SCORE: Record<Severity, string> = { critical: '9.5', high: '8.0', medium: '5.5', low: '3.0', info: '1.0' };
 
+// GitHub reads an alert's severity from its rule, so there is one rule per kind and severity.
 export function toSarif(results: ContractResult[], root: string) {
-  const kinds = Object.keys(RULES) as FindingKind[];
+  const found = results.flatMap((r) => (r.report?.findings ?? []).filter((f) => !f.suppressed).map((f) => ({ r, f })));
+  const ruleId = (k: FindingKind, s: Severity) => `tell/${k}/${s}`;
+  const ids = [...new Set(found.map(({ f }) => ruleId(f.kind, f.severity)))].sort();
   return {
     $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
     version: '2.1.0',
@@ -59,35 +62,35 @@ export function toSarif(results: ContractResult[], root: string) {
           driver: {
             name: 'Tell',
             informationUri: 'https://github.com/RohanGlitched/tell',
-            version: '0.1.0',
-            rules: kinds.map((k) => ({
-              id: `tell/${k}`,
-              name: RULES[k].name,
-              shortDescription: { text: RULES[k].short },
-              help: { text: RULES[k].help },
-              properties: { tags: ['privacy', 'midnight', 'compact'] },
-            })),
+            version: '1.0.0',
+            rules: ids.map((id) => {
+              const [, k, sev] = id.split('/') as [string, FindingKind, Severity];
+              return {
+                id,
+                name: `${RULES[k].name}${sev[0].toUpperCase()}${sev.slice(1)}`,
+                shortDescription: { text: RULES[k].short },
+                help: { text: RULES[k].help },
+                defaultConfiguration: { level: LEVEL[sev] },
+                properties: { tags: ['security', 'privacy', 'midnight', 'compact'], 'security-severity': SCORE[sev], precision: 'high' },
+              };
+            }),
           },
         },
-        results: results.flatMap((r) =>
-          (r.report?.findings ?? [])
-            .filter((f) => !f.suppressed)
-            .map((f) => ({
-              ruleId: `tell/${f.kind}`,
-              ruleIndex: kinds.indexOf(f.kind),
-              level: LEVEL[f.severity],
-              message: { text: `${f.circuit}: ${f.title}. ${f.detail} Fix: ${f.fix}` },
-              properties: { 'security-severity': SCORE[f.severity], bits: f.bits },
-              locations: [
-                {
-                  physicalLocation: {
-                    artifactLocation: { uri: path.relative(root, r.file).split(path.sep).join('/') },
-                    region: { startLine: f.line ?? 1 },
-                  },
-                },
-              ],
-            })),
-        ),
+        results: found.map(({ r, f }) => ({
+          ruleId: ruleId(f.kind, f.severity),
+          ruleIndex: ids.indexOf(ruleId(f.kind, f.severity)),
+          level: LEVEL[f.severity],
+          message: { text: `${f.circuit}: ${f.title}. ${f.detail} Fix: ${f.fix}` },
+          properties: { bits: f.bits },
+          locations: [
+            {
+              physicalLocation: {
+                artifactLocation: { uri: path.relative(root, r.file).split(path.sep).join('/') },
+                region: { startLine: f.line ?? 1 },
+              },
+            },
+          ],
+        })),
       },
     ],
   };

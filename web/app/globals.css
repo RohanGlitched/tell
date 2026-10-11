@@ -25,6 +25,7 @@
   --display: var(--font-schibsted), var(--font-plex-sans), sans-serif;
   --mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', monospace;
   --hand: var(--font-newsreader), Georgia, serif;
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,6 +43,8 @@
     --amber-soft: #3a2a12;
     --hi: #ffe14a;
     --hi-soft: #3b3518;
+    /* native controls (checkboxes, scrollbars) follow the dark sheet */
+    color-scheme: dark;
   }
 }
 

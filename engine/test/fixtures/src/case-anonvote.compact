@@ -1,0 +1,29 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+
+// Anonymous yes/no poll: membership by Merkle proof, one-time nullifier per poll,
+// the tally is public by design (that is the point of a poll).
+export ledger members: HistoricMerkleTree<10, Bytes<32>>;
+export ledger nullifiers: Set<Bytes<32>>;
+export ledger yes: Counter;
+export ledger no: Counter;
+export ledger pollId: Bytes<32>;
+
+witness memberSecret(): Bytes<32>;
+witness memberPath(): MerkleTreePath<10, Bytes<32>>;
+witness ballot(): Boolean;
+
+circuit leafOf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "poll:member"), sk]);
+}
+
+export circuit vote(): [] {
+  const sk = memberSecret();
+  const path = memberPath();
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "not a member");
+  assert(path.leaf == leafOf(sk), "wrong path");
+  const n = disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, "poll:null"), pollId, sk]));
+  assert(!nullifiers.member(n), "already voted");
+  nullifiers.insert(n);
+  if (disclose(ballot())) { yes.increment(1); } else { no.increment(1); }
+}

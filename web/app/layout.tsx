@@ -16,9 +16,13 @@ export const metadata: Metadata = {
   title: { default: 'Tell: what your Midnight contract gives away', template: '%s · Tell' },
   description:
     'Tell reads a Compact contract the way the compiler does and shows, in bits, what each circuit reveals about its users: guessable hashes, secret branches, linkable tags, keys in the clear.',
-  openGraph: { type: 'website', siteName: 'Tell', images: ['/og.png'] },
+  openGraph: {
+    type: 'website',
+    siteName: 'Tell',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'Tell: every contract has a tell. A privacy leak scanner for Midnight.' }],
+  },
   twitter: { card: 'summary_large_image', images: ['/og.png'] },
-  icons: { icon: '/icon.svg' },
+  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }] },
 };
 
 export const viewport: Viewport = {
@@ -43,14 +47,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <header className="sticky top-0 z-40 border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--paper)_88%,transparent)] backdrop-blur">
-          <div className="mx-auto flex max-w-[1180px] items-center gap-6 px-4 py-3 sm:px-6">
-            <Link href="/" className="flex items-center gap-2 no-underline" aria-label="Tell home">
+          <div className="mx-auto flex max-w-[1180px] items-center gap-6 px-4 py-1.5 sm:px-6">
+            <Link href="/" className="flex min-h-[44px] items-center gap-2 no-underline" aria-label="Tell home">
               <Mark />
               <span className="display text-[21px] font-extrabold tracking-[-0.03em]">Tell</span>
             </Link>
             <nav className="no-scrollbar ml-auto flex items-center gap-1 overflow-x-auto text-[14px] sm:gap-2" aria-label="Main">
               {NAV.map(([href, label, short]) => (
-                <Link key={href} href={href} className="whitespace-nowrap rounded px-2 py-1.5 text-[var(--graphite)] no-underline hover:bg-[var(--sheet)] hover:text-[var(--ink)]">
+                <Link key={href} href={href} className="inline-flex min-h-[44px] items-center whitespace-nowrap rounded px-2 text-[var(--graphite)] no-underline hover:bg-[var(--sheet)] hover:text-[var(--ink)]">
                   <span className="hidden sm:inline">{label}</span>
                   <span className="sm:hidden">{short}</span>
                 </Link>
@@ -58,7 +62,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
-        <main id="main">{children}</main>
+        <main id="main" tabIndex={-1} className="outline-none">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>
@@ -105,7 +111,7 @@ function Footer() {
           ]}
         />
       </div>
-      <div className="border-t border-[var(--rule)] px-4 py-4 text-center text-[13px] text-[var(--faint)] sm:px-6">
+      <div className="border-t border-[var(--rule)] px-4 py-4 text-center text-[14px] text-[var(--faint)] sm:px-6">
         Findings are produced by static analysis of what the Compact compiler builds. They describe what the public transcript can reveal, not proof that anyone has read it.
       </div>
     </footer>
@@ -115,11 +121,11 @@ function Footer() {
 function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
   return (
     <div>
-      <h2 className="text-[13px] font-semibold text-[var(--graphite)]">{title}</h2>
-      <ul className="mt-3 space-y-2 text-[14px]">
+      <h2 className="text-[14px] font-semibold text-[var(--graphite)]">{title}</h2>
+      <ul className="mt-2 text-[14px] sm:mt-3 sm:space-y-2">
         {links.map(([href, label]) => (
           <li key={href}>
-            <a href={href} className="no-underline hover:underline">
+            <a href={href} className="inline-flex min-h-[44px] items-center no-underline hover:underline sm:min-h-0">
               {label}
             </a>
           </li>

@@ -1,0 +1,9 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// An exported circuit's result is part of the public transaction.
+export ledger calls: Counter;
+witness secretKey(): Bytes<32>;
+export circuit leakKey(): Bytes<32> {
+  calls.increment(1);
+  return disclose(secretKey());
+}

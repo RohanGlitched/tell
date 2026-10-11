@@ -1,0 +1,14 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// The fix Tell suggests for a branch: the same operation on the same field on both paths.
+export ledger results: Set<Bytes<32>>;
+witness score(): Uint<16>;
+witness resultSalt(): Bytes<32>;
+export circuit grade(): [] {
+  const s = score();
+  if (disclose(s >= 50)) {
+    results.insert(disclose(persistentCommit<Boolean>(true, resultSalt())));
+  } else {
+    results.insert(disclose(persistentCommit<Boolean>(false, resultSalt())));
+  }
+}
