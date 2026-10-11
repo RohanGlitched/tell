@@ -29,7 +29,7 @@ const CASES: Case[] = [
     kind: 'Guessable hash',
     severity: 'critical',
     story: 'Each vote is stored as hash(choice). It looks like a commitment. With four candidates, it is a lookup table.',
-    finding: 'choice() is hidden behind a persistentHash anyone can reverse: about 8 bits, at most 256 tries.',
+    finding: 'choice() is hidden behind a persistentHash anyone can reverse: 2 bits once the contract asserts c < 4, at most 4 tries.',
     attack: 'The test casts twelve votes, then hashes the four choices and matches them against the public ballots map: every vote recovered.',
     fix: 'persistentCommit(choice, salt) with a 32-byte salt that only the voter holds. The same attack matches nothing.',
   },
@@ -82,7 +82,7 @@ export default function ZooPage() {
       <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.015em] sm:text-[46px]">The leak zoo</h1>
       <p className="mt-3 max-w-[66ch] text-[17px] text-[var(--graphite)]">
         Five small contracts, each with one leak a careful developer could ship, and its fix. For every pair, Tell reports the leak on the left and nothing above
-        low on the right, and an attack test reads the secret back out of public state. Ten attack tests and sixty precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+        low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 85 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
       </p>
       <nav aria-label="Cases" className="mt-6 flex flex-wrap gap-2 text-[14px]">
         {CASES.map((c) => (

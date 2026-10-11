@@ -26,7 +26,7 @@ Half of it. Compact makes you write `disclose()` wherever private data may reach
 
 | This line | Compiler | Tell |
 |---|---|---|
-| `disclose(hash(vote))` | accepted | 8 bits; four guesses recover it |
+| `disclose(hash(vote))` | accepted | 2 bits once asserted below four; four guesses recover it |
 | `disclose(hash(id, salary))` | accepted | `id` is public in the same call; the salary falls to brute force |
 | `if (disclose(bid >= reserve)) a.insert(t) else b.insert(t)` | accepted | which set was written shows the bid's side |
 | `posts.insert(n, disclose(hash(key)))` | accepted | the same tag on every post: one identified post unmasks all |
@@ -64,7 +64,7 @@ Grades run from A (nothing above info) to F (anything critical). Severity follow
 ## Evidence
 
 - **Leak zoo** ([`zoo/`](zoo)): five leaky contracts and their fixes. Each leak is carried out by an attack test that reads the secret back out of public ledger state; each fix stops it. Ten attack tests in CI.
-- **Precision tests** ([`engine/test`](engine/test)): 83 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
+- **Precision tests** ([`engine/test`](engine/test)): 85 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json)): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed circuit by circuit. Every medium-or-worse finding was read by hand against the source. Results are published in aggregate under salted numbers; no team is named, and findings are for the team concerned.
 - **Live on Midnight** ([`chain/`](chain)): the leaky and fixed ballots deployed on Midnight Preprod with the same votes. The site reads both from the indexer and runs the attack Tell predicted.
 
@@ -104,7 +104,7 @@ seeds.insert(slot, s); // tell:allow secret-published
 | When | What |
 |---|---|
 | Now | Scanner, CLI, GitHub Action with SARIF, leak zoo with attack tests, survey of every buildathon app, live demo on Preprod |
-| Wave 3 | Pull request comments with the fix inline; constructor and return-value analysis; shielded token and DUST patterns in the zoo |
+| Wave 3 | Pull request comments with the fix inline; constructor analysis; shielded token and DUST patterns in the zoo |
 | Next | A VS Code extension that marks leaking lines as you type; a Tell check in Midnight's project templates |
 | Later | Hosted checks with history per contract, team dashboards, and a privacy report auditors can attach |
 

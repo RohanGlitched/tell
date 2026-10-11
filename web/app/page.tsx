@@ -8,7 +8,7 @@ import survey from '@/data/survey.json';
 
 // Lines the compiler accepts, and what Tell says about each.
 const COMPILER_ROWS = [
-  ['disclose(hash(vote))', 'accepted', '8 bits, four guesses recover it'],
+  ['disclose(hash(vote))', 'accepted', '2 bits once asserted below four: four guesses recover it'],
   ['disclose(hash(id, salary))', 'accepted', 'id is public in the same call; salary falls to brute force'],
   ['if (disclose(bid ≥ reserve)) a.insert(t) else b.insert(t)', 'accepted', 'which set was written shows the bid’s side'],
   ['posts.insert(n, disclose(hash(key)))', 'accepted', 'same tag on every post: one identified post unmasks all'],
@@ -221,7 +221,7 @@ seeds.insert(slot, s); // tell:allow secret-published`}</pre>
           <ol className="grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2">
             {[
               ['Now', 'Scanner, CLI, GitHub Action with SARIF, leak zoo with attack tests, survey of every buildathon app.'],
-              ['Wave 3', 'Pull request comments with the fix inline. Constructor and return-value analysis. Shielded token and DUST patterns in the zoo.'],
+              ['Wave 3', 'Pull request comments with the fix inline. Constructor analysis. Shielded token and DUST patterns in the zoo.'],
               ['Next', 'A VS Code extension that marks leaking lines as you type. A Tell check in Midnight’s project templates.'],
               ['Later', 'Hosted checks with history per contract, team dashboards, and a privacy report auditors can attach.'],
             ].map(([w, d]) => (
