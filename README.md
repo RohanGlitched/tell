@@ -64,7 +64,7 @@ Grades run from A (nothing above info) to F (anything critical). Severity follow
 ## Evidence
 
 - **Leak zoo** ([`zoo/`](zoo)): five leaky contracts and their fixes. Each leak is carried out by an attack test that reads the secret back out of public ledger state; each fix stops it. Ten attack tests in CI.
-- **Precision tests** ([`engine/test`](engine/test)): 85 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
+- **Precision tests** ([`engine/test`](engine/test)): 87 tests. Every zoo leak is reported exactly once, nothing above low on the fixes, regression cases from review, and findings in Midnight's own examples (the election example reveals votes through a branch; the zk-loan example publishes predicates).
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json)): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed circuit by circuit. Every medium-or-worse finding was read by hand against the source. Results are published in aggregate under salted numbers; no team is named, and findings are for the team concerned.
 - **Live on Midnight** ([`chain/`](chain)): the leaky and fixed ballots deployed on Midnight Preprod with the same votes. The site reads both from the indexer and runs the attack Tell predicted.
 
@@ -90,7 +90,7 @@ npx tsx engine/src/cli.ts . --sarif tell.sarif --fail-on high    # for CI
 Findings appear in GitHub code scanning on the line that leaks. Some disclosures are the point; mark them once and Tell stops reporting them:
 
 ```compact
-seeds.insert(slot, s); // tell:allow secret-published
+seeds.insert(slot, s); // tell:allow published
 ```
 
 ## Who it is for

@@ -1,0 +1,10 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%seeds.1 (0) (Map (tunsigned 255) (tbytes 32)))))
+  (witness %seed.3 () (tbytes 32))
+  (circuit %reveal.0 ((%slot.4 (tunsigned 255))) (ttuple)
+    (= #t %s.5 (call %seed.3))
+    (= #t %t.6 (public-ledger %seeds.1 (0) insert %slot.4 %s.5))
+    (= #t %t.7 (tuple)) %t.7))

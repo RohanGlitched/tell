@@ -1,0 +1,10 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger seeds: Map<Uint<8>, Bytes<32>>;
+witness seed(): Bytes<32>;
+// the README's own suppression example, without the suppression
+export circuit reveal(slot: Uint<8>): [] {
+  const s = seed();
+  seeds.insert(disclose(slot), disclose(s)); // tell:allow published
+}
+

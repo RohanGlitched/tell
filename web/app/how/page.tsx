@@ -178,7 +178,7 @@ jobs:
         </p>
         <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
           {`// the reveal phase publishes the seed by design
-seeds.insert(slot, s); // tell:allow secret-published`}
+seeds.insert(slot, s); // tell:allow published`}
         </pre>
       </section>
 

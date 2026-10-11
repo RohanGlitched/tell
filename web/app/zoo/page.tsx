@@ -82,7 +82,7 @@ export default function ZooPage() {
       <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.015em] sm:text-[46px]">The leak zoo</h1>
       <p className="mt-3 max-w-[66ch] text-[17px] text-[var(--graphite)]">
         Five small contracts, each with one leak a careful developer could ship, and its fix. For every pair, Tell reports the leak on the left and nothing above
-        low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 85 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+        low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 87 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
       </p>
       <nav aria-label="Cases" className="mt-6 flex flex-wrap gap-2 text-[14px]">
         {CASES.map((c) => (

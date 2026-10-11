@@ -152,6 +152,11 @@ describe('review cases', () => {
   it('a tag scoped by a caller-chosen id is not one identity across actions', () => {
     expect(load('case-scoped').findings.filter((f) => f.kind === 'attributable')).toEqual([]);
   });
+  it('the suppression example in the docs silences what it says it does', () => {
+    const r = load('case-seeds-allow');
+    expect(r.findings.some((f) => f.kind === 'published' && f.severity === 'medium' && f.suppressed)).toBe(true);
+    expect(serious(r.findings)).toEqual([]);
+  });
   it('a circuit result is public, like a ledger write', () => {
     expect(one('case-return')).toMatchObject([{ kind: 'secret-published', severity: 'critical', field: 'return' }]);
   });

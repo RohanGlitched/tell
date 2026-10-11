@@ -165,7 +165,7 @@ export default function Home() {
             <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">3</span>
             <h3 className="mt-3 text-[19px] font-bold">Mark what you meant</h3>
             <pre className="mono mt-3 whitespace-pre-wrap break-words rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`// the reveal publishes the seed
-seeds.insert(slot, s); // tell:allow secret-published`}</pre>
+seeds.insert(slot, s); // tell:allow published`}</pre>
             <p className="mt-3 text-[15px] text-[var(--graphite)]">Some disclosures are the point. Say so once and Tell stops reporting them.</p>
           </li>
         </ol>
