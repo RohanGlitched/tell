@@ -1,0 +1,10 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%pk.0 (0) (__compact_Cell (tfield)))))
+  (native %degradeToTransient.3 ((%x.4 (tbytes 32))) (tfield))
+  (witness %secretKey.5 () (tbytes 32))
+  (circuit %set.1 () (ttuple) (= #t %t.7 (call %secretKey.5))
+    (= #t %tmp.6 (call %degradeToTransient.3 %t.7))
+    (= #t %t.8 (public-ledger %pk.0 (0) write %tmp.6))
+    (= #t %t.9 (tuple)) %t.9))

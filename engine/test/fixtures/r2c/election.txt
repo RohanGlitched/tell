@@ -1,0 +1,262 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.17 () (Kernel)))
+  (public-ledger-declaration
+    ((%organizer.9 (0) (__compact_Cell (tbytes 32))) (%candidate0.0 (1) (__compact_Cell (topaque "string")))
+      (%candidate1.2 (2) (__compact_Cell (topaque "string")))
+      (%votingState.15 (3) (__compact_Cell (tunsigned 1)))
+      (%hashedVoteMap.7 (4) (Map (tbytes 32) (tbytes 32)))
+      (%registeredVoters.11 (5) (Set (tbytes 32)))
+      (%revealedVoters.13 (6) (Set (tbytes 32)))
+      (%totalVoteCount.14 (7) (Counter))
+      (%candidate0VoteCounter.1 (8) (Counter))
+      (%candidate1VoteCounter.3 (9) (Counter))
+      (%winner.16 (10) (__compact_Cell (tunsigned 2)))))
+  (native
+    %persistentHash.18
+    ((%value.19 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %localGetVote.20 () (tunsigned 2))
+  (witness %localSk.21 () (tbytes 32))
+  (circuit %registerToVote.10 () (ttuple)
+   (= #t %_sk.27 (call %localSk.21))
+   (= #t
+      %t.63
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.27))
+   (= #t %pubKey.28 (call %persistentHash.18 %t.63))
+   (= #t
+      %t.64
+      (public-ledger %registeredVoters.11 (5) member %pubKey.28))
+   (= #t %t.65 (select %t.64 #t #f))
+   (= #t %t.66 (select %t.64 #f #t))
+   (= #t %t.67 (select %t.64 #f #t))
+   (= #t %t.68 (select #t %t.67 #t))
+   (assert %t.68 "You are already registered to vote")
+   (= #t %t.69 (tuple))
+   (= #t %t.70 (public-ledger %votingState.15 (3) read))
+   (= #t %t.71 (== %t.70 0)) (= #t %t.72 (select #t %t.71 #t))
+   (assert %t.72 "You can only register before voting starts")
+   (= #t %t.73 (tuple))
+   (= #t
+      %t.74
+      (public-ledger %registeredVoters.11 (5) insert %pubKey.28))
+   (= #t %t.75 (tuple)) %t.75)
+  (circuit %openVoting.8 () (ttuple)
+   (= #t %_sk.29 (call %localSk.21))
+   (= #t
+      %t.76
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.29))
+   (= #t %pubKey.30 (call %persistentHash.18 %t.76))
+   (= #t %t.77 (public-ledger %organizer.9 (0) read))
+   (= #t %t.78 (== %t.77 %pubKey.30))
+   (= #t %t.79 (select #t %t.78 #t))
+   (assert %t.79 "You are not the organizer")
+   (= #t %t.80 (tuple))
+   (= #t %t.81 (public-ledger %votingState.15 (3) read))
+   (= #t %t.82 (== %t.81 0)) (= #t %t.83 (select #t %t.82 #t))
+   (assert %t.83 "Voting has already been openend")
+   (= #t %t.84 (tuple))
+   (= #t
+      %t.85
+      (public-ledger %registeredVoters.11 (5) isEmpty))
+   (= #t %t.86 (select %t.85 #t #f))
+   (= #t %t.87 (select %t.85 #f #t))
+   (= #t %t.88 (select %t.85 #f #t))
+   (= #t %t.89 (select #t %t.88 #t))
+   (assert %t.89 "There are no registered voters")
+   (= #t %t.90 (tuple))
+   (= #t %t.91 (public-ledger %votingState.15 (3) write 1))
+   (= #t %t.92 (tuple)) %t.92)
+  (circuit %commitVote.6 () (ttuple)
+   (= #t %t.93 (public-ledger %votingState.15 (3) read))
+   (= #t %t.94 (== %t.93 1)) (= #t %t.95 (select #t %t.94 #t))
+   (assert %t.95 "Voting has not opened yet")
+   (= #t %t.96 (tuple)) (= #t %_sk.31 (call %localSk.21))
+   (= #t
+      %t.97
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.31))
+   (= #t %pubKey.32 (call %persistentHash.18 %t.97))
+   (= #t
+      %t.98
+      (public-ledger %registeredVoters.11 (5) member %pubKey.32))
+   (= #t %t.99 (select #t %t.98 #t))
+   (assert %t.99 "You are not registered to vote.")
+   (= #t %t.100 (tuple))
+   (= #t
+      %t.101
+      (public-ledger %hashedVoteMap.7 (4) member %pubKey.32))
+   (= #t %t.102 (select %t.101 #t #f))
+   (= #t %t.103 (select %t.101 #f #t))
+   (= #t %t.104 (select %t.101 #f #t))
+   (= #t %t.105 (select #t %t.104 #t))
+   (assert %t.105 "Attempt to double vote")
+   (= #t %t.106 (tuple))
+   (= #t %_currentVote.33 (call %localGetVote.20))
+   (= #t %t.107 (== %_currentVote.33 0))
+   (= #t %t.108 (select %t.107 #t #f))
+   (= #t %t.109 (select %t.107 #f #t))
+   (= %t.109 %t.110 (== %_currentVote.33 1))
+   (= #t %t.111 (select %t.107 #t %t.110))
+   (= #t %t.112 (select #t %t.111 #t))
+   (assert %t.112 "Please provide a valid vote")
+   (= #t %t.113 (tuple))
+   (= #t %_vote.56 (field->bytes 32 %_currentVote.33))
+   (= #t %t.114 (tuple %_vote.56 %_sk.31))
+   (= #t %hash.34 (call %persistentHash.18 %t.114))
+   (= #t
+      %t.115
+      (public-ledger %hashedVoteMap.7 (4) insert %pubKey.32
+        %hash.34))
+   (= #t
+      %t.116
+      (public-ledger %totalVoteCount.14 (7) increment 1))
+   (= #t %t.117 (tuple)) %t.117)
+  (circuit %revealVote.12 () (ttuple)
+   (= #t %t.118 (public-ledger %votingState.15 (3) read))
+   (= #t %t.119 (== %t.118 0))
+   (= #t %t.120 (select #t %t.119 #t))
+   (assert %t.120 "Voting is still open") (= #t %t.121 (tuple))
+   (= #t %_sk.36 (call %localSk.21))
+   (= #t
+      %t.122
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.36))
+   (= #t %pubKey.37 (call %persistentHash.18 %t.122))
+   (= #t
+      %t.123
+      (public-ledger %hashedVoteMap.7 (4) member %pubKey.37))
+   (= #t %t.124 (select #t %t.123 #t))
+   (assert %t.124 "You have not voted yet")
+   (= #t %t.125 (tuple))
+   (= #t
+      %t.126
+      (public-ledger %registeredVoters.11 (5) member %pubKey.37))
+   (= #t %t.127 (select #t %t.126 #t))
+   (assert %t.127 "You are not a registered voter")
+   (= #t %t.128 (tuple))
+   (= #t
+      %t.129
+      (public-ledger %revealedVoters.13 (6) member %pubKey.37))
+   (= #t %t.130 (select %t.129 #t #f))
+   (= #t %t.131 (select %t.129 #f #t))
+   (= #t %t.132 (select %t.129 #f #t))
+   (= #t %t.133 (select #t %t.132 #t))
+   (assert %t.133 "You have already revealed your vote")
+   (= #t %t.134 (tuple))
+   (= #t %vote.38 (call %localGetVote.20))
+   (= #t %t.135 (== %vote.38 0))
+   (= #t %t.136 (select %t.135 #t #f))
+   (= #t %t.137 (select %t.135 #f #t))
+   (= %t.137 %t.138 (== %vote.38 1))
+   (= #t %t.139 (select %t.135 #t %t.138))
+   (= #t %t.140 (select #t %t.139 #t))
+   (assert %t.140 "Please supply a valid vote")
+   (= #t %t.141 (tuple))
+   (= #t %_vote.59 (field->bytes 32 %vote.38))
+   (= #t %t.142 (tuple %_vote.59 %_sk.36))
+   (= #t %hashedVote.39 (call %persistentHash.18 %t.142))
+   (= #t
+      %t.143
+      (public-ledger %hashedVoteMap.7 (4) lookup %pubKey.37))
+   (= #t %t.144 (== %t.143 %hashedVote.39))
+   (= #t %t.145 (select #t %t.144 #t))
+   (assert %t.145 "Attempt to change the vote!")
+   (= #t %t.146 (tuple))
+   (= #t
+      %t.147
+      (public-ledger %revealedVoters.13 (6) insert %pubKey.37))
+   (= #t %t.148 (== %vote.38 0))
+   (= #t %t.149 (select %t.148 #t #f))
+   (= #t %t.150 (select %t.148 #f #t))
+   (= %t.149
+      %t.151
+      (public-ledger %candidate0VoteCounter.1 (8) increment 1))
+   (= %t.150 %t.152 (== %vote.38 1))
+   (= #t %t.153 (select %t.152 %t.150 #f))
+   (= #t %t.154 (select %t.152 #f %t.150))
+   (= %t.153
+      %t.155
+      (public-ledger %candidate1VoteCounter.3 (9) increment 1))
+   (= %t.154 %t.156 (tuple)) (= #t %t.157 (tuple)) %t.157)
+  (circuit %closeVoting.5 () (ttuple)
+   (= #t %_sk.40 (call %localSk.21))
+   (= #t
+      %t.158
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.40))
+   (= #t %pubKey.41 (call %persistentHash.18 %t.158))
+   (= #t %t.159 (public-ledger %organizer.9 (0) read))
+   (= #t %t.160 (== %t.159 %pubKey.41))
+   (= #t %t.161 (select #t %t.160 #t))
+   (assert %t.161 "You are not the organizer")
+   (= #t %t.162 (tuple))
+   (= #t %t.163 (public-ledger %hashedVoteMap.7 (4) isEmpty))
+   (= #t %t.164 (select %t.163 #t #f))
+   (= #t %t.165 (select %t.163 #f #t))
+   (= #t %t.166 (select %t.163 #f #t))
+   (= #t %t.167 (select #t %t.166 #t))
+   (assert %t.167 "You can't close the voting with no votes")
+   (= #t %t.168 (tuple))
+   (= #t %t.169 (public-ledger %votingState.15 (3) write 0))
+   (= #t %t.170 (tuple)) %t.170)
+  (circuit %checkWinner.4 () (ttuple)
+   (= #t %_sk.42 (call %localSk.21))
+   (= #t
+      %t.171
+      (tuple
+        #vu8(101 108 101 99 116 105 111 110 58 112 107 58 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.42))
+   (= #t %pubKey.43 (call %persistentHash.18 %t.171))
+   (= #t %t.172 (public-ledger %organizer.9 (0) read))
+   (= #t %t.173 (== %t.172 %pubKey.43))
+   (= #t %t.174 (select #t %t.173 #t))
+   (assert %t.174 "You are not an organizer")
+   (= #t %t.175 (tuple))
+   (= #t %t.176 (public-ledger %votingState.15 (3) read))
+   (= #t %t.177 (== %t.176 0))
+   (= #t %t.178 (select #t %t.177 #t))
+   (assert %t.178 "Voting is still open") (= #t %t.179 (tuple))
+   (= #t
+      %t.47
+      (public-ledger %candidate0VoteCounter.1 (8) read))
+   (= #t
+      %t.180
+      (public-ledger %candidate1VoteCounter.3 (9) read))
+   (= #t %t.181 (< 64 %t.180 %t.47))
+   (= #t %t.182 (select %t.181 #t #f))
+   (= #t %t.183 (select %t.181 #f #t))
+   (= %t.182 %t.184 (public-ledger %winner.16 (10) write 0))
+   (= %t.183
+      %t.48
+      (public-ledger %candidate0VoteCounter.1 (8) read))
+   (= %t.183
+      %t.185
+      (public-ledger %candidate1VoteCounter.3 (9) read))
+   (= %t.183 %t.186 (< 64 %t.48 %t.185))
+   (= #t %t.187 (select %t.186 %t.183 #f))
+   (= #t %t.188 (select %t.186 #f %t.183))
+   (= %t.187 %t.189 (public-ledger %winner.16 (10) write 1))
+   (= %t.188
+      %t.190
+      (public-ledger %candidate0VoteCounter.1 (8) read))
+   (= %t.188
+      %t.191
+      (public-ledger %candidate1VoteCounter.3 (9) read))
+   (= %t.188 %t.192 (== %t.190 %t.191))
+   (= #t %t.193 (select %t.192 %t.188 #f))
+   (= #t %t.194 (select %t.192 #f %t.188))
+   (= %t.193 %t.195 (public-ledger %winner.16 (10) write 2))
+   (= %t.194 %t.196 (tuple)) (= #t %t.197 (tuple)) %t.197))

@@ -1,0 +1,41 @@
+// Tell leak zoo: a branch on a secret.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// A sealed-bid sale. Bids are committed properly, but the contract files
+// each bid under `qualified` or `belowReserve` depending on the hidden
+// amount. The public transcript names the set that was touched, so every
+// bidder's side of the reserve price is public.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger reserve: Uint<64>;
+export ledger bids: Map<Bytes<32>, Bytes<32>>;
+export ledger qualified: Set<Bytes<32>>;
+export ledger belowReserve: Set<Bytes<32>>;
+
+witness bidderKey(): Bytes<32>;
+witness amount(): Uint<64>;
+witness bidSalt(): Bytes<32>;
+
+constructor(r: Uint<64>) {
+  reserve = disclose(r);
+}
+
+circuit bidderTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "sale:bidder"), sk]);
+}
+
+export circuit bid(): [] {
+  const tag = disclose(bidderTag(bidderKey()));
+  assert(!bids.member(tag), "one bid per bidder");
+  const a = amount();
+  bids.insert(tag, disclose(persistentCommit<Uint<64>>(a, bidSalt())));
+  if (disclose(a >= reserve)) {
+    qualified.insert(tag);
+  } else {
+    belowReserve.insert(tag);
+  }
+}

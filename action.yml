@@ -1,0 +1,69 @@
+# Tell: a privacy leak scanner for Midnight Compact contracts.
+# Copyright (C) 2026 Rohan Borade
+# SPDX-License-Identifier: Apache-2.0
+name: 'Tell: Midnight privacy leak scanner'
+description: 'Find what your Compact contracts reveal: guessable hashes, secret branches, linkable tags, keys in the clear.'
+branding:
+  icon: 'eye'
+  color: 'purple'
+
+inputs:
+  path:
+    description: 'Directories or files holding your .compact contracts (space-separated)'
+    required: false
+    default: '.'
+  fail-on:
+    description: 'Fail the job at this severity or worse: critical, high, medium, low, info, or none'
+    required: false
+    default: 'high'
+  compact-version:
+    description: 'Compact toolchain to install (the one for the ledger live today by default)'
+    required: false
+    default: '0.31.1'
+  upload-sarif:
+    description: 'Upload findings to GitHub code scanning (needs security-events: write)'
+    required: false
+    default: 'true'
+
+outputs:
+  sarif:
+    description: 'Path of the SARIF file written'
+    value: ${{ steps.scan.outputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    - uses: midnightntwrk/setup-compact-action@v1
+      with:
+        compact-version: ${{ inputs.compact-version }}
+    - name: Install Tell
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        npm install --no-audit --no-fund --workspace engine --include-workspace-root=false >/dev/null
+    - id: scan
+      name: Scan
+      shell: bash
+      run: |
+        out="$RUNNER_TEMP/tell.sarif"
+        fail="${{ inputs.fail-on }}"
+        args=(--sarif "$out")
+        if [ "$fail" != "none" ]; then args+=(--fail-on "$fail"); fi
+        set +e
+        read -r -a paths <<< "${{ inputs.path }}"
+        npx --prefix "${{ github.action_path }}/engine" tsx "${{ github.action_path }}/engine/src/cli.ts" "${paths[@]}" "${args[@]}"
+        code=$?
+        set -e
+        echo "sarif=$out" >> "$GITHUB_OUTPUT"
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+    - if: ${{ inputs.upload-sarif == 'true' && always() }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif }}
+        category: tell
+    - name: Result
+      shell: bash
+      run: exit ${{ steps.scan.outputs.code }}

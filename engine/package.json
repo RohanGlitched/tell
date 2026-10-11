@@ -1,0 +1,11 @@
+{
+  "name": "@tell/engine",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "bin": { "tell": "./src/cli.ts" },
+  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit", "scan": "tsx src/cli.ts" },
+  "devDependencies": { "tsx": "^4.20.0", "typescript": "^5.9.3", "vitest": "^3.2.0", "@types/node": "^22.0.0" }
+}

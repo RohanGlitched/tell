@@ -1,0 +1,7 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger ballots: Set<Bytes<32>>;
+export circuit vote(choice: Uint<8>): [] {
+  assert(choice < 4, "four candidates");
+  ballots.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "vote"), (choice as Field) as Bytes<32>])));
+}

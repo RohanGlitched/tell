@@ -1,0 +1,25 @@
+// Tell leak zoo: a secret key on the ledger.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The vault remembers its owner by storing the owner's secret key, so the
+// first withdrawal hands that key to everyone watching the chain.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger owner: Bytes<32>;
+export ledger withdrawals: Counter;
+
+witness secretKey(): Bytes<32>;
+
+export circuit claim(): [] {
+  assert(owner == default<Bytes<32>>, "already claimed");
+  owner = disclose(secretKey());
+}
+
+export circuit withdraw(): [] {
+  assert(owner == disclose(secretKey()), "not the owner");
+  withdrawals.increment(1);
+}

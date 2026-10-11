@@ -1,0 +1,42 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        with: { compact-version: '0.31.1' }
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --include-workspace-root
+      - name: Compile the zoo
+        run: npm run compact -w zoo
+      - name: Engine precision tests
+        run: npm test -w engine
+      - name: Zoo attack tests
+        run: npm test -w zoo
+  scan-zoo:
+    # Tell scanning its own leak zoo: every fixed contract passes at medium, every leaky one fails.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fixed contracts stay clean
+        uses: ./
+        with:
+          path: zoo/contracts/ballot-fixed.compact zoo/contracts/payband-fixed.compact zoo/contracts/reserve-fixed.compact zoo/contracts/vault-fixed.compact zoo/contracts/board-fixed.compact
+          fail-on: medium
+          upload-sarif: 'false'
+      - name: Leaky contracts are caught
+        id: leaky
+        uses: ./
+        continue-on-error: true
+        with:
+          path: zoo/contracts/ballot-leaky.compact zoo/contracts/payband-leaky.compact zoo/contracts/reserve-leaky.compact zoo/contracts/vault-leaky.compact zoo/contracts/board-leaky.compact
+          fail-on: medium
+      - name: Expect the leaky scan to fail
+        if: steps.leaky.outcome != 'failure'
+        run: echo "Tell missed a leak in the zoo" && exit 1

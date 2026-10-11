@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+
+/* Tell: under the lamp. A forensic case file on cool examination stock; an
+   ultraviolet lamp makes hidden ink fluoresce. UV colours appear only where the
+   lamp shines. */
+:root {
+  --paper: #eceef2;
+  --sheet: #f8f9fb;
+  --ink: #0d1220;
+  --graphite: #4c5568;
+  --faint: #8790a1;
+  --rule: #cdd2db;
+  --rule-strong: #aab2bf;
+  --red: #d3263a;
+  --red-soft: #f8dde1;
+  --amber: #b06a00;
+  --amber-soft: #fbecd2;
+  --uv: #1a1040;
+  --uv-2: #2a1a63;
+  --glow: #ff4fd8;
+  --glow-2: #5cf2ff;
+  --hi: #ffe14a;
+  --hi-soft: #fff4b5;
+  --sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --display: var(--font-schibsted), var(--font-plex-sans), sans-serif;
+  --mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', monospace;
+  --hand: var(--font-newsreader), Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #0c1019;
+    --sheet: #121826;
+    --ink: #e8ebf2;
+    --graphite: #a2abbd;
+    --faint: #6f788b;
+    --rule: #252d3f;
+    --rule-strong: #3a445c;
+    --red: #ff5468;
+    --red-soft: #3b1720;
+    --amber: #f0a43a;
+    --amber-soft: #3a2a12;
+    --hi: #ffe14a;
+    --hi-soft: #3b3518;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--paper);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  ::selection {
+    background: var(--glow);
+    color: #fff;
+  }
+  a {
+    color: inherit;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  a:hover {
+    text-decoration-color: var(--red);
+  }
+  :focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* grid and flex children may shrink below their content (code blocks scroll inside) */
+  .grid > * {
+    min-width: 0;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--display);
+    letter-spacing: -0.02em;
+  }
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--mono);
+  font-feature-settings: 'zero' 1, 'calt' 0;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.hand {
+  font-family: var(--hand);
+  font-style: italic;
+}
+.display {
+  font-family: var(--display);
+}
+
+/* Highlighter stroke for inline emphasis. */
+.hl {
+  background: linear-gradient(100deg, transparent 0 2%, var(--hi) 2% 97%, transparent 97%) 0 62% / 100% 72% no-repeat;
+  color: #0d1220;
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+/* Red ink circle around a figure that matters. */
+.circled {
+  position: relative;
+  display: inline-block;
+}
+.circled::after {
+  content: '';
+  position: absolute;
+  inset: -0.22em -0.42em;
+  border: 2.5px solid var(--red);
+  border-radius: 48% 52% 45% 55% / 55% 45% 58% 42%;
+  transform: rotate(-3deg);
+  pointer-events: none;
+}
+
+/* Case-file sheet: a card with a punched margin. */
+.sheet {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+}
+.tape {
+  background:
+    radial-gradient(circle at 9px 50%, var(--paper) 3px, transparent 3.5px) 0 0 / 100% 20px repeat-y,
+    radial-gradient(circle at calc(100% - 9px) 50%, var(--paper) 3px, transparent 3.5px) 0 0 / 100% 20px repeat-y,
+    var(--sheet);
+  border-left: 1px dashed var(--rule-strong);
+  border-right: 1px dashed var(--rule-strong);
+}
+
+/* Evidence label: a typed tab used on case sections. */
+.label {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--graphite);
+}
+
+/* Rubber stamp. */
+.stamp {
+  font-family: var(--display);
+  border: 3px solid currentColor;
+  border-radius: 6px;
+  padding: 0.1em 0.45em;
+  transform: rotate(-7deg);
+  display: inline-block;
+  mix-blend-mode: multiply;
+  letter-spacing: 0.02em;
+}
+
+@keyframes lamp-hint {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(6px, -3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

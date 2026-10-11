@@ -1,0 +1,23 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%ballots.0 (0) (Set (tbytes 32)))))
+  (native
+    %persistentHash.3
+    ((%value.4 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (circuit %vote.1 ((%choice.5 (tunsigned 255))) (ttuple)
+    (= #t %t.7 (< 8 %choice.5 4))
+    (= #t %t.8 (select #t %t.7 #t))
+    (assert %t.8 "four candidates") (= #t %t.9 (tuple))
+    (= #t %t.10 (field->bytes 32 %choice.5))
+    (= #t
+       %t.11
+       (tuple
+         #vu8(118 111 116 101 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0)
+         %t.10))
+    (= #t %tmp.6 (call %persistentHash.3 %t.11))
+    (= #t %t.12 (public-ledger %ballots.0 (0) insert %tmp.6))
+    (= #t %t.13 (tuple)) %t.13))

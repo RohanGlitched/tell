@@ -1,0 +1,6 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger players: Set<ZswapCoinPublicKey>;
+export circuit join(): [] {
+  players.insert(disclose(ownPublicKey()));
+}

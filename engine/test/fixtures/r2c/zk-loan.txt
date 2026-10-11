@@ -1,0 +1,952 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.16 () (Kernel)))
+ (public-ledger-declaration
+   ((%blacklist.0 (0) (Set (tbytes 32)))
+     (%loans.6
+       (1)
+       (Map (tbytes 32)
+            (Map (tunsigned 65535)
+                 (tstruct
+                   LoanApplication
+                   (authorizedAmount (tunsigned 65535))
+                   (status (tunsigned 3))))))
+     (%onGoingPinMigration.7
+       (2)
+       (Map (tbytes 32) (tunsigned 65535)))
+     (%contractAdmin.3 (3) (__compact_Cell (tbytes 32)))
+     (%providers.8
+       (4)
+       (Map (tunsigned 65535) (topaque "JubjubPoint")))))
+ (native
+   %transientHash.17
+   ((%value.18 (tbytes 32)))
+   (tfield))
+ (native
+   %transientHash.19
+   ((%value.20
+      (tstruct SchnorrHashInput (ann_x (tfield)) (ann_y (tfield))
+        (pk_x (tfield)) (pk_y (tfield))
+        (msg (tvector 4 (tfield))))))
+   (tfield))
+ (native
+   %persistentHash.21
+   ((%value.22 (tunsigned 65535)))
+   (tbytes 32))
+ (native
+   %persistentHash.23
+   ((%value.24 (ttuple (tbytes 17) (tbytes 32) (tbytes 32))))
+   (tbytes 32))
+ (native
+   %persistentHash.25
+   ((%value.26 (ttuple (tbytes 18) (tbytes 32))))
+   (tbytes 32))
+ (native
+   %jubjubPointX.27
+   ((%np.28 (topaque "JubjubPoint")))
+   (tfield))
+ (native
+   %jubjubPointY.29
+   ((%np.30 (topaque "JubjubPoint")))
+   (tfield))
+ (native
+   %ecAdd.31
+   ((%a.32 (topaque "JubjubPoint"))
+     (%b.33 (topaque "JubjubPoint")))
+   (topaque "JubjubPoint"))
+ (native
+   %ecMul.34
+   ((%a.35 (topaque "JubjubPoint")) (%b.36 (tfield)))
+   (topaque "JubjubPoint"))
+ (native
+   %ecMulGenerator.37
+   ((%b.38 (tfield)))
+   (topaque "JubjubPoint"))
+ (witness
+   %getSchnorrReduction.39
+   ((%challengeHash.40 (tfield)))
+   (ttuple
+     (tunsigned 127)
+     (tunsigned
+       452312848583266388373324160190187140051835877600158453279131187530910662655)))
+ (witness
+   %getAttestedScoringWitness.64
+   ()
+   (ttuple
+     (tstruct
+       Applicant
+       (creditScore (tunsigned 65535))
+       (monthlyIncome (tunsigned 65535))
+       (monthsAsCustomer (tunsigned 65535)))
+     (tstruct
+       SchnorrSignature
+       (announcement (topaque "JubjubPoint"))
+       (response (tfield)))
+     (tunsigned 65535)))
+ (witness %getUserSecret.63 () (tbytes 32))
+ (circuit %requestLoan.12
+  ((%amountRequested.69 (tunsigned 65535))
+    (%secretPin.70 (tunsigned 65535)))
+  (ttuple) (= #t %t.231 (< 16 0 %amountRequested.69))
+  (= #t %t.232 (select #t %t.231 #t))
+  (assert %t.232 "Loan amount must be greater than zero")
+  (= #t %t.233 (tuple))
+  (= #t %sk.146 (call %getUserSecret.63))
+  (= #t %pinBytes.148 (call %persistentHash.21 %secretPin.70))
+  (= #t
+     %t.234
+     (tuple
+       #vu8(122 107 108 111 97 110 58 117 115 101 114 58 112 107 58
+            118 49)
+       %pinBytes.148
+       %sk.146))
+  (= #t %requesterPubKey.71 (call %persistentHash.23 %t.234))
+  (= #t
+     %t.235
+     (public-ledger %blacklist.0 (0) member %requesterPubKey.71))
+  (= #t %t.236 (select %t.235 #t #f))
+  (= #t %t.237 (select %t.235 #f #t))
+  (= #t %t.238 (select %t.235 #f #t))
+  (= #t %t.239 (select #t %t.238 #t))
+  (assert %t.239 "Requester is blacklisted")
+  (= #t %t.240 (tuple))
+  (= #t
+     %t.241
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %requesterPubKey.71))
+  (= #t %t.242 (select %t.241 #t #f))
+  (= #t %t.243 (select %t.241 #f #t))
+  (= #t %t.244 (select %t.241 #f #t))
+  (= #t %t.245 (select #t %t.244 #t))
+  (assert %t.245 "PIN migration is in progress for this user")
+  (= #t %t.246 (tuple))
+  (= #t
+     %userPubKeyHash.73
+     (call %transientHash.17 %requesterPubKey.71))
+  (= #t
+     %__compact_pattern_tmp1.150
+     (call %getAttestedScoringWitness.64))
+  (= #t
+     %profile.151
+     (tuple-ref %__compact_pattern_tmp1.150 0))
+  (= #t
+     %signature.152
+     (tuple-ref %__compact_pattern_tmp1.150 1))
+  (= #t
+     %providerId.153
+     (tuple-ref %__compact_pattern_tmp1.150 2))
+  (= #t
+     %t.247
+     (public-ledger %providers.8 (4) member %providerId.153))
+  (= #t %t.248 (select #t %t.247 #t))
+  (assert %t.248 "Attestation provider not registered")
+  (= #t %t.249 (tuple))
+  (= #t
+     %providerPk.154
+     (public-ledger %providers.8 (4) lookup %providerId.153))
+  (= #t %t.250 (elt-ref %profile.151 creditScore))
+  (= #t %t.251 (elt-ref %profile.151 monthlyIncome))
+  (= #t %t.252 (elt-ref %profile.151 monthsAsCustomer))
+  (= #t
+     %msg.155
+     (tuple %t.250 %t.251 %t.252 %userPubKeyHash.73))
+  (= #t
+     %announcement.160
+     (elt-ref %signature.152 announcement))
+  (= #t %response.161 (elt-ref %signature.152 response))
+  (= #t %t.253 (call %jubjubPointX.27 %announcement.160))
+  (= #t %t.254 (call %jubjubPointY.29 %announcement.160))
+  (= #t %t.255 (call %jubjubPointX.27 %providerPk.154))
+  (= #t %t.256 (call %jubjubPointY.29 %providerPk.154))
+  (= #t
+     %t.257
+     (new (tstruct SchnorrHashInput (ann_x (tfield)) (ann_y (tfield))
+            (pk_x (tfield)) (pk_y (tfield)) (msg (tvector 4 (tfield))))
+          %t.253 %t.254 %t.255 %t.256 %msg.155))
+  (= #t %cFull.162 (call %transientHash.19 %t.257))
+  (= #t
+     %__compact_pattern_tmp1.164
+     (call %getSchnorrReduction.39 %cFull.162))
+  (= #t %q.165 (tuple-ref %__compact_pattern_tmp1.164 0))
+  (= #t
+     %cTruncated.166
+     (tuple-ref %__compact_pattern_tmp1.164 1))
+  (= #t %t.258 (< 7 %q.165 116))
+  (= #t %t.259 (select #t %t.258 #t))
+  (assert %t.259 "Schnorr quotient out of range")
+  (= #t %t.260 (tuple))
+  (= #t
+     %t.261
+     (* #f
+        %q.165
+        452312848583266388373324160190187140051835877600158453279131187530910662656))
+  (= #t %t.262 (+ #f %t.261 %cTruncated.166))
+  (= #t %t.263 (== %t.262 %cFull.162))
+  (= #t %t.264 (select #t %t.263 #t))
+  (assert %t.264 "Invalid challenge reduction")
+  (= #t %t.265 (tuple))
+  (= #t %lhs.169 (call %ecMulGenerator.37 %response.161))
+  (= #t
+     %t.266
+     (call %ecMul.34 %providerPk.154 %cTruncated.166))
+  (= #t %rhs.170 (call %ecAdd.31 %announcement.160 %t.266))
+  (= #t %t.267 (call %jubjubPointX.27 %lhs.169))
+  (= #t %t.268 (call %jubjubPointX.27 %rhs.170))
+  (= #t %t.269 (== %t.267 %t.268))
+  (= #t %t.270 (select %t.269 #t #f))
+  (= #t %t.271 (select %t.269 #f #t))
+  (= %t.270 %t.272 (call %jubjubPointY.29 %lhs.169))
+  (= %t.270 %t.273 (call %jubjubPointY.29 %rhs.170))
+  (= %t.270 %t.274 (== %t.272 %t.273))
+  (= #t %t.275 (select %t.269 %t.274 #f))
+  (= #t %t.276 (select #t %t.275 #t))
+  (assert %t.276 "Invalid attestation signature")
+  (= #t %t.277 (tuple))
+  (= #t %t.171 (elt-ref %profile.151 creditScore))
+  (= #t %t.278 (< 16 %t.171 700))
+  (= #t %t.279 (select %t.278 #t #f))
+  (= #t %t.280 (select %t.278 #f #t))
+  (= #t %t.281 (select %t.278 #f #t))
+  (= #t %t.282 (select %t.281 #t #f))
+  (= #t %t.283 (select %t.281 #f #t))
+  (= %t.282 %t.172 (elt-ref %profile.151 monthlyIncome))
+  (= %t.282 %t.284 (< 16 %t.172 2000))
+  (= #t %t.285 (select %t.284 %t.282 #f))
+  (= #t %t.286 (select %t.284 #f %t.282))
+  (= %t.282 %t.287 (select %t.284 #f #t))
+  (= #t %t.288 (select %t.281 %t.287 #f))
+  (= #t %t.289 (select %t.288 #t #f))
+  (= #t %t.290 (select %t.288 #f #t))
+  (= %t.289 %t.173 (elt-ref %profile.151 monthsAsCustomer))
+  (= %t.289 %t.291 (< 16 %t.173 24))
+  (= #t %t.292 (select %t.291 %t.289 #f))
+  (= #t %t.293 (select %t.291 #f %t.289))
+  (= %t.289 %t.294 (select %t.291 #f #t))
+  (= #t %t.295 (select %t.288 %t.294 #f))
+  (= #t %t.296 (select %t.295 #t #f))
+  (= #t %t.297 (select %t.295 #f #t))
+  (= %t.296 %t.298 (tuple 10000 0))
+  (= %t.297 %t.174 (elt-ref %profile.151 creditScore))
+  (= %t.297 %t.299 (< 16 %t.174 600))
+  (= #t %t.300 (select %t.299 %t.297 #f))
+  (= #t %t.301 (select %t.299 #f %t.297))
+  (= %t.297 %t.302 (select %t.299 #f #t))
+  (= #t %t.303 (select %t.302 %t.297 #f))
+  (= #t %t.304 (select %t.302 #f %t.297))
+  (= %t.303 %t.175 (elt-ref %profile.151 monthlyIncome))
+  (= %t.303 %t.305 (< 16 %t.175 1500))
+  (= #t %t.306 (select %t.305 %t.303 #f))
+  (= #t %t.307 (select %t.305 #f %t.303))
+  (= %t.303 %t.308 (select %t.305 #f #t))
+  (= %t.297 %t.309 (select %t.302 %t.308 #f))
+  (= #t %t.310 (select %t.309 %t.297 #f))
+  (= #t %t.311 (select %t.309 #f %t.297))
+  (= %t.310 %t.312 (tuple 7000 0))
+  (= %t.311 %t.176 (elt-ref %profile.151 creditScore))
+  (= %t.311 %t.313 (< 16 %t.176 580))
+  (= #t %t.314 (select %t.313 %t.311 #f))
+  (= #t %t.315 (select %t.313 #f %t.311))
+  (= %t.311 %t.316 (select %t.313 #f #t))
+  (= #t %t.317 (select %t.316 %t.311 #f))
+  (= #t %t.318 (select %t.316 #f %t.311))
+  (= %t.317 %t.319 (tuple 3000 0))
+  (= %t.318 %t.320 (tuple 0 1))
+  (= %t.311 %t.321 (select %t.316 %t.319 %t.320))
+  (= %t.297 %t.322 (select %t.309 %t.312 %t.321))
+  (= #t
+     %__compact_pattern_tmp2.74
+     (select %t.295 %t.298 %t.322))
+  (= #t
+     %topTierAmount.76
+     (tuple-ref %__compact_pattern_tmp2.74 0))
+  (= #t %status.77 (tuple-ref %__compact_pattern_tmp2.74 1))
+  (= #t %t.323 (< 16 %topTierAmount.76 %amountRequested.69))
+  (= #t %t.324 (select %t.323 #t #f))
+  (= #t %t.325 (select %t.323 #f #t))
+  (= #t
+     %authorizedAmount.181
+     (select %t.323 %topTierAmount.76 %amountRequested.69))
+  (= #t %t.326 (== %status.77 1))
+  (= #t %t.327 (select %t.326 #t #f))
+  (= #t %t.328 (select %t.326 #f #t))
+  (= %t.328
+     %t.329
+     (< 16 %topTierAmount.76 %amountRequested.69))
+  (= #t %t.330 (select %t.329 %t.328 #f))
+  (= #t %t.331 (select %t.329 #f %t.328))
+  (= %t.328 %t.332 (select %t.329 2 0))
+  (= #t %finalStatus.182 (select %t.326 1 %t.332))
+  (= #t
+     %loan.183
+     (new (tstruct
+            LoanApplication
+            (authorizedAmount (tunsigned 65535))
+            (status (tunsigned 3)))
+          %authorizedAmount.181
+          %finalStatus.182))
+  (= #t
+     %t.333
+     (public-ledger %loans.6 (1) member %requesterPubKey.71))
+  (= #t %t.334 (select %t.333 #t #f))
+  (= #t %t.335 (select %t.333 #f #t))
+  (= #t %t.336 (select %t.333 #f #t))
+  (= #t %t.337 (select %t.336 #t #f))
+  (= #t %t.338 (select %t.336 #f #t))
+  (= %t.337
+     %t.339
+     (default
+       (Map (tunsigned 65535)
+            (tstruct
+              LoanApplication
+              (authorizedAmount (tunsigned 65535))
+              (status (tunsigned 3))))))
+  (= %t.337
+     %t.340
+     (public-ledger %loans.6 (1) insert %requesterPubKey.71
+       %t.339))
+  (= %t.338 %t.341 (tuple))
+  (= #t
+     %totalLoans.184
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %requesterPubKey.71))
+       size))
+  (= #t %t.342 (< 64 %totalLoans.184 65535))
+  (= #t %t.343 (select #t %t.342 #t))
+  (assert %t.343 "Maximum number of loans reached")
+  (= #t %t.344 (tuple)) (= #t %t.345 (+ 65 %totalLoans.184 1))
+  (= #t
+     %loanNumber.185
+     (downcast-unsigned 18446744073709551616 65535 %t.345))
+  (= #t
+     %t.346
+     (public-ledger %loans.6
+       (1 ((tbytes 32) %requesterPubKey.71)) insert %loanNumber.185
+       %loan.183))
+  (= #t %t.347 (tuple)) %t.347)
+ (circuit %respondToLoan.13
+  ((%loanId.81 (tunsigned 65535))
+    (%secretPin.82 (tunsigned 65535))
+    (%accept.83 (tboolean)))
+  (ttuple) (= #t %sk.186 (call %getUserSecret.63))
+  (= #t %pinBytes.188 (call %persistentHash.21 %secretPin.82))
+  (= #t
+     %t.348
+     (tuple
+       #vu8(122 107 108 111 97 110 58 117 115 101 114 58 112 107 58
+            118 49)
+       %pinBytes.188
+       %sk.186))
+  (= #t %requesterPubKey.84 (call %persistentHash.23 %t.348))
+  (= #t
+     %t.349
+     (public-ledger %blacklist.0 (0) member %requesterPubKey.84))
+  (= #t %t.350 (select %t.349 #t #f))
+  (= #t %t.351 (select %t.349 #f #t))
+  (= #t %t.352 (select %t.349 #f #t))
+  (= #t %t.353 (select #t %t.352 #t))
+  (assert %t.353 "User is blacklisted") (= #t %t.354 (tuple))
+  (= #t
+     %t.355
+     (public-ledger %loans.6 (1) member %requesterPubKey.84))
+  (= #t %t.356 (select #t %t.355 #t))
+  (assert %t.356 "No loans found for this user")
+  (= #t %t.357 (tuple))
+  (= #t
+     %t.358
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %requesterPubKey.84))
+       member
+       %loanId.81))
+  (= #t %t.359 (select #t %t.358 #t))
+  (assert %t.359 "Loan not found") (= #t %t.360 (tuple))
+  (= #t
+     %existingLoan.88
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %requesterPubKey.84))
+       lookup
+       %loanId.81))
+  (= #t %t.361 (elt-ref %existingLoan.88 status))
+  (= #t %t.362 (== %t.361 2))
+  (= #t %t.363 (select #t %t.362 #t))
+  (assert %t.363 "Loan is not in Proposed status")
+  (= #t %t.364 (tuple))
+  (= #t %t.365 (select %accept.83 #t #f))
+  (= #t %t.366 (select %accept.83 #f #t))
+  (= %t.365
+     %t.367
+     (elt-ref %existingLoan.88 authorizedAmount))
+  (= %t.365
+     %t.368
+     (new (tstruct
+            LoanApplication
+            (authorizedAmount (tunsigned 65535))
+            (status (tunsigned 3)))
+          %t.367
+          0))
+  (= %t.366
+     %t.369
+     (new (tstruct
+            LoanApplication
+            (authorizedAmount (tunsigned 65535))
+            (status (tunsigned 3)))
+          0
+          3))
+  (= #t %updatedLoan.89 (select %accept.83 %t.368 %t.369))
+  (= #t
+     %t.370
+     (public-ledger %loans.6
+       (1 ((tbytes 32) %requesterPubKey.84)) insert %loanId.81
+       %updatedLoan.89))
+  (= #t %t.371 (tuple)) %t.371)
+ (circuit %blacklistUser.1 ((%account.106 (tbytes 32))) (ttuple)
+   (= #t %t.372 (public-ledger %contractAdmin.3 (3) read))
+   (= #t %sk.189 (call %getUserSecret.63))
+   (= #t
+      %t.373
+      (tuple
+        #vu8(122 107 108 111 97 110 58 97 100 109 105 110 58 112 107
+             58 118 49)
+        %sk.189))
+   (= #t %t.374 (call %persistentHash.25 %t.373))
+   (= #t %t.375 (== %t.372 %t.374))
+   (= #t %t.376 (select #t %t.375 #t))
+   (assert %t.376 "Only admin can blacklist users")
+   (= #t %t.377 (tuple))
+   (= #t
+      %t.378
+      (public-ledger %blacklist.0 (0) insert %account.106))
+   (= #t %t.379 (tuple)) %t.379)
+ (circuit %removeBlacklistUser.10 ((%account.107 (tbytes 32)))
+   (ttuple)
+   (= #t %t.380 (public-ledger %contractAdmin.3 (3) read))
+   (= #t %sk.190 (call %getUserSecret.63))
+   (= #t
+      %t.381
+      (tuple
+        #vu8(122 107 108 111 97 110 58 97 100 109 105 110 58 112 107
+             58 118 49)
+        %sk.190))
+   (= #t %t.382 (call %persistentHash.25 %t.381))
+   (= #t %t.383 (== %t.380 %t.382))
+   (= #t %t.384 (select #t %t.383 #t))
+   (assert %t.384 "Only admin can remove from blacklist")
+   (= #t %t.385 (tuple))
+   (= #t
+      %t.386
+      (public-ledger %blacklist.0 (0) remove %account.107))
+   (= #t %t.387 (tuple)) %t.387)
+ (circuit %registerProvider.9
+   ((%providerId.108 (tunsigned 65535))
+     (%providerPk.109 (topaque "JubjubPoint")))
+   (ttuple)
+   (= #t %t.388 (public-ledger %contractAdmin.3 (3) read))
+   (= #t %sk.191 (call %getUserSecret.63))
+   (= #t
+      %t.389
+      (tuple
+        #vu8(122 107 108 111 97 110 58 97 100 109 105 110 58 112 107
+             58 118 49)
+        %sk.191))
+   (= #t %t.390 (call %persistentHash.25 %t.389))
+   (= #t %t.391 (== %t.388 %t.390))
+   (= #t %t.392 (select #t %t.391 #t))
+   (assert %t.392 "Only admin can register providers")
+   (= #t %t.393 (tuple))
+   (= #t
+      %t.394
+      (public-ledger %providers.8 (4) insert %providerId.108
+        %providerPk.109))
+   (= #t %t.395 (tuple)) %t.395)
+ (circuit %removeProvider.11 ((%providerId.110 (tunsigned 65535)))
+   (ttuple)
+   (= #t %t.396 (public-ledger %contractAdmin.3 (3) read))
+   (= #t %sk.192 (call %getUserSecret.63))
+   (= #t
+      %t.397
+      (tuple
+        #vu8(122 107 108 111 97 110 58 97 100 109 105 110 58 112 107
+             58 118 49)
+        %sk.192))
+   (= #t %t.398 (call %persistentHash.25 %t.397))
+   (= #t %t.399 (== %t.396 %t.398))
+   (= #t %t.400 (select #t %t.399 #t))
+   (assert %t.400 "Only admin can remove providers")
+   (= #t %t.401 (tuple))
+   (= #t
+      %t.402
+      (public-ledger %providers.8 (4) member %providerId.110))
+   (= #t %t.403 (select #t %t.402 #t))
+   (assert %t.403 "Provider not found") (= #t %t.404 (tuple))
+   (= #t
+      %t.405
+      (public-ledger %providers.8 (4) remove %providerId.110))
+   (= #t %t.406 (tuple)) %t.406)
+ (circuit %rotateAdmin.14 ((%newAdmin.111 (tbytes 32))) (ttuple)
+   (= #t %t.407 (public-ledger %contractAdmin.3 (3) read))
+   (= #t %sk.193 (call %getUserSecret.63))
+   (= #t
+      %t.408
+      (tuple
+        #vu8(122 107 108 111 97 110 58 97 100 109 105 110 58 112 107
+             58 118 49)
+        %sk.193))
+   (= #t %t.409 (call %persistentHash.25 %t.408))
+   (= #t %t.410 (== %t.407 %t.409))
+   (= #t %t.411 (select #t %t.410 #t))
+   (assert %t.411 "Only admin can rotate admin role")
+   (= #t %t.412 (tuple))
+   (= #t
+      %t.413
+      (public-ledger %contractAdmin.3 (3) write %newAdmin.111))
+   (= #t %t.414 (tuple)) %t.414)
+ (circuit %changePin.2
+  ((%oldPin.112 (tunsigned 65535))
+    (%newPin.113 (tunsigned 65535)))
+  (ttuple) (= #t %sk.194 (call %getUserSecret.63))
+  (= #t %pinBytes.196 (call %persistentHash.21 %oldPin.112))
+  (= #t
+     %t.415
+     (tuple
+       #vu8(122 107 108 111 97 110 58 117 115 101 114 58 112 107 58
+            118 49)
+       %pinBytes.196
+       %sk.194))
+  (= #t %oldUserPk.114 (call %persistentHash.23 %t.415))
+  (= #t %sk.197 (call %getUserSecret.63))
+  (= #t %pinBytes.199 (call %persistentHash.21 %newPin.113))
+  (= #t
+     %t.416
+     (tuple
+       #vu8(122 107 108 111 97 110 58 117 115 101 114 58 112 107 58
+            118 49)
+       %pinBytes.199
+       %sk.197))
+  (= #t %newUserPk.115 (call %persistentHash.23 %t.416))
+  (= #t
+     %t.417
+     (public-ledger %blacklist.0 (0) member %oldUserPk.114))
+  (= #t %t.418 (select %t.417 #t #f))
+  (= #t %t.419 (select %t.417 #f #t))
+  (= #t %t.420 (select %t.417 #f #t))
+  (= #t %t.421 (select #t %t.420 #t))
+  (assert %t.421 "User is blacklisted") (= #t %t.422 (tuple))
+  (= #t %t.423 (== %oldPin.112 %newPin.113))
+  (= #t %t.424 (select %t.423 #t #f))
+  (= #t %t.425 (select %t.423 #f #t))
+  (= #t %t.426 (select %t.423 #f #t))
+  (= #t %t.427 (select #t %t.426 #t))
+  (assert %t.427 "New PIN must be different from old PIN")
+  (= #t %t.428 (tuple))
+  (= #t
+     %t.429
+     (public-ledger %loans.6 (1) member %oldUserPk.114))
+  (= #t %t.430 (select #t %t.429 #t))
+  (assert %t.430 "Old PIN does not match any user")
+  (= #t %t.431 (tuple))
+  (= #t
+     %t.432
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.433 (select %t.432 #t #f))
+  (= #t %t.434 (select %t.432 #f #t))
+  (= #t %t.435 (select %t.432 #f #t))
+  (= #t %t.436 (select %t.435 #t #f))
+  (= #t %t.437 (select %t.435 #f #t))
+  (= %t.436
+     %t.438
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 0))
+  (= %t.437 %t.439 (tuple))
+  (= #t
+     %t.440
+     (public-ledger %loans.6 (1) member %newUserPk.115))
+  (= #t %t.441 (select %t.440 #t #f))
+  (= #t %t.442 (select %t.440 #f #t))
+  (= #t %t.443 (select %t.440 #f #t))
+  (= #t %t.444 (select %t.443 #t #f))
+  (= #t %t.445 (select %t.443 #f #t))
+  (= %t.444
+     %t.446
+     (default
+       (Map (tunsigned 65535)
+            (tstruct
+              LoanApplication
+              (authorizedAmount (tunsigned 65535))
+              (status (tunsigned 3))))))
+  (= %t.444
+     %t.447
+     (public-ledger %loans.6 (1) insert %newUserPk.115 %t.446))
+  (= %t.445 %t.448 (tuple))
+  (= #t
+     %lastMigratedSourceId.120
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       lookup
+       %oldUserPk.114))
+  (= #t
+     %t.449
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %newUserPk.115))
+       size))
+  (= #t
+     %lastDestinationId.121
+     (downcast-unsigned 18446744073709551615 65535 %t.449))
+  (= #t
+     %t.450
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.451 (select %t.450 #t #f))
+  (= #t %t.452 (select %t.450 #f #t))
+  (= %t.451 %t.453 (+ 17 %lastMigratedSourceId.120 1))
+  (= %t.451
+     %sourceId.206
+     (downcast-unsigned 65540 65535 %t.453))
+  (= %t.451 %t.454 (+ 17 %lastDestinationId.121 1))
+  (= %t.451
+     %destinationId.207
+     (downcast-unsigned 65540 65535 %t.454))
+  (= %t.451
+     %t.455
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       member
+       %sourceId.206))
+  (= #t %t.456 (select %t.455 %t.451 #f))
+  (= #t %t.457 (select %t.455 #f %t.451))
+  (= %t.456
+     %loan.208
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       lookup
+       %sourceId.206))
+  (= %t.456
+     %t.458
+     (public-ledger %loans.6 (1 ((tbytes 32) %newUserPk.115))
+       insert %destinationId.207 %loan.208))
+  (= %t.456
+     %t.459
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       remove
+       %sourceId.206))
+  (= %t.456
+     %t.460
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 %sourceId.206))
+  (= %t.457
+     %t.461
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       remove
+       %oldUserPk.114))
+  (= %t.457
+     %t.462
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       size))
+  (= %t.457 %t.463 (== %t.462 0))
+  (= #t %t.464 (select %t.463 %t.457 #f))
+  (= #t %t.465 (select %t.463 #f %t.457))
+  (= %t.464
+     %t.466
+     (public-ledger %loans.6 (1) remove %oldUserPk.114))
+  (= %t.465 %t.467 (tuple)) (= %t.452 %t.468 (tuple))
+  (= #t
+     %t.469
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.470 (select %t.469 #t #f))
+  (= #t %t.471 (select %t.469 #f #t))
+  (= %t.470 %t.472 (+ 17 %lastMigratedSourceId.120 1))
+  (= %t.470 %t.473 (+ 17 %t.472 1))
+  (= %t.470
+     %sourceId.210
+     (downcast-unsigned 65540 65535 %t.473))
+  (= %t.470 %t.474 (+ 17 %lastDestinationId.121 1))
+  (= %t.470 %t.475 (+ 17 %t.474 1))
+  (= %t.470
+     %destinationId.211
+     (downcast-unsigned 65540 65535 %t.475))
+  (= %t.470
+     %t.476
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       member
+       %sourceId.210))
+  (= #t %t.477 (select %t.476 %t.470 #f))
+  (= #t %t.478 (select %t.476 #f %t.470))
+  (= %t.477
+     %loan.212
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       lookup
+       %sourceId.210))
+  (= %t.477
+     %t.479
+     (public-ledger %loans.6 (1 ((tbytes 32) %newUserPk.115))
+       insert %destinationId.211 %loan.212))
+  (= %t.477
+     %t.480
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       remove
+       %sourceId.210))
+  (= %t.477
+     %t.481
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 %sourceId.210))
+  (= %t.478
+     %t.482
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       remove
+       %oldUserPk.114))
+  (= %t.478
+     %t.483
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       size))
+  (= %t.478 %t.484 (== %t.483 0))
+  (= #t %t.485 (select %t.484 %t.478 #f))
+  (= #t %t.486 (select %t.484 #f %t.478))
+  (= %t.485
+     %t.487
+     (public-ledger %loans.6 (1) remove %oldUserPk.114))
+  (= %t.486 %t.488 (tuple)) (= %t.471 %t.489 (tuple))
+  (= #t
+     %t.490
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.491 (select %t.490 #t #f))
+  (= #t %t.492 (select %t.490 #f #t))
+  (= %t.491 %t.493 (+ 17 %lastMigratedSourceId.120 2))
+  (= %t.491 %t.494 (+ 17 %t.493 1))
+  (= %t.491
+     %sourceId.214
+     (downcast-unsigned 65540 65535 %t.494))
+  (= %t.491 %t.495 (+ 17 %lastDestinationId.121 2))
+  (= %t.491 %t.496 (+ 17 %t.495 1))
+  (= %t.491
+     %destinationId.215
+     (downcast-unsigned 65540 65535 %t.496))
+  (= %t.491
+     %t.497
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       member
+       %sourceId.214))
+  (= #t %t.498 (select %t.497 %t.491 #f))
+  (= #t %t.499 (select %t.497 #f %t.491))
+  (= %t.498
+     %loan.216
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       lookup
+       %sourceId.214))
+  (= %t.498
+     %t.500
+     (public-ledger %loans.6 (1 ((tbytes 32) %newUserPk.115))
+       insert %destinationId.215 %loan.216))
+  (= %t.498
+     %t.501
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       remove
+       %sourceId.214))
+  (= %t.498
+     %t.502
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 %sourceId.214))
+  (= %t.499
+     %t.503
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       remove
+       %oldUserPk.114))
+  (= %t.499
+     %t.504
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       size))
+  (= %t.499 %t.505 (== %t.504 0))
+  (= #t %t.506 (select %t.505 %t.499 #f))
+  (= #t %t.507 (select %t.505 #f %t.499))
+  (= %t.506
+     %t.508
+     (public-ledger %loans.6 (1) remove %oldUserPk.114))
+  (= %t.507 %t.509 (tuple)) (= %t.492 %t.510 (tuple))
+  (= #t
+     %t.511
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.512 (select %t.511 #t #f))
+  (= #t %t.513 (select %t.511 #f #t))
+  (= %t.512 %t.514 (+ 17 %lastMigratedSourceId.120 3))
+  (= %t.512 %t.515 (+ 17 %t.514 1))
+  (= %t.512
+     %sourceId.218
+     (downcast-unsigned 65540 65535 %t.515))
+  (= %t.512 %t.516 (+ 17 %lastDestinationId.121 3))
+  (= %t.512 %t.517 (+ 17 %t.516 1))
+  (= %t.512
+     %destinationId.219
+     (downcast-unsigned 65540 65535 %t.517))
+  (= %t.512
+     %t.518
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       member
+       %sourceId.218))
+  (= #t %t.519 (select %t.518 %t.512 #f))
+  (= #t %t.520 (select %t.518 #f %t.512))
+  (= %t.519
+     %loan.220
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       lookup
+       %sourceId.218))
+  (= %t.519
+     %t.521
+     (public-ledger %loans.6 (1 ((tbytes 32) %newUserPk.115))
+       insert %destinationId.219 %loan.220))
+  (= %t.519
+     %t.522
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       remove
+       %sourceId.218))
+  (= %t.519
+     %t.523
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 %sourceId.218))
+  (= %t.520
+     %t.524
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       remove
+       %oldUserPk.114))
+  (= %t.520
+     %t.525
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       size))
+  (= %t.520 %t.526 (== %t.525 0))
+  (= #t %t.527 (select %t.526 %t.520 #f))
+  (= #t %t.528 (select %t.526 #f %t.520))
+  (= %t.527
+     %t.529
+     (public-ledger %loans.6 (1) remove %oldUserPk.114))
+  (= %t.528 %t.530 (tuple)) (= %t.513 %t.531 (tuple))
+  (= #t
+     %t.532
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       member
+       %oldUserPk.114))
+  (= #t %t.533 (select %t.532 #t #f))
+  (= #t %t.534 (select %t.532 #f #t))
+  (= %t.533 %t.535 (+ 17 %lastMigratedSourceId.120 4))
+  (= %t.533 %t.536 (+ 17 %t.535 1))
+  (= %t.533
+     %sourceId.222
+     (downcast-unsigned 65540 65535 %t.536))
+  (= %t.533 %t.537 (+ 17 %lastDestinationId.121 4))
+  (= %t.533 %t.538 (+ 17 %t.537 1))
+  (= %t.533
+     %destinationId.223
+     (downcast-unsigned 65540 65535 %t.538))
+  (= %t.533
+     %t.539
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       member
+       %sourceId.222))
+  (= #t %t.540 (select %t.539 %t.533 #f))
+  (= #t %t.541 (select %t.539 #f %t.533))
+  (= %t.540
+     %loan.224
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       lookup
+       %sourceId.222))
+  (= %t.540
+     %t.542
+     (public-ledger %loans.6 (1 ((tbytes 32) %newUserPk.115))
+       insert %destinationId.223 %loan.224))
+  (= %t.540
+     %t.543
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       remove
+       %sourceId.222))
+  (= %t.540
+     %t.544
+     (public-ledger %onGoingPinMigration.7 (2) insert
+       %oldUserPk.114 %sourceId.222))
+  (= %t.541
+     %t.545
+     (public-ledger
+       %onGoingPinMigration.7
+       (2)
+       remove
+       %oldUserPk.114))
+  (= %t.541
+     %t.546
+     (public-ledger
+       %loans.6
+       (1 ((tbytes 32) %oldUserPk.114))
+       size))
+  (= %t.541 %t.547 (== %t.546 0))
+  (= #t %t.548 (select %t.547 %t.541 #f))
+  (= #t %t.549 (select %t.547 #f %t.541))
+  (= %t.548
+     %t.550
+     (public-ledger %loans.6 (1) remove %oldUserPk.114))
+  (= %t.549 %t.551 (tuple)) (= %t.534 %t.552 (tuple))
+  (= #t %t.553 (tuple)) %t.553))

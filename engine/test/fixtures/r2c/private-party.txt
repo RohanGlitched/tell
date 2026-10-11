@@ -1,0 +1,296 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.11 () (Kernel)))
+  (public-ledger-declaration
+    ((%organizer.7 (0) (__compact_Cell (tbytes 32))) (%maxListSize.6 (1) (__compact_Cell (tunsigned 65535)))
+      (%entryFee.4 (2) (__compact_Cell (tunsigned 65535)))
+      (%partyState.8 (3) (__compact_Cell (tunsigned 4)))
+      (%hashedPartyGoers.5 (4) (Set (tbytes 32)))
+      (%checkedInParty.1
+        (5)
+        (Set (tstruct UserAddress (bytes (tbytes 32)))))))
+  (native
+    %persistentHash.30
+    ((%value.31 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.32
+    ((%value.33 (tbytes 32)) (%rand.34 (tbytes 32)))
+    (tbytes 32))
+  (circuit %rsvp.9
+   ((%_address.40 (tstruct UserAddress (bytes (tbytes 32))))
+     (%_secret.41 (tbytes 32)))
+   (ttuple)
+   (= #t
+      %t.96
+      (tuple
+        #vu8(112 114 105 118 97 116 101 45 112 97 114 116 121 58 112
+             107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_secret.41))
+   (= #t %pubKey.42 (call %persistentHash.30 %t.96))
+   (= #t %t.97 (public-ledger %organizer.7 (0) read))
+   (= #t %t.98 (== %pubKey.42 %t.97))
+   (= #t %t.99 (select %t.98 #t #f))
+   (= #t %t.100 (select %t.98 #f #t))
+   (= #t %t.101 (select %t.98 #f #t))
+   (= #t %t.102 (select #t %t.101 #t))
+   (assert %t.102 "Organizer cannot RSVP to the party")
+   (= #t %t.103 (tuple))
+   (= #t %t.104 (public-ledger %partyState.8 (3) read))
+   (= #t %t.105 (== %t.104 0))
+   (= #t %t.106 (select #t %t.105 #t))
+   (assert %t.106 "The party has already started")
+   (= #t %t.107 (tuple))
+   (= #t %t.59 (public-ledger %hashedPartyGoers.5 (4) size))
+   (= #t %t.108 (public-ledger %maxListSize.6 (1) read))
+   (= #t %t.109 (< 64 %t.59 %t.108))
+   (= #t %t.110 (select #t %t.109 #t))
+   (assert %t.110 "The list is full") (= #t %t.111 (tuple))
+   (= #t %_secret.70 (elt-ref %_address.40 bytes))
+   (= #t
+      %commitHash.43
+      (call %persistentCommit.32 %_secret.41 %_secret.70))
+   (= #t
+      %t.112
+      (public-ledger
+        %hashedPartyGoers.5
+        (4)
+        member
+        %commitHash.43))
+   (= #t %t.113 (select %t.112 #t #f))
+   (= #t %t.114 (select %t.112 #f #t))
+   (= #t %t.115 (select %t.112 #f #t))
+   (= #t %t.116 (select #t %t.115 #t))
+   (assert %t.116 "You are already on the list")
+   (= #t %t.117 (tuple))
+   (= #t
+      %t.118
+      (public-ledger
+        %hashedPartyGoers.5
+        (4)
+        insert
+        %commitHash.43))
+   (= #t %t.119 (public-ledger %hashedPartyGoers.5 (4) size))
+   (= #t %t.120 (public-ledger %maxListSize.6 (1) read))
+   (= #t %t.121 (== %t.119 %t.120))
+   (= #t %t.122 (select %t.121 #t #f))
+   (= #t %t.123 (select %t.121 #f #t))
+   (= %t.122 %t.124 (public-ledger %partyState.8 (3) write 1))
+   (= %t.123 %t.125 (tuple)) (= #t %t.126 (tuple)) %t.126)
+  (circuit %startParty.10 ((%_secret.45 (tbytes 32))) (ttuple)
+   (= #t
+      %t.127
+      (tuple
+        #vu8(112 114 105 118 97 116 101 45 112 97 114 116 121 58 112
+             107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_secret.45))
+   (= #t %pubKey.46 (call %persistentHash.30 %t.127))
+   (= #t %t.128 (public-ledger %organizer.7 (0) read))
+   (= #t %t.129 (== %t.128 %pubKey.46))
+   (= #t %t.130 (select #t %t.129 #t))
+   (assert %t.130 "Only the organizer can start the party")
+   (= #t %t.131 (tuple))
+   (= #t %t.132 (public-ledger %partyState.8 (3) read))
+   (= #t %t.133 (== %t.132 1))
+   (= #t %t.134 (select %t.133 #t #f))
+   (= #t %t.135 (select %t.133 #f #t))
+   (= %t.135 %t.136 (public-ledger %partyState.8 (3) read))
+   (= %t.135 %t.137 (== %t.136 0))
+   (= #t %t.138 (select %t.133 #t %t.137))
+   (= #t %t.139 (select #t %t.138 #t))
+   (assert
+     %t.139
+     "The party is not in the correct state for this operation")
+   (= #t %t.140 (tuple))
+   (= #t %t.141 (public-ledger %partyState.8 (3) write 2))
+   (= #t %t.142 (tuple)) %t.142)
+  (circuit %checkIn.0
+   ((%address.47 (tstruct UserAddress (bytes (tbytes 32))))
+     (%_secret.48 (tbytes 32)))
+   (ttuple)
+   (= #t %t.143 (public-ledger %partyState.8 (3) read))
+   (= #t %t.144 (== %t.143 2))
+   (= #t %t.145 (select #t %t.144 #t))
+   (assert
+     %t.145
+     "The party has not been started. Call the party police")
+   (= #t %t.146 (tuple))
+   (= #t %t.60 (public-ledger %checkedInParty.1 (5) size))
+   (= #t %t.147 (public-ledger %hashedPartyGoers.5 (4) size))
+   (= #t %t.148 (< 64 %t.60 %t.147))
+   (= #t %t.149 (select #t %t.148 #t))
+   (assert %t.149 "All guests have already checked in")
+   (= #t %t.150 (tuple))
+   (= #t %_secret.73 (elt-ref %address.47 bytes))
+   (= #t
+      %commitHash.49
+      (call %persistentCommit.32 %_secret.48 %_secret.73))
+   (= #t
+      %t.151
+      (public-ledger
+        %hashedPartyGoers.5
+        (4)
+        member
+        %commitHash.49))
+   (= #t %t.152 (select #t %t.151 #t))
+   (assert %t.152 "You are not on the list")
+   (= #t %t.153 (tuple))
+   (= #t
+      %t.154
+      (public-ledger %checkedInParty.1 (5) member %address.47))
+   (= #t %t.155 (select %t.154 #t #f))
+   (= #t %t.156 (select %t.154 #f #t))
+   (= #t %t.157 (select %t.154 #f #t))
+   (= #t %t.158 (select #t %t.157 #t))
+   (assert %t.158 "You have already checked in")
+   (= #t %t.159 (tuple))
+   (= #t
+      %color.74
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t %amount.75 (public-ledger %entryFee.4 (2) read))
+   (= #t %t.160 (default (tbytes 32)))
+   (= #t
+      %tmp.76
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.74
+           %t.160))
+   (= #t
+      %t.161
+      (public-ledger %kernel.11 () incUnshieldedInputs %tmp.76
+        %amount.75))
+   (= #t
+      %t.162
+      (public-ledger %checkedInParty.1 (5) insert %address.47))
+   (= #t %t.163 (public-ledger %checkedInParty.1 (5) size))
+   (= #t %t.164 (public-ledger %maxListSize.6 (1) read))
+   (= #t %t.165 (== %t.163 %t.164))
+   (= #t %t.166 (select %t.165 #t #f))
+   (= #t %t.167 (select %t.165 #f #t))
+   (= %t.166 %t.168 (public-ledger %partyState.8 (3) write 3))
+   (= %t.167 %t.169 (tuple)) (= #t %t.170 (tuple)) %t.170)
+  (circuit %closeEntry.3 ((%_secret.50 (tbytes 32))) (ttuple)
+    (= #t
+       %t.171
+       (tuple
+         #vu8(112 114 105 118 97 116 101 45 112 97 114 116 121 58 112
+              107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %_secret.50))
+    (= #t %pubKey.51 (call %persistentHash.30 %t.171))
+    (= #t %t.172 (public-ledger %organizer.7 (0) read))
+    (= #t %t.173 (== %t.172 %pubKey.51))
+    (= #t %t.174 (select #t %t.173 #t))
+    (assert %t.174 "Only organizer can close the doors")
+    (= #t %t.175 (tuple))
+    (= #t %t.176 (public-ledger %partyState.8 (3) read))
+    (= #t %t.177 (== %t.176 2))
+    (= #t %t.178 (select #t %t.177 #t))
+    (assert %t.178 "Party in wrong state") (= #t %t.179 (tuple))
+    (= #t %t.180 (public-ledger %partyState.8 (3) write 3))
+    (= #t %t.181 (tuple)) %t.181)
+  (circuit %claimFees.2
+   ((%address.52 (tstruct UserAddress (bytes (tbytes 32))))
+     (%_secret.53 (tbytes 32)))
+   (ttuple)
+   (= #t
+      %t.182
+      (tuple
+        #vu8(112 114 105 118 97 116 101 45 112 97 114 116 121 58 112
+             107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_secret.53))
+   (= #t %pubKey.54 (call %persistentHash.30 %t.182))
+   (= #t %t.183 (public-ledger %organizer.7 (0) read))
+   (= #t %t.184 (== %t.183 %pubKey.54))
+   (= #t %t.185 (select #t %t.184 #t))
+   (assert %t.185 "You are not the organizer")
+   (= #t %t.186 (tuple))
+   (= #t %t.187 (public-ledger %partyState.8 (3) read))
+   (= #t %t.188 (== %t.187 3))
+   (= #t %t.189 (select #t %t.188 #t))
+   (assert %t.189 "The doors are not yet closed")
+   (= #t %t.190 (tuple))
+   (= #t %t.61 (public-ledger %checkedInParty.1 (5) size))
+   (= #t %t.191 (< 64 0 %t.61))
+   (= #t %t.192 (select #t %t.191 #t))
+   (assert %t.192 "No fees to claim") (= #t %t.193 (tuple))
+   (= #t %t.194 (public-ledger %checkedInParty.1 (5) size))
+   (= #t %t.195 (public-ledger %entryFee.4 (2) read))
+   (= #t %totalCollected.55 (* 80 %t.194 %t.195))
+   (= #t
+      %color.80
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t %t.196 (default (tbytes 32)))
+   (= #t
+      %tmp.84
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.80
+           %t.196))
+   (= #t
+      %t.197
+      (public-ledger %kernel.11 () balanceLessThan %tmp.84
+        %totalCollected.55))
+   (= #t %t.198 (select %t.197 #t #f))
+   (= #t %t.199 (select %t.197 #f #t))
+   (= #t %t.200 (select %t.197 #f #t))
+   (= #t %t.201 (select #t %t.200 #t))
+   (assert %t.201 "Contract balance wrong")
+   (= #t %t.202 (tuple))
+   (= #t
+      %color.86
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t
+      %t.203
+      (default (tstruct ContractAddress (bytes (tbytes 32)))))
+   (= #t
+      %recipient.88
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ContractAddress (bytes (tbytes 32))))
+             (right (tstruct UserAddress (bytes (tbytes 32)))))
+           #f
+           %t.203
+           %address.52))
+   (= #t %t.204 (default (tbytes 32)))
+   (= #t
+      %tmp.90
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.86
+           %t.204))
+   (= #t
+      %t.205
+      (public-ledger %kernel.11 () incUnshieldedOutputs %tmp.90
+        %totalCollected.55))
+   (= #t %t.206 (default (tbytes 32)))
+   (= #t
+      %tmp.92
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.86
+           %t.206))
+   (= #t
+      %t.207
+      (public-ledger %kernel.11 () claimUnshieldedCoinSpend
+        %tmp.92 %recipient.88 %totalCollected.55))
+   (= #t %t.208 (public-ledger %partyState.8 (3) write 4))
+   (= #t %t.209 (tuple)) %t.209))

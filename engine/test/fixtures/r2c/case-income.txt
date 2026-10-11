@@ -1,0 +1,18 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.3 () (Kernel)))
+  (public-ledger-declaration
+    ((%highEarners.1 (0) (Counter)) (%others.2 (1) (Counter))))
+  (witness
+    %individualIncome.4
+    ()
+    (tunsigned 18446744073709551615))
+  (circuit %file.0 () (ttuple) (= #t %t.5 (call %individualIncome.4))
+    (= #t %t.8 (< 64 50000 %t.5))
+    (= #t %t.9 (select %t.8 #t #f))
+    (= #t %t.10 (select %t.8 #f #t))
+    (= %t.9
+       %t.11
+       (public-ledger %highEarners.1 (0) increment 1))
+    (= %t.10 %t.12 (public-ledger %others.2 (1) increment 1))
+    (= #t %t.13 (tuple)) %t.13))

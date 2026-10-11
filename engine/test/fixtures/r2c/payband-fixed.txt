@@ -1,0 +1,53 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.4 () (Kernel)))
+  (public-ledger-declaration
+    ((%employer.0 (0) (__compact_Cell (tbytes 32)))
+      (%records.3 (1) (Map (tunsigned 4294967295) (tbytes 32)))))
+  (native
+    %persistentHash.5
+    ((%value.6 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.7
+    ((%value.8
+       (tstruct
+         Payslip
+         (employee (tunsigned 4294967295))
+         (pay (tunsigned 4294967295))))
+      (%rand.9 (tbytes 32)))
+    (tbytes 32))
+  (witness %employerKey.10 () (tbytes 32))
+  (witness %salary.11 () (tunsigned 4294967295))
+  (witness %slipSalt.12 () (tbytes 32))
+  (circuit %file.1 ((%employee.15 (tunsigned 4294967295)))
+   (ttuple) (= #t %sk.18 (call %employerKey.10))
+   (= #t
+      %t.19
+      (tuple
+        #vu8(112 97 121 98 97 110 100 58 101 109 112 108 111 121 101
+             114 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.18))
+   (= #t %t.20 (call %persistentHash.5 %t.19))
+   (= #t %t.21 (public-ledger %employer.0 (0) read))
+   (= #t %t.22 (== %t.20 %t.21))
+   (= #t %t.23 (select #t %t.22 #t))
+   (assert %t.23 "only the employer files records")
+   (= #t %t.24 (tuple)) (= #t %pay.16 (call %salary.11))
+   (= #t %t.25 (< 32 0 %pay.16))
+   (= #t %t.26 (select #t %t.25 #t))
+   (assert %t.26 "salary must be positive")
+   (= #t %t.27 (tuple))
+   (= #t
+      %t.28
+      (new (tstruct
+             Payslip
+             (employee (tunsigned 4294967295))
+             (pay (tunsigned 4294967295)))
+           %employee.15
+           %pay.16))
+   (= #t %t.29 (call %slipSalt.12))
+   (= #t %tmp.17 (call %persistentCommit.7 %t.28 %t.29))
+   (= #t
+      %t.30
+      (public-ledger %records.3 (1) insert %employee.15 %tmp.17))
+   (= #t %t.31 (tuple)) %t.31))

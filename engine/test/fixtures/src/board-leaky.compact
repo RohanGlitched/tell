@@ -1,0 +1,35 @@
+// Tell leak zoo: a linkable tag.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// An "anonymous" staff feedback board. Nobody can tell who a member is, but
+// every post carries the same author tag, so all posts by one person line up
+// and a single identified post unmasks the rest.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: Set<Bytes<32>>;
+export ledger posts: Map<Uint<32>, Bytes<32>>;
+export ledger authors: Map<Uint<32>, Bytes<32>>;
+export ledger count: Counter;
+
+witness memberKey(): Bytes<32>;
+
+circuit memberTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "board:member"), sk]);
+}
+
+export circuit join(): [] {
+  members.insert(disclose(memberTag(memberKey())));
+}
+
+export circuit post(text: Bytes<32>): [] {
+  const tag = disclose(memberTag(memberKey()));
+  assert(members.member(tag), "members only");
+  const n = count.read() as Uint<32>;
+  posts.insert(n, disclose(text));
+  authors.insert(n, tag);
+  count.increment(1);
+}

@@ -1,0 +1,34 @@
+// Tell leak zoo: the branch, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Only bids that meet the reserve are accepted at all: the circuit asserts it.
+// Every accepted transaction touches the same fields in the same way, so the
+// transcript says nothing beyond "a qualifying bid was placed".
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger reserve: Uint<64>;
+export ledger bids: Map<Bytes<32>, Bytes<32>>;
+
+witness bidderKey(): Bytes<32>;
+witness amount(): Uint<64>;
+witness bidSalt(): Bytes<32>;
+
+constructor(r: Uint<64>) {
+  reserve = disclose(r);
+}
+
+circuit bidderTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "sale:bidder"), sk]);
+}
+
+export circuit bid(): [] {
+  const tag = disclose(bidderTag(bidderKey()));
+  assert(!bids.member(tag), "one bid per bidder");
+  const a = amount();
+  assert(a >= reserve, "bids below the reserve are not accepted");
+  bids.insert(tag, disclose(persistentCommit<Uint<64>>(a, bidSalt())));
+}

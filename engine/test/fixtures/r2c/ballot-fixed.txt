@@ -1,0 +1,53 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%voters.4 (0) (Set (tbytes 32)))
+      (%ballots.0 (1) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.8
+    ((%value.9 (tunsigned 255)) (%rand.10 (tbytes 32)))
+    (tbytes 32))
+  (witness %voterKey.11 () (tbytes 32))
+  (witness %choice.12 () (tunsigned 255))
+  (witness %ballotSalt.13 () (tbytes 32))
+  (circuit %register.2 () (ttuple) (= #t %sk.21 (call %voterKey.11))
+    (= #t
+       %t.23
+       (tuple
+         #vu8(98 97 108 108 111 116 58 118 111 116 101 114 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.21))
+    (= #t %tmp.19 (call %persistentHash.6 %t.23))
+    (= #t %t.24 (public-ledger %voters.4 (0) insert %tmp.19))
+    (= #t %t.25 (tuple)) %t.25)
+  (circuit %vote.3 () (ttuple)
+   (= #t %sk.22 (call %voterKey.11))
+   (= #t
+      %t.26
+      (tuple
+        #vu8(98 97 108 108 111 116 58 118 111 116 101 114 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.22))
+   (= #t %tag.17 (call %persistentHash.6 %t.26))
+   (= #t %t.27 (public-ledger %voters.4 (0) member %tag.17))
+   (= #t %t.28 (select #t %t.27 #t))
+   (assert %t.28 "not a registered voter") (= #t %t.29 (tuple))
+   (= #t %t.30 (public-ledger %ballots.0 (1) member %tag.17))
+   (= #t %t.31 (select %t.30 #t #f))
+   (= #t %t.32 (select %t.30 #f #t))
+   (= #t %t.33 (select %t.30 #f #t))
+   (= #t %t.34 (select #t %t.33 #t))
+   (assert %t.34 "already voted") (= #t %t.35 (tuple))
+   (= #t %c.18 (call %choice.12)) (= #t %t.36 (< 8 %c.18 4))
+   (= #t %t.37 (select #t %t.36 #t))
+   (assert %t.37 "there are four candidates")
+   (= #t %t.38 (tuple)) (= #t %t.39 (call %ballotSalt.13))
+   (= #t %tmp.20 (call %persistentCommit.8 %c.18 %t.39))
+   (= #t
+      %t.40
+      (public-ledger %ballots.0 (1) insert %tag.17 %tmp.20))
+   (= #t %t.41 (tuple)) %t.41))

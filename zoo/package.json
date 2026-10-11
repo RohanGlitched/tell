@@ -1,0 +1,17 @@
+{
+  "name": "@tell/zoo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "compact": "node scripts/compile.mjs",
+    "compact:keys": "node scripts/compile.mjs --keys",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1"
+  },
+  "devDependencies": { "vitest": "^3.2.0", "typescript": "^5.9.3", "@types/node": "^22.0.0" }
+}

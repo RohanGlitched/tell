@@ -1,0 +1,2 @@
+reduce-to-circuit:
+(program (public-ledger-declaration ()))

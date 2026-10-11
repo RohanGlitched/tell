@@ -1,0 +1,85 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.7 () (Kernel)))
+  (public-ledger-declaration
+    ((%state.5 (0) (__compact_Cell (tunsigned 1)))
+      (%message.0
+        (1)
+        (__compact_Cell
+          (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value (topaque "string")))))
+      (%sequence.4 (2) (Counter))
+      (%owner.1 (3) (__compact_Cell (tbytes 32)))))
+  (native
+    %persistentHash.11
+    ((%value.12 (tvector 3 (tbytes 32))))
+    (tbytes 32))
+  (witness %localSecretKey.13 () (tbytes 32))
+  (circuit %post.2 ((%newMessage.14 (topaque "string"))) (ttuple)
+    (= #t %t.29 (public-ledger %state.5 (0) read))
+    (= #t %t.30 (== %t.29 0)) (= #t %t.31 (select #t %t.30 #t))
+    (assert %t.31 "Attempted to post to an occupied board")
+    (= #t %t.32 (tuple)) (= #t %sk.24 (call %localSecretKey.13))
+    (= #t %t.33 (public-ledger %sequence.4 (2) read))
+    (= #t %sequence.25 (field->bytes 32 %t.33))
+    (= #t
+       %t.34
+       (tuple
+         #vu8(98 98 111 97 114 100 58 112 107 58 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0)
+         %sequence.25
+         %sk.24))
+    (= #t %tmp.20 (call %persistentHash.11 %t.34))
+    (= #t %t.35 (public-ledger %owner.1 (3) write %tmp.20))
+    (= #t
+       %tmp.21
+       (new (tstruct
+              Maybe
+              (is_some (tboolean))
+              (value (topaque "string")))
+            #t
+            %newMessage.14))
+    (= #t %t.36 (public-ledger %message.0 (1) write %tmp.21))
+    (= #t %t.37 (public-ledger %state.5 (0) write 1))
+    (= #t %t.38 (tuple)) %t.38)
+  (circuit %takeDown.6 () (topaque "string")
+   (= #t %t.39 (public-ledger %state.5 (0) read))
+   (= #t %t.40 (== %t.39 1)) (= #t %t.41 (select #t %t.40 #t))
+   (assert
+     %t.41
+     "Attempted to take down post from an empty board")
+   (= #t %t.42 (tuple))
+   (= #t %t.43 (public-ledger %owner.1 (3) read))
+   (= #t %sk.27 (call %localSecretKey.13))
+   (= #t %t.44 (public-ledger %sequence.4 (2) read))
+   (= #t %sequence.28 (field->bytes 32 %t.44))
+   (= #t
+      %t.45
+      (tuple
+        #vu8(98 98 111 97 114 100 58 112 107 58 0 0 0 0 0 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0)
+        %sequence.28
+        %sk.27))
+   (= #t %t.46 (call %persistentHash.11 %t.45))
+   (= #t %t.47 (== %t.43 %t.46))
+   (= #t %t.48 (select #t %t.47 #t))
+   (assert
+     %t.48
+     "Attempted to take down post, but not the current owner")
+   (= #t %t.49 (tuple))
+   (= #t %t.50 (public-ledger %message.0 (1) read))
+   (= #t %formerMsg.15 (elt-ref %t.50 value))
+   (= #t %t.51 (public-ledger %state.5 (0) write 0))
+   (= #t %t.52 (public-ledger %sequence.4 (2) increment 1))
+   (= #t %t.53 (default (topaque "string")))
+   (= #t
+      %tmp.23
+      (new (tstruct
+             Maybe
+             (is_some (tboolean))
+             (value (topaque "string")))
+           #f
+           %t.53))
+   (= #t %t.54 (public-ledger %message.0 (1) write %tmp.23))
+   %formerMsg.15))

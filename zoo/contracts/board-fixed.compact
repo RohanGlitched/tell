@@ -1,0 +1,40 @@
+// Tell leak zoo: the tag, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Membership is a Merkle proof that never names the leaf, and each post gets a
+// one-time tag derived from the key and the post number. Two posts by the same
+// member share nothing an observer can match.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: MerkleTree<10, Bytes<32>>;
+export ledger posts: Map<Uint<32>, Bytes<32>>;
+export ledger tags: Set<Bytes<32>>;
+export ledger count: Counter;
+
+witness memberKey(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+export pure circuit memberLeaf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "board:member"), sk]);
+}
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit post(text: Bytes<32>): [] {
+  const sk = memberKey();
+  const leaf = memberLeaf(sk);
+  const path = memberPath(leaf);
+  assert(path.leaf == leaf, "path is not for this member");
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "members only");
+  const n = count.read() as Uint<32>;
+  const oneTime = persistentHash<Vector<3, Bytes<32>>>([pad(32, "board:post"), sk, (n as Field) as Bytes<32>]);
+  tags.insert(disclose(oneTime));
+  posts.insert(n, disclose(text));
+  count.increment(1);
+}

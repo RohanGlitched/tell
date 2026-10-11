@@ -1,0 +1,7 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger pk: Field;
+witness secretKey(): Bytes<32>;
+export circuit set(): [] {
+  pk = disclose(degradeToTransient(secretKey()));
+}

@@ -1,0 +1,21 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger members: MerkleTree<10, Bytes<32>>;
+export ledger spent: Set<Bytes<32>>;
+witness memberKey(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+export pure circuit leafOf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:leaf"), sk]);
+}
+export circuit join(): [] {
+  members.insert(disclose(leafOf(memberKey())));
+}
+export circuit claim(): [] {
+  const sk = memberKey();
+  const path = memberPath(leafOf(sk));
+  assert(path.leaf == leafOf(sk), "path is not for this member");
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "members only");
+  const nul = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:nullifier"), sk]);
+  assert(!spent.member(disclose(nul)), "already claimed");
+  spent.insert(disclose(nul));
+}

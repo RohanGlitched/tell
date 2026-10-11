@@ -1,0 +1,102 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%minimumBid.1
+       (0)
+       (__compact_Cell (tunsigned 18446744073709551615)))
+      (%bidCommitments.0 (1) (Map (tbytes 32) (tbytes 32)))
+      (%revealedBids.4
+        (2)
+        (Map (tbytes 32) (tunsigned 18446744073709551615)))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 3 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.8
+    ((%value.9 (tunsigned 18446744073709551615))
+      (%rand.10 (tbytes 32)))
+    (tbytes 32))
+  (witness %localSecretKey.11 () (tbytes 32))
+  (circuit %placeBid.2
+   ((%amount.16 (tunsigned 18446744073709551615))) (ttuple)
+   (= #t %secretKey.17 (call %localSecretKey.11))
+   (= #t %t.33 (public-ledger %minimumBid.1 (0) read))
+   (= #t %t.34 (< 64 %amount.16 %t.33))
+   (= #t %t.35 (select %t.34 #t #f))
+   (= #t %t.36 (select %t.34 #f #t))
+   (= #t %t.37 (select %t.34 #f #t))
+   (= #t %t.38 (select #t %t.37 #t))
+   (assert %t.38 "Bid is below the minimum")
+   (= #t %t.39 (tuple))
+   (= #t
+      %purpose.25
+      #vu8(112 114 105 118 97 116 101 45 98 105 100 58 107 101 121
+           58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %t.40 (public-ledger %kernel.5 () self))
+   (= #t %t.41 (elt-ref %t.40 bytes))
+   (= #t %t.42 (tuple %purpose.25 %t.41 %secretKey.17))
+   (= #t %bidder.18 (call %persistentHash.6 %t.42))
+   (= #t
+      %t.43
+      (public-ledger %bidCommitments.0 (1) member %bidder.18))
+   (= #t %t.44 (select %t.43 #t #f))
+   (= #t %t.45 (select %t.43 #f #t))
+   (= #t %t.46 (select %t.43 #f #t))
+   (= #t %t.47 (select #t %t.46 #t))
+   (assert %t.47 "This bidder already placed a bid")
+   (= #t %t.48 (tuple))
+   (= #t
+      %purpose.27
+      #vu8(112 114 105 118 97 116 101 45 98 105 100 58 115 97 108
+           116 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %t.49 (public-ledger %kernel.5 () self))
+   (= #t %t.50 (elt-ref %t.49 bytes))
+   (= #t %t.51 (tuple %purpose.27 %t.50 %secretKey.17))
+   (= #t %salt.19 (call %persistentHash.6 %t.51))
+   (= #t
+      %tmp.24
+      (call %persistentCommit.8 %amount.16 %salt.19))
+   (= #t
+      %t.52
+      (public-ledger %bidCommitments.0 (1) insert %bidder.18
+        %tmp.24))
+   (= #t %t.53 (tuple)) %t.53)
+  (circuit %revealBid.3
+   ((%amount.20 (tunsigned 18446744073709551615))) (ttuple)
+   (= #t %secretKey.21 (call %localSecretKey.11))
+   (= #t
+      %purpose.29
+      #vu8(112 114 105 118 97 116 101 45 98 105 100 58 107 101 121
+           58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %t.54 (public-ledger %kernel.5 () self))
+   (= #t %t.55 (elt-ref %t.54 bytes))
+   (= #t %t.56 (tuple %purpose.29 %t.55 %secretKey.21))
+   (= #t %bidder.22 (call %persistentHash.6 %t.56))
+   (= #t
+      %purpose.31
+      #vu8(112 114 105 118 97 116 101 45 98 105 100 58 115 97 108
+           116 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %t.57 (public-ledger %kernel.5 () self))
+   (= #t %t.58 (elt-ref %t.57 bytes))
+   (= #t %t.59 (tuple %purpose.31 %t.58 %secretKey.21))
+   (= #t %salt.23 (call %persistentHash.6 %t.59))
+   (= #t
+      %t.60
+      (public-ledger %bidCommitments.0 (1) member %bidder.22))
+   (= #t %t.61 (select #t %t.60 #t))
+   (assert %t.61 "This bidder has not placed a bid")
+   (= #t %t.62 (tuple))
+   (= #t
+      %t.63
+      (public-ledger %bidCommitments.0 (1) lookup %bidder.22))
+   (= #t %t.64 (call %persistentCommit.8 %amount.20 %salt.23))
+   (= #t %t.65 (== %t.63 %t.64))
+   (= #t %t.66 (select #t %t.65 #t))
+   (assert %t.66 "Amount does not match the committed bid")
+   (= #t %t.67 (tuple))
+   (= #t
+      %t.68
+      (public-ledger %revealedBids.4 (2) insert %bidder.22
+        %amount.20))
+   (= #t %t.69 (tuple)) %t.69))

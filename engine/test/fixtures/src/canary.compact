@@ -1,0 +1,263 @@
+// Canary: exam papers that name their own leak.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// One contract per exam sitting. The public ledger holds commitments, never
+// questions: which sets exist, which were burned by a proven leak, which set
+// the custodians' seeds drew, and which packet each proven leak came from.
+// Question papers, seeds, packet fingerprints and reporter secrets stay in the
+// private state of whoever holds them and enter circuits only as witnesses.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+// The paper has 180 questions in four sections of 45 (NEET-UG format).
+export enum Phase { SETUP, SEALED, DRAWN, CLOSED }
+
+// A set as its setter knows it. Only a commitment to this goes on chain.
+export struct SetBody {
+  digest: Bytes<32>;                // hash of the full question set (text, options, key)
+  sections: Vector<180, Uint<8>>;   // section of each question: 0 Physics, 1 Chemistry, 2 Botany, 3 Zoology
+}
+
+// One printed packet. Every packet of every set is ordered differently, so its
+// printed question codes (the fingerprint) are unique to it.
+export struct Copy {
+  set: Uint<8>;
+  packet: Uint<32>;
+  centre: Uint<32>;
+}
+
+export struct Trip {
+  set: Uint<8>;
+  packet: Uint<32>;
+  centre: Uint<32>;
+  phase: Phase;       // when it was proven: before the draw it burns the set
+  claim: Bytes<32>;   // hash of the reporter's claim secret, for the reward
+}
+
+export struct Revealed {
+  digest: Bytes<32>;
+  sections: Vector<180, Uint<8>>;
+}
+
+// Fixed at deployment.
+export sealed ledger examCode: Bytes<32>;
+export sealed ledger authority: Bytes<32>;
+export sealed ledger setCount: Uint<8>;          // 2..8 sets in the pool
+export sealed ledger sealBy: Uint<64>;           // setup closes (unix seconds)
+export sealed ledger drawAt: Uint<64>;           // the draw opens (T-30)
+export sealed ledger examEnd: Uint<64>;          // the paper is over
+
+export ledger phase: Phase;
+export ledger setters: Map<Uint<8>, Bytes<32>>;      // set slot -> setter public key
+export ledger setCommits: Map<Uint<8>, Bytes<32>>;   // set slot -> commitment to SetBody
+export ledger custodians: Map<Uint<8>, Bytes<32>>;   // seed slot (0..2) -> custodian public key
+export ledger seedCommits: Map<Uint<8>, Bytes<32>>;  // seed slot -> hash of the seed
+export ledger seeds: Map<Uint<8>, Bytes<32>>;        // seed slot -> revealed seed
+export ledger canaries: Map<Bytes<32>, Copy>;        // hash of a packet fingerprint -> packet
+export ledger packets: Counter;
+export ledger burned: Set<Uint<8>>;
+export ledger trips: Map<Bytes<32>, Trip>;            // tripped fingerprint hash -> what it proved
+export ledger compromised: Set<Uint<32>>;             // packets of the drawn set leaked during the exam
+export ledger drawn: Maybe<Uint<8>>;
+export ledger revealed: Map<Uint<8>, Revealed>;
+
+// Private inputs. Each role's app supplies only its own.
+witness secretKey(): Bytes<32>;
+witness setBody(slot: Uint<8>): SetBody;
+witness setSalt(slot: Uint<8>): Bytes<32>;
+witness seed(slot: Uint<8>): Bytes<32>;
+witness fingerprint(): Bytes<32>;
+// The draw needs r mod n; Compact has no division, so the prover supplies the
+// quotient and remainder and the circuit checks them.
+witness divide(x: Uint<16>, n: Uint<8>): [Uint<16>, Uint<8>];
+
+constructor(code: Bytes<32>, authorityKey: Bytes<32>, sets: Uint<8>, sealTime: Uint<64>, drawTime: Uint<64>, endTime: Uint<64>) {
+  assert(sets >= 2 && sets <= 8, "a pool needs 2 to 8 sets");
+  assert(sealTime <= drawTime && drawTime < endTime, "times must run seal, draw, end");
+  examCode = disclose(code);
+  authority = disclose(authorityKey);
+  setCount = disclose(sets);
+  sealBy = disclose(sealTime);
+  drawAt = disclose(drawTime);
+  examEnd = disclose(endTime);
+  phase = Phase.SETUP;
+  drawn = none<Uint<8>>();
+}
+
+export pure circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "canary:pk"), sk]);
+}
+
+export pure circuit leafOf(code: Bytes<32>, fp: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "canary:leaf"), code, fp]);
+}
+
+export pure circuit seedHash(s: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "canary:seed"), s]);
+}
+
+export pure circuit drawHash(s0: Bytes<32>, s1: Bytes<32>, s2: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([pad(32, "canary:draw"), s0, s1, s2]);
+}
+
+circuit assertAuthority(): [] {
+  assert(publicKey(secretKey()) == authority, "only the exam authority can do this");
+}
+
+// ---- Setup: the authority appoints people; it never sees a paper ----
+
+export circuit appointSetter(slot: Uint<8>, setterKey: Bytes<32>): [] {
+  assertAuthority();
+  assert(phase == Phase.SETUP, "setup is closed");
+  assert(slot < setCount, "no such set slot");
+  assert(!setters.member(disclose(slot)), "that slot already has a setter");
+  setters.insert(disclose(slot), disclose(setterKey));
+}
+
+export circuit appointCustodian(slot: Uint<8>, custodianKey: Bytes<32>): [] {
+  assertAuthority();
+  assert(phase == Phase.SETUP, "setup is closed");
+  assert(slot < 3, "there are three seed custodians");
+  assert(!custodians.member(disclose(slot)), "that custodian is already appointed");
+  custodians.insert(disclose(slot), disclose(custodianKey));
+}
+
+// A setter commits a set and proves, without showing it, that it follows the
+// blueprint: exactly 45 questions in each of the four sections.
+export circuit commitSet(slot: Uint<8>): [] {
+  assert(phase == Phase.SETUP, "setup is closed");
+  assert(setters.member(disclose(slot)), "no setter appointed for that slot");
+  assert(setters.lookup(disclose(slot)) == publicKey(secretKey()), "only this slot's setter can commit it");
+  assert(!setCommits.member(disclose(slot)), "this set is already committed");
+  const body = setBody(slot);
+  const counts = fold((acc: Vector<4, Uint<8>>, s: Uint<8>): Vector<4, Uint<8>> => {
+    assert(s < 4, "every question needs one of the four sections");
+    return [
+      (s == 0 ? acc[0] + 1 : acc[0]) as Uint<8>,
+      (s == 1 ? acc[1] + 1 : acc[1]) as Uint<8>,
+      (s == 2 ? acc[2] + 1 : acc[2]) as Uint<8>,
+      (s == 3 ? acc[3] + 1 : acc[3]) as Uint<8>
+    ];
+  }, [0, 0, 0, 0], body.sections);
+  assert(counts[0] == 45 && counts[1] == 45 && counts[2] == 45 && counts[3] == 45, "the set does not follow the 45/45/45/45 blueprint");
+  setCommits.insert(disclose(slot), disclose(persistentCommit<SetBody>(body, setSalt(slot))));
+}
+
+// The press registers each printed packet by the hash of its fingerprint.
+export circuit registerPackets(leaves: Vector<4, Bytes<32>>, copies: Vector<4, Copy>): [] {
+  assertAuthority();
+  assert(phase == Phase.SETUP, "setup is closed");
+  for (const i of 0..4) {
+    const leaf = disclose(leaves[i]);
+    const copy = disclose(copies[i]);
+    if (leaf != default<Bytes<32>>) {
+      assert(copy.set < setCount, "packet for a set that does not exist");
+      assert(!canaries.member(leaf), "packet already registered");
+      canaries.insert(leaf, copy);
+      packets.increment(1);
+    }
+  }
+}
+
+export circuit commitSeed(slot: Uint<8>): [] {
+  assert(phase == Phase.SETUP, "setup is closed");
+  assert(custodians.member(disclose(slot)), "no custodian appointed for that slot");
+  assert(custodians.lookup(disclose(slot)) == publicKey(secretKey()), "only this slot's custodian can commit its seed");
+  assert(!seedCommits.member(disclose(slot)), "seed already committed");
+  seedCommits.insert(disclose(slot), disclose(seedHash(seed(slot))));
+}
+
+// Closing setup: every set and every seed must be committed.
+export circuit seal(): [] {
+  assertAuthority();
+  assert(phase == Phase.SETUP, "already sealed");
+  for (const i of 0..8) {
+    assert(i >= setCount || setCommits.member(i as Uint<8>), "a set has not been committed");
+  }
+  for (const i of 0..3) {
+    assert(seedCommits.member(i as Uint<8>), "a custodian has not committed a seed");
+  }
+  phase = Phase.SEALED;
+}
+
+// ---- The tripwire: anyone holding a printed packet can prove it ----
+
+// The reporter proves they hold a packet's fingerprint without publishing it.
+// Before the draw, the packet's whole set is burned. During the exam, a leak of
+// the drawn set marks that packet's centre compromised. The reporter is never
+// identified; `claim` is the hash of a secret only they know.
+export circuit trip(claim: Bytes<32>): [] {
+  assert(phase != Phase.CLOSED, "the exam is over");
+  const leaf = disclose(leafOf(examCode, fingerprint()));
+  assert(canaries.member(leaf), "that is not a registered packet of this exam");
+  assert(!trips.member(leaf), "this packet has already been reported");
+  const copy = canaries.lookup(leaf);
+  trips.insert(leaf, Trip { set: copy.set, packet: copy.packet, centre: copy.centre, phase: phase, claim: disclose(claim) });
+  if (phase == Phase.DRAWN) {
+    if (drawn.value == copy.set) {
+      compromised.insert(copy.packet);
+    }
+  } else {
+    burned.insert(copy.set);
+  }
+}
+
+// ---- The draw at T-30 ----
+
+export circuit revealSeed(slot: Uint<8>): [] {
+  assert(phase == Phase.SEALED, "seeds are revealed after sealing, before the draw");
+  assert(seedCommits.member(disclose(slot)), "no seed committed for that slot");
+  assert(!seeds.member(disclose(slot)), "seed already revealed");
+  const s = disclose(seed(slot));
+  assert(seedHash(s) == seedCommits.lookup(disclose(slot)), "that seed does not match the commitment");
+  seeds.insert(disclose(slot), s);
+}
+
+export circuit draw(): [] {
+  assert(phase == Phase.SEALED, "the exam is not sealed");
+  for (const i of 0..3) {
+    assert(seeds.member(i as Uint<8>), "a custodian has not revealed a seed");
+  }
+  const r = drawHash(seeds.lookup(0), seeds.lookup(1), seeds.lookup(2));
+  const rb = r as Vector<32, Uint<8>>;
+  const x = (rb[0] + (rb[1] as Uint<16>) * 256) as Uint<16>;
+  // live[i]: set i is in the pool and was not burned
+  const live = map((i: Uint<8>): Boolean => i < setCount && !burned.member(i), [0, 1, 2, 3, 4, 5, 6, 7]);
+  const n = fold((acc: Uint<8>, l: Boolean): Uint<8> => (l ? acc + 1 : acc) as Uint<8>, 0 as Uint<8>, live);
+  assert(n > 0, "every set was burned: the sitting must be rescheduled");
+  const qr = divide(x, n);
+  const q = disclose(qr[0]);
+  const rem = disclose(qr[1]);
+  assert(rem < n && (q as Field) * (n as Field) + (rem as Field) == (x as Field), "bad division hint");
+  // pick the rem-th live set, counting from 0
+  const pick = fold((acc: [Uint<8>, Uint<8>, Uint<8>], l: Boolean): [Uint<8>, Uint<8>, Uint<8>] =>
+    [
+      (acc[0] + 1) as Uint<8>,
+      (l ? acc[1] + 1 : acc[1]) as Uint<8>,
+      (l && acc[1] == rem ? acc[0] : acc[2]) as Uint<8>
+    ], [0 as Uint<8>, 0 as Uint<8>, 255 as Uint<8>], live);
+  drawn = some<Uint<8>>(pick[2]);
+  phase = Phase.DRAWN;
+}
+
+// ---- After the paper ----
+
+export circuit close(): [] {
+  assertAuthority();
+  assert(phase == Phase.DRAWN, "nothing to close");
+  phase = Phase.CLOSED;
+}
+
+// After the exam anyone holding a set (its setter, or the authority once the
+// paper is public) opens its commitment, so the blueprint proof can be audited
+// against the real questions.
+export circuit revealSet(slot: Uint<8>): [] {
+  assert(phase == Phase.CLOSED, "sets open only after the exam");
+  assert(setCommits.member(disclose(slot)), "no such set");
+  const body = setBody(slot);
+  assert(persistentCommit<SetBody>(body, setSalt(slot)) == setCommits.lookup(disclose(slot)), "that is not the committed set");
+  revealed.insert(disclose(slot), Revealed { digest: disclose(body.digest), sections: disclose(body.sections) });
+}

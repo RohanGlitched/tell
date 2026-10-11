@@ -1,0 +1,230 @@
+{
+ "generatedAt": "2026-10-11T17:46:31.679Z",
+ "rows": [
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "9a7898fc53872f455a3d5d261aeb172ac548c1c54b15c67fa8234ac35e9c64e2",
+   "value": "0d448398884b404cc02140248c532fc375b9ea68618a7339f64eec3412e13fb4",
+   "reveal": "voted Dara",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "c9ed294a60a74c7a59435d42ea6b49dec3f84b0b5e2e68f20c0b81ceef0b0b5d",
+   "value": "e73f93026f6ff45f15993abb1f5f12dd148413cc25c0af332cb71782726b687b",
+   "reveal": "voted Chen",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "fc3aefaabaa46c6174c9721459a5e24f823665c839807f31ae1cd09c9a0d99f8",
+   "value": "e73f93026f6ff45f15993abb1f5f12dd148413cc25c0af332cb71782726b687b",
+   "reveal": "voted Chen",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "3f278fb92d7e989ac8d57248d635f19f1dd751565ecb01a2063dd78808babae8",
+   "value": "e73f93026f6ff45f15993abb1f5f12dd148413cc25c0af332cb71782726b687b",
+   "reveal": "voted Chen",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "8ae5595163cfb3fec7a12535d751372530bcd7a288376368f68409e9ff062d7b",
+   "value": "e73f93026f6ff45f15993abb1f5f12dd148413cc25c0af332cb71782726b687b",
+   "reveal": "voted Chen",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "6ba7b2d24bc4a0a187375450040e0cb3a219c6fbe5e4c826f1757de7f318234f",
+   "value": "bd4b2304c103ee39cd762630f76b1cc1f8c9fee4e11fabede05bb828d952b190",
+   "reveal": "voted Bilal",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "ea78c8e1f20415c2a10ce733353962d86eb93dd3ad0d589cc4b4621a8c500123",
+   "value": "c81b9533edc9d20dbe00679b163f0cf759970ff8b9683400de3cfef066415d32",
+   "reveal": "voted Asha",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "cc6f075af14e199f1e6d496bba5a896dddef45bf2fcd132feb417ae516088545",
+   "value": "c81b9533edc9d20dbe00679b163f0cf759970ff8b9683400de3cfef066415d32",
+   "reveal": "voted Asha",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "ec640be2c93ea0e6a0a4c7c38c1163f60a56145323194f0ead6e4eeebb1ad4ce",
+   "value": "e73f93026f6ff45f15993abb1f5f12dd148413cc25c0af332cb71782726b687b",
+   "reveal": "voted Chen",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "ballot",
+   "field": "ballots",
+   "key": "2a9ff1c2c858686fa08a9120ffebbbedd14a455a9efd18425cccc64761d06fdc",
+   "value": "bd4b2304c103ee39cd762630f76b1cc1f8c9fee4e11fabede05bb828d952b190",
+   "reveal": "voted Bilal",
+   "how": "4 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "payband",
+   "field": "records",
+   "key": "employee 101",
+   "value": "ed8b19fa2874968225b64407f4afac533610e93cd90ac4e5ce22ffb5a9fe2e19",
+   "reveal": "₹38,500 / month",
+   "how": "770 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "payband",
+   "field": "records",
+   "key": "employee 103",
+   "value": "f3f95ce558532619f677fa811f7cab384209efd49ea41431926394ebf3cb5513",
+   "reveal": "₹71,250 / month",
+   "how": "1425 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "payband",
+   "field": "records",
+   "key": "employee 105",
+   "value": "34f2a378050b316bb6e3332837652b2ab2ce57aaca29081aece331b0160b720f",
+   "reveal": "₹96,500 / month",
+   "how": "1930 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "payband",
+   "field": "records",
+   "key": "employee 102",
+   "value": "3889b4897077c2b0c7dbffe5c620210b43f7c92bb938847f314a8d2459d2d9ed",
+   "reveal": "₹52,000 / month",
+   "how": "1040 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "payband",
+   "field": "records",
+   "key": "employee 104",
+   "value": "cef942df166bd1017683940ad40d8e883bfdbc3abfac51bece97da2ba34bd1ee",
+   "reveal": "₹45,000 / month",
+   "how": "900 guesses",
+   "severity": "critical"
+  },
+  {
+   "contract": "board",
+   "field": "authors",
+   "key": "post #3",
+   "value": "b8fd0a0e1ad8c09c2a175cfe4fd324f501b9f31ee74800327752d9a102e08203",
+   "reveal": "author A, first post",
+   "how": "tag matches",
+   "severity": "medium"
+  },
+  {
+   "contract": "board",
+   "field": "authors",
+   "key": "post #2",
+   "value": "b8fd0a0e1ad8c09c2a175cfe4fd324f501b9f31ee74800327752d9a102e08203",
+   "reveal": "same author as post #3",
+   "how": "tag matches",
+   "severity": "medium"
+  },
+  {
+   "contract": "board",
+   "field": "authors",
+   "key": "post #1",
+   "value": "a137332c7fbd71d72e8b106bf97ad72da30f04fd9bb62215524fb4aea2e73589",
+   "reveal": "author A, first post",
+   "how": "tag matches",
+   "severity": "medium"
+  },
+  {
+   "contract": "board",
+   "field": "authors",
+   "key": "post #4",
+   "value": "a137332c7fbd71d72e8b106bf97ad72da30f04fd9bb62215524fb4aea2e73589",
+   "reveal": "same author as post #1",
+   "how": "tag matches",
+   "severity": "medium"
+  },
+  {
+   "contract": "board",
+   "field": "authors",
+   "key": "post #0",
+   "value": "b8fd0a0e1ad8c09c2a175cfe4fd324f501b9f31ee74800327752d9a102e08203",
+   "reveal": "same author as post #3",
+   "how": "tag matches",
+   "severity": "medium"
+  },
+  {
+   "contract": "reserve",
+   "field": "qualified",
+   "key": "bidder",
+   "value": "5d0f8285b81329082b2e133b238a50e4774546c6475af01cac7a2ee7ceed0bd8",
+   "reveal": "bid ≥ reserve",
+   "how": "set touched",
+   "severity": "medium"
+  },
+  {
+   "contract": "reserve",
+   "field": "qualified",
+   "key": "bidder",
+   "value": "a5a4189a1a54ed171c306c9fb614d4b1a60f1e1a403c0104db393fa112a0a9d3",
+   "reveal": "bid ≥ reserve",
+   "how": "set touched",
+   "severity": "medium"
+  },
+  {
+   "contract": "reserve",
+   "field": "belowReserve",
+   "key": "bidder",
+   "value": "f0c525f410df7cc695396a60b5b2d69c60d4ad28c33eb63780c4823d499431b0",
+   "reveal": "bid < reserve",
+   "how": "set touched",
+   "severity": "medium"
+  },
+  {
+   "contract": "reserve",
+   "field": "belowReserve",
+   "key": "bidder",
+   "value": "c768a17154b750032169d9f5c9e26c44384d2c09241a518745cd87296d204e14",
+   "reveal": "bid < reserve",
+   "how": "set touched",
+   "severity": "medium"
+  },
+  {
+   "contract": "vault",
+   "field": "owner",
+   "key": "cell",
+   "value": "fc901dd0e9681ca8d99131fb52c998b22c5b549a71e37a27d1dd10ec901db65d",
+   "reveal": "this is the owner’s secret key",
+   "how": "read it",
+   "severity": "critical"
+  }
+ ]
+}

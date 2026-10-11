@@ -1,0 +1,1412 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.19 () (Kernel)))
+ (public-ledger-declaration
+   ((%_name.2 (0) (__compact_Cell (topaque "string"))) (%_symbol.3 (1) (__compact_Cell (topaque "string")))
+     (%_decimals.0 (2) (__compact_Cell (tunsigned 255)))
+     (%_domain.1 (3) (__compact_Cell (tbytes 32)))
+     (%_totalMinted.5
+       (4)
+       (__compact_Cell
+         (tunsigned 340282366920938463463374607431768211455)))
+     (%_totalBurned.4
+       (5)
+       (__compact_Cell
+         (tunsigned 340282366920938463463374607431768211455)))
+     (%_treasury.6
+       (6)
+       (Map (tbytes 32)
+            (tstruct QualifiedShieldedCoinInfo (nonce (tbytes 32))
+              (color (tbytes 32))
+              (value (tunsigned 340282366920938463463374607431768211455))
+              (mt_index (tunsigned 18446744073709551615)))))
+     (%theHouse.14 (7) (__compact_Cell (tbytes 32)))))
+ (native
+   %transientHash.55
+   ((%value.71 (tvector 2 (tfield))))
+   (tfield))
+ (native
+   %persistentHash.68
+   ((%value.72
+      (tstruct CoinPreimage (domain_sep (tbytes 21))
+        (info
+          (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value
+              (tunsigned 340282366920938463463374607431768211455))))
+        (dataType (tboolean)) (data (tbytes 32)))))
+   (tbytes 32))
+ (native
+   %persistentHash.73
+   ((%value.74 (tvector 2 (tbytes 32))))
+   (tbytes 32))
+ (native
+   %persistentCommit.30
+   ((%value.75 (tvector 2 (tbytes 32))) (%rand.76 (tbytes 32)))
+   (tbytes 32))
+ (native
+   %degradeToTransient.56
+   ((%x.77 (tbytes 32)))
+   (tfield))
+ (native
+   %upgradeFromTransient.54
+   ((%x.78 (tfield)))
+   (tbytes 32))
+ (native
+   %ownPublicKey.79
+   ()
+   (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+ (native
+   %createZswapInput.49
+   ((%coin.80
+      (tstruct QualifiedShieldedCoinInfo (nonce (tbytes 32))
+        (color (tbytes 32))
+        (value (tunsigned 340282366920938463463374607431768211455))
+        (mt_index (tunsigned 18446744073709551615)))))
+   (ttuple))
+ (native
+   %createZswapOutput.37
+   ((%coin.81
+      (tstruct
+        ShieldedCoinInfo
+        (nonce (tbytes 32))
+        (color (tbytes 32))
+        (value
+          (tunsigned 340282366920938463463374607431768211455))))
+     (%recipient.82
+       (tstruct
+         Either
+         (is_left (tboolean))
+         (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+         (right (tstruct ContractAddress (bytes (tbytes 32)))))))
+   (ttuple))
+ (witness %localSecretKey.83 () (tbytes 32))
+ (circuit %name.12 () (topaque "string")
+   (= #t %t.302 (public-ledger %_name.2 (0) read)) %t.302)
+ (circuit %symbol.13 () (topaque "string")
+   (= #t %t.303 (public-ledger %_symbol.3 (1) read)) %t.303)
+ (circuit %decimals.9 () (tunsigned 255)
+   (= #t %t.304 (public-ledger %_decimals.0 (2) read)) %t.304)
+ (circuit %tokenColor.15 () (tbytes 32)
+   (= #t %domain_sep.147 (public-ledger %_domain.1 (3) read))
+   (= #t
+      %contractAddress.148
+      (public-ledger %kernel.19 () self))
+   (= #t %t.305 (elt-ref %contractAddress.148 bytes))
+   (= #t %t.306 (tuple %domain_sep.147 %t.305))
+   (= #t
+      %t.307
+      (call
+        %persistentCommit.30
+        %t.306
+        #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+             101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+   %t.307)
+ (circuit %totalMinted.17 ()
+   (tunsigned 340282366920938463463374607431768211455)
+   (= #t %t.308 (public-ledger %_totalMinted.5 (4) read))
+   %t.308)
+ (circuit %totalBurned.16 ()
+   (tunsigned 340282366920938463463374607431768211455)
+   (= #t %t.309 (public-ledger %_totalBurned.4 (5) read))
+   %t.309)
+ (circuit %totalSupply.18 ()
+   (tunsigned 340282366920938463463374607431768211455)
+   (= #t %t.128 (public-ledger %_totalMinted.5 (4) read))
+   (= #t %t.129 (public-ledger %_totalBurned.4 (5) read))
+   (= #t %t.310 (< 128 %t.128 %t.129))
+   (= #t %t.311 (select %t.310 #t #f))
+   (= #t %t.312 (select %t.310 #f #t))
+   (= #t %t.313 (select %t.310 #f #t))
+   (= #t %t.314 (select #t %t.313 #t))
+   (assert %t.314 "result of subtraction would be negative")
+   (= #t %t.315 (tuple)) (= #t %t.316 (- 128 %t.128 %t.129))
+   %t.316)
+ (circuit %mint.10
+  ((%recipient.109
+     (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+    (%amount.110 (tunsigned 18446744073709551615))
+    (%nonce.111 (tbytes 32)))
+  (tstruct
+    ShieldedCoinInfo
+    (nonce (tbytes 32))
+    (color (tbytes 32))
+    (value (tunsigned 340282366920938463463374607431768211455)))
+  (= #t %_sk.149 (call %localSecretKey.83))
+  (= #t
+     %t.317
+     (tuple
+       #vu8(114 111 117 108 101 116 116 101 58 112 107 58 0 0 0 0 0
+            0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+       %_sk.149))
+  (= #t %t.318 (call %persistentHash.73 %t.317))
+  (= #t %t.319 (public-ledger %theHouse.14 (7) read))
+  (= #t %t.320 (== %t.318 %t.319))
+  (= #t %t.321 (select #t %t.320 #t))
+  (assert %t.321 "Only the house can do that")
+  (= #t %t.322 (tuple)) (= #t %t.323 (< 64 0 %amount.110))
+  (= #t %t.324 (select #t %t.323 #t))
+  (assert %t.324 "Mint amount must be positive")
+  (= #t %t.325 (tuple))
+  (= #t
+     %t.326
+     (default (tstruct ContractAddress (bytes (tbytes 32)))))
+  (= #t
+     %recipient.151
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #t
+          %recipient.109
+          %t.326))
+  (= #t %t.327 (elt-ref %recipient.109 bytes))
+  (= #t %t.328 (default (tbytes 32)))
+  (= #t %t.329 (== %t.327 %t.328))
+  (= #t %t.330 (select %t.329 #t #f))
+  (= #t %t.331 (select %t.329 #f #t))
+  (= #t %t.332 (select %t.329 #f #t))
+  (= #t %t.333 (select #t %t.332 #t))
+  (assert
+    %t.333
+    "NativeShieldedToken: mint to the zero address")
+  (= #t %t.334 (tuple))
+  (= #t %domain_sep.156 (public-ledger %_domain.1 (3) read))
+  (= #t
+     %contractAddress.162
+     (public-ledger %kernel.19 () self))
+  (= #t %t.335 (elt-ref %contractAddress.162 bytes))
+  (= #t %t.336 (tuple %domain_sep.156 %t.335))
+  (= #t
+     %t.337
+     (call
+       %persistentCommit.30
+       %t.336
+       #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+            101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+  (= #t
+     %coin.160
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %nonce.111
+          %t.337
+          %amount.110))
+  (= #t
+     %t.338
+     (public-ledger %kernel.19 () mintShielded %domain_sep.156
+       %amount.110))
+  (= #t
+     %t.339
+     (call %createZswapOutput.37 %coin.160 %recipient.151))
+  (= #t %t.340 (elt-ref %recipient.109 bytes))
+  (= #t
+     %t.341
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %coin.160 #t %t.340))
+  (= #t %cm.163 (call %persistentHash.68 %t.341))
+  (= #t
+     %t.342
+     (public-ledger %kernel.19 () claimZswapCoinSpend %cm.163))
+  (= #t %coin.113 %coin.160)
+  (= #t %t.343 (public-ledger %_totalMinted.5 (4) read))
+  (= #t %t.344 (+ 129 %t.343 %amount.110))
+  (= #t
+     %tmp.167
+     (downcast-unsigned
+       680564733841876926926749214863536422910
+       340282366920938463463374607431768211455
+       %t.344))
+  (= #t
+     %t.345
+     (public-ledger %_totalMinted.5 (4) write %tmp.167))
+  %coin.113)
+ (circuit %burn.7
+  ((%coin.114
+     (tstruct
+       ShieldedCoinInfo
+       (nonce (tbytes 32))
+       (color (tbytes 32))
+       (value
+         (tunsigned 340282366920938463463374607431768211455))))
+    (%amount.115
+      (tunsigned 340282366920938463463374607431768211455)))
+  (tstruct
+    Maybe
+    (is_some (tboolean))
+    (value
+      (tstruct
+        ShieldedCoinInfo
+        (nonce (tbytes 32))
+        (color (tbytes 32))
+        (value
+          (tunsigned 340282366920938463463374607431768211455)))))
+  (= #t %_sk.168 (call %localSecretKey.83))
+  (= #t
+     %t.346
+     (tuple
+       #vu8(114 111 117 108 101 116 116 101 58 112 107 58 0 0 0 0 0
+            0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+       %_sk.168))
+  (= #t %t.347 (call %persistentHash.73 %t.346))
+  (= #t %t.348 (public-ledger %theHouse.14 (7) read))
+  (= #t %t.349 (== %t.347 %t.348))
+  (= #t %t.350 (select #t %t.349 #t))
+  (assert %t.350 "Only the house can do that")
+  (= #t %t.351 (tuple))
+  (= #t %value.173 (call %ownPublicKey.79))
+  (= #t
+     %t.352
+     (default (tstruct ContractAddress (bytes (tbytes 32)))))
+  (= #t
+     %refundTo.172
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #t
+          %value.173
+          %t.352))
+  (= #t %t.353 (elt-ref %coin.114 color))
+  (= #t %domain_sep.174 (public-ledger %_domain.1 (3) read))
+  (= #t
+     %contractAddress.175
+     (public-ledger %kernel.19 () self))
+  (= #t %t.354 (elt-ref %contractAddress.175 bytes))
+  (= #t %t.355 (tuple %domain_sep.174 %t.354))
+  (= #t
+     %t.356
+     (call
+       %persistentCommit.30
+       %t.355
+       #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+            101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+  (= #t %t.357 (== %t.353 %t.356))
+  (= #t %t.358 (select #t %t.357 #t))
+  (assert %t.358 "NativeShieldedToken: wrong token color")
+  (= #t %t.359 (tuple))
+  (= #t %t.360 (elt-ref %coin.114 value))
+  (= #t %t.361 (< 128 %t.360 %amount.115))
+  (= #t %t.362 (select %t.361 #t #f))
+  (= #t %t.363 (select %t.361 #f #t))
+  (= #t %t.364 (select %t.361 #f #t))
+  (= #t %t.365 (select #t %t.364 #t))
+  (assert
+    %t.365
+    "NativeShieldedToken: burn amount exceeds coin value")
+  (= #t %t.366 (tuple))
+  (= #t %t.367 (elt-ref %refundTo.172 left))
+  (= #t %t.368 (elt-ref %t.367 bytes))
+  (= #t %t.369 (default (tbytes 32)))
+  (= #t %t.370 (== %t.368 %t.369))
+  (= #t %t.371 (select %t.370 #t #f))
+  (= #t %t.372 (select %t.370 #f #t))
+  (= #t %t.373 (select %t.370 #f #t))
+  (= #t %t.374 (select #t %t.373 #t))
+  (assert
+    %t.374
+    "NativeShieldedToken: refund to the zero address")
+  (= #t %t.375 (tuple))
+  (= #t %value.180 (public-ledger %kernel.19 () self))
+  (= #t
+     %t.376
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= #t
+     %recipient.179
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.376
+          %value.180))
+  (= #t
+     %t.377
+     (call %createZswapOutput.37 %coin.114 %recipient.179))
+  (= #t %t.378 (elt-ref %recipient.179 right))
+  (= #t %t.379 (elt-ref %t.378 bytes))
+  (= #t
+     %t.380
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %coin.114 #f %t.379))
+  (= #t %tmp.181 (call %persistentHash.68 %t.380))
+  (= #t
+     %t.381
+     (public-ledger
+       %kernel.19
+       ()
+       claimZswapCoinReceive
+       %tmp.181))
+  (= #t
+     %value.187
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= #t
+     %t.382
+     (default (tstruct ContractAddress (bytes (tbytes 32)))))
+  (= #t
+     %target.186
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #t
+          %value.187
+          %t.382))
+  (= #t %t.383 (elt-ref %coin.114 nonce))
+  (= #t %t.384 (elt-ref %coin.114 color))
+  (= #t %t.385 (elt-ref %coin.114 value))
+  (= #t
+     %input.189
+     (new (tstruct QualifiedShieldedCoinInfo (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455))
+            (mt_index (tunsigned 18446744073709551615)))
+          %t.383 %t.384 %t.385 0))
+  (= #t %selfAddr.193 (public-ledger %kernel.19 () self))
+  (= #t %t.386 (call %createZswapInput.49 %input.189))
+  (= #t %t.387 (elt-ref %input.189 nonce))
+  (= #t %t.388 (elt-ref %input.189 color))
+  (= #t %t.389 (elt-ref %input.189 value))
+  (= #t
+     %coin.195
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.387
+          %t.388
+          %t.389))
+  (= #t %t.390 (elt-ref %selfAddr.193 bytes))
+  (= #t
+     %t.391
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 110 91 118 49 93)
+          %coin.195 #f %t.390))
+  (= #t %tmp.194 (call %persistentHash.68 %t.391))
+  (= #t
+     %t.392
+     (public-ledger %kernel.19 () claimZswapNullifier %tmp.194))
+  (= #t %t.199 (elt-ref %input.189 value))
+  (= #t %t.393 (< 128 %t.199 %amount.115))
+  (= #t %t.394 (select %t.393 #t #f))
+  (= #t %t.395 (select %t.393 #f #t))
+  (= #t %t.396 (select %t.393 #f #t))
+  (= #t %t.397 (select #t %t.396 #t))
+  (assert %t.397 "result of subtraction would be negative")
+  (= #t %t.398 (tuple))
+  (= #t %change.198 (- 128 %t.199 %amount.115))
+  (= #t %t.399 (elt-ref %input.189 nonce))
+  (= #t %t.400 (call %degradeToTransient.56 %t.399))
+  (= #t
+     %t.401
+     (tuple
+       10685258091935385184760267925849721347998787314052891846880509847917
+       %t.400))
+  (= #t %t.402 (call %transientHash.55 %t.401))
+  (= #t %t.403 (call %upgradeFromTransient.54 %t.402))
+  (= #t %t.404 (elt-ref %input.189 color))
+  (= #t
+     %output.200
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.403
+          %t.404
+          %amount.115))
+  (= #t
+     %t.405
+     (call %createZswapOutput.37 %output.200 %target.186))
+  (= #t %t.406 (elt-ref %target.186 left))
+  (= #t %t.407 (elt-ref %t.406 bytes))
+  (= #t
+     %t.408
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %output.200 #t %t.407))
+  (= #t %tmp.201 (call %persistentHash.68 %t.408))
+  (= #t
+     %t.409
+     (public-ledger %kernel.19 () claimZswapCoinSpend %tmp.201))
+  (= #t %t.410 (== %change.198 0))
+  (= #t %t.411 (select %t.410 #t #f))
+  (= #t %t.412 (select %t.410 #f #t))
+  (= %t.411
+     %t.413
+     (default
+       (tstruct
+         ShieldedCoinInfo
+         (nonce (tbytes 32))
+         (color (tbytes 32))
+         (value
+           (tunsigned 340282366920938463463374607431768211455)))))
+  (= %t.411
+     %t.414
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #f
+          %t.413))
+  (= %t.411
+     %t.415
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.414
+          %output.200))
+  (= %t.412 %t.416 (elt-ref %input.189 nonce))
+  (= %t.412 %t.417 (call %degradeToTransient.56 %t.416))
+  (= %t.412
+     %t.418
+     (tuple
+       346365120090976204827271903090867044985564393183692787556584961381525869
+       %t.417))
+  (= %t.412 %t.419 (call %transientHash.55 %t.418))
+  (= %t.412 %t.420 (call %upgradeFromTransient.54 %t.419))
+  (= %t.412 %t.421 (elt-ref %input.189 color))
+  (= %t.412
+     %changeCoin.207
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.420
+          %t.421
+          %change.198))
+  (= %t.412
+     %t.422
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= %t.412
+     %t.423
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.422
+          %selfAddr.193))
+  (= %t.412
+     %t.424
+     (call %createZswapOutput.37 %changeCoin.207 %t.423))
+  (= %t.412 %t.425 (elt-ref %selfAddr.193 bytes))
+  (= %t.412
+     %t.426
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %changeCoin.207 #f %t.425))
+  (= %t.412 %cm.209 (call %persistentHash.68 %t.426))
+  (= %t.412
+     %t.427
+     (public-ledger %kernel.19 () claimZswapCoinSpend %cm.209))
+  (= %t.412
+     %t.428
+     (public-ledger %kernel.19 () claimZswapCoinReceive %cm.209))
+  (= %t.412
+     %t.429
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #t
+          %changeCoin.207))
+  (= %t.412
+     %t.430
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.429
+          %output.200))
+  (= #t %burned.184 (select %t.410 %t.415 %t.430))
+  (= #t %t.431 (elt-ref %burned.184 change))
+  (= #t %t.432 (elt-ref %t.431 is_some))
+  (= #t %t.433 (select %t.432 #t #f))
+  (= #t %t.434 (select %t.432 #f #t))
+  (= %t.433 %t.435 (elt-ref %burned.184 change))
+  (= %t.433 %input.215 (elt-ref %t.435 value))
+  (= %t.433 %t.436 (elt-ref %burned.184 change))
+  (= %t.433 %t.437 (elt-ref %t.436 value))
+  (= %t.433 %value.217 (elt-ref %t.437 value))
+  (= %t.433 %t.438 (elt-ref %input.215 nonce))
+  (= %t.433 %t.439 (elt-ref %input.215 color))
+  (= %t.433 %t.440 (elt-ref %input.215 value))
+  (= %t.433
+     %input.218
+     (new (tstruct QualifiedShieldedCoinInfo (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455))
+            (mt_index (tunsigned 18446744073709551615)))
+          %t.438 %t.439 %t.440 0))
+  (= %t.433 %selfAddr.222 (public-ledger %kernel.19 () self))
+  (= %t.433 %t.441 (call %createZswapInput.49 %input.218))
+  (= %t.433 %t.442 (elt-ref %input.218 nonce))
+  (= %t.433 %t.443 (elt-ref %input.218 color))
+  (= %t.433 %t.444 (elt-ref %input.218 value))
+  (= %t.433
+     %coin.224
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.442
+          %t.443
+          %t.444))
+  (= %t.433 %t.445 (elt-ref %selfAddr.222 bytes))
+  (= %t.433
+     %t.446
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 110 91 118 49 93)
+          %coin.224 #f %t.445))
+  (= %t.433 %tmp.223 (call %persistentHash.68 %t.446))
+  (= %t.433
+     %t.447
+     (public-ledger %kernel.19 () claimZswapNullifier %tmp.223))
+  (= %t.433 %t.228 (elt-ref %input.218 value))
+  (= %t.433 %t.448 (< 128 %t.228 %value.217))
+  (= #t %t.449 (select %t.448 %t.433 #f))
+  (= #t %t.450 (select %t.448 #f %t.433))
+  (= %t.433 %t.451 (select %t.448 #f #t))
+  (= #t %t.452 (select %t.433 %t.451 #t))
+  (assert %t.452 "result of subtraction would be negative")
+  (= %t.433 %t.453 (tuple))
+  (= %t.433 %change.227 (- 128 %t.228 %value.217))
+  (= %t.433 %t.454 (elt-ref %input.218 nonce))
+  (= %t.433 %t.455 (call %degradeToTransient.56 %t.454))
+  (= %t.433
+     %t.456
+     (tuple
+       10685258091935385184760267925849721347998787314052891846880509847917
+       %t.455))
+  (= %t.433 %t.457 (call %transientHash.55 %t.456))
+  (= %t.433 %t.458 (call %upgradeFromTransient.54 %t.457))
+  (= %t.433 %t.459 (elt-ref %input.218 color))
+  (= %t.433
+     %output.229
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.458
+          %t.459
+          %value.217))
+  (= %t.433
+     %t.460
+     (call %createZswapOutput.37 %output.229 %refundTo.172))
+  (= %t.433 %t.461 (elt-ref %refundTo.172 left))
+  (= %t.433 %t.462 (elt-ref %t.461 bytes))
+  (= %t.433
+     %t.463
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %output.229 #t %t.462))
+  (= %t.433 %tmp.230 (call %persistentHash.68 %t.463))
+  (= %t.433
+     %t.464
+     (public-ledger %kernel.19 () claimZswapCoinSpend %tmp.230))
+  (= %t.433 %t.465 (== %change.227 0))
+  (= #t %t.466 (select %t.465 %t.433 #f))
+  (= #t %t.467 (select %t.465 #f %t.433))
+  (= %t.466
+     %t.468
+     (default
+       (tstruct
+         ShieldedCoinInfo
+         (nonce (tbytes 32))
+         (color (tbytes 32))
+         (value
+           (tunsigned 340282366920938463463374607431768211455)))))
+  (= %t.466
+     %t.469
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #f
+          %t.468))
+  (= %t.466
+     %t.470
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.469
+          %output.229))
+  (= %t.467 %t.471 (elt-ref %input.218 nonce))
+  (= %t.467 %t.472 (call %degradeToTransient.56 %t.471))
+  (= %t.467
+     %t.473
+     (tuple
+       346365120090976204827271903090867044985564393183692787556584961381525869
+       %t.472))
+  (= %t.467 %t.474 (call %transientHash.55 %t.473))
+  (= %t.467 %t.475 (call %upgradeFromTransient.54 %t.474))
+  (= %t.467 %t.476 (elt-ref %input.218 color))
+  (= %t.467
+     %changeCoin.236
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.475
+          %t.476
+          %change.227))
+  (= %t.467
+     %t.477
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= %t.467
+     %t.478
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.477
+          %selfAddr.222))
+  (= %t.467
+     %t.479
+     (call %createZswapOutput.37 %changeCoin.236 %t.478))
+  (= %t.467 %t.480 (elt-ref %selfAddr.222 bytes))
+  (= %t.467
+     %t.481
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %changeCoin.236 #f %t.480))
+  (= %t.467 %cm.238 (call %persistentHash.68 %t.481))
+  (= %t.467
+     %t.482
+     (public-ledger %kernel.19 () claimZswapCoinSpend %cm.238))
+  (= %t.467
+     %t.483
+     (public-ledger %kernel.19 () claimZswapCoinReceive %cm.238))
+  (= %t.467
+     %t.484
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #t
+          %changeCoin.236))
+  (= %t.467
+     %t.485
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.484
+          %output.229))
+  (= %t.433 %refunded.214 (select %t.465 %t.470 %t.485))
+  (= %t.433 %value.243 (elt-ref %refunded.214 sent))
+  (= %t.433
+     %t.486
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #t
+          %value.243))
+  (= %t.434
+     %t.487
+     (default
+       (tstruct
+         ShieldedCoinInfo
+         (nonce (tbytes 32))
+         (color (tbytes 32))
+         (value
+           (tunsigned 340282366920938463463374607431768211455)))))
+  (= %t.434
+     %t.488
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #f
+          %t.487))
+  (= #t %refund.116 (select %t.432 %t.486 %t.488))
+  (= #t %t.489 (public-ledger %_totalBurned.4 (5) read))
+  (= #t %t.490 (+ 129 %t.489 %amount.115))
+  (= #t
+     %tmp.245
+     (downcast-unsigned
+       680564733841876926926749214863536422910
+       340282366920938463463374607431768211455
+       %t.490))
+  (= #t
+     %t.491
+     (public-ledger %_totalBurned.4 (5) write %tmp.245))
+  %refund.116)
+ (circuit %mintToTreasury.11
+  ((%amount.117 (tunsigned 18446744073709551615))
+    (%nonce.118 (tbytes 32)))
+  (ttuple) (= #t %_sk.246 (call %localSecretKey.83))
+  (= #t
+     %t.492
+     (tuple
+       #vu8(114 111 117 108 101 116 116 101 58 112 107 58 0 0 0 0 0
+            0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+       %_sk.246))
+  (= #t %t.493 (call %persistentHash.73 %t.492))
+  (= #t %t.494 (public-ledger %theHouse.14 (7) read))
+  (= #t %t.495 (== %t.493 %t.494))
+  (= #t %t.496 (select #t %t.495 #t))
+  (assert %t.496 "Only the house can do that")
+  (= #t %t.497 (tuple)) (= #t %t.498 (< 64 0 %amount.117))
+  (= #t %t.499 (select #t %t.498 #t))
+  (assert %t.499 "Mint amount must be positive")
+  (= #t %t.500 (tuple))
+  (= #t %value.249 (public-ledger %kernel.19 () self))
+  (= #t
+     %t.501
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= #t
+     %recipient.248
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.501
+          %value.249))
+  (= #t %t.502 (elt-ref %recipient.248 right))
+  (= #t %t.503 (elt-ref %t.502 bytes))
+  (= #t %t.504 (default (tbytes 32)))
+  (= #t %t.505 (== %t.503 %t.504))
+  (= #t %t.506 (select %t.505 #t #f))
+  (= #t %t.507 (select %t.505 #f #t))
+  (= #t %t.508 (select %t.505 #f #t))
+  (= #t %t.509 (select #t %t.508 #t))
+  (assert
+    %t.509
+    "NativeShieldedToken: mint to the zero address")
+  (= #t %t.510 (tuple))
+  (= #t %domain_sep.253 (public-ledger %_domain.1 (3) read))
+  (= #t
+     %contractAddress.259
+     (public-ledger %kernel.19 () self))
+  (= #t %t.511 (elt-ref %contractAddress.259 bytes))
+  (= #t %t.512 (tuple %domain_sep.253 %t.511))
+  (= #t
+     %t.513
+     (call
+       %persistentCommit.30
+       %t.512
+       #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+            101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+  (= #t
+     %coin.257
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %nonce.118
+          %t.513
+          %amount.117))
+  (= #t
+     %t.514
+     (public-ledger %kernel.19 () mintShielded %domain_sep.253
+       %amount.117))
+  (= #t
+     %t.515
+     (call %createZswapOutput.37 %coin.257 %recipient.248))
+  (= #t %t.516 (elt-ref %recipient.248 right))
+  (= #t %t.517 (elt-ref %t.516 bytes))
+  (= #t
+     %t.518
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %coin.257 #f %t.517))
+  (= #t %cm.260 (call %persistentHash.68 %t.518))
+  (= #t
+     %t.519
+     (public-ledger %kernel.19 () claimZswapCoinSpend %cm.260))
+  (= #t %t.520 (elt-ref %recipient.248 right))
+  (= #t %t.521 (elt-ref %t.520 bytes))
+  (= #t %t.522 (public-ledger %kernel.19 () self))
+  (= #t %t.523 (elt-ref %t.522 bytes))
+  (= #t %t.524 (== %t.521 %t.523))
+  (= #t %t.525 (select %t.524 #t #f))
+  (= #t %t.526 (select %t.524 #f #t))
+  (= %t.525
+     %t.527
+     (public-ledger %kernel.19 () claimZswapCoinReceive %cm.260))
+  (= %t.526 %t.528 (tuple)) (= #t %coin.119 %coin.257)
+  (= #t %value.263 (public-ledger %kernel.19 () self))
+  (= #t
+     %t.529
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= #t
+     %tmp.142
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.529
+          %value.263))
+  (= #t
+     %t.530
+     (public-ledger %_treasury.6 (6) insertCoin %nonce.118
+       %coin.119 %tmp.142))
+  (= #t %t.531 (public-ledger %_totalMinted.5 (4) read))
+  (= #t %t.532 (+ 129 %t.531 %amount.117))
+  (= #t
+     %tmp.265
+     (downcast-unsigned
+       680564733841876926926749214863536422910
+       340282366920938463463374607431768211455
+       %t.532))
+  (= #t
+     %t.533
+     (public-ledger %_totalMinted.5 (4) write %tmp.265))
+  (= #t %t.534 (tuple)) %t.534)
+ (circuit %burnFromTreasury.8
+  ((%key.120 (tbytes 32))
+    (%amount.121
+      (tunsigned 340282366920938463463374607431768211455)))
+  (ttuple) (= #t %_sk.266 (call %localSecretKey.83))
+  (= #t
+     %t.535
+     (tuple
+       #vu8(114 111 117 108 101 116 116 101 58 112 107 58 0 0 0 0 0
+            0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+       %_sk.266))
+  (= #t %t.536 (call %persistentHash.73 %t.535))
+  (= #t %t.537 (public-ledger %theHouse.14 (7) read))
+  (= #t %t.538 (== %t.536 %t.537))
+  (= #t %t.539 (select #t %t.538 #t))
+  (assert %t.539 "Only the house can do that")
+  (= #t %t.540 (tuple))
+  (= #t
+     %t.541
+     (public-ledger %_treasury.6 (6) member %key.120))
+  (= #t %t.542 (select #t %t.541 #t))
+  (assert %t.542 "No treasury coin under that key")
+  (= #t %t.543 (tuple))
+  (= #t
+     %coin.122
+     (public-ledger %_treasury.6 (6) lookup %key.120))
+  (= #t %t.544 (elt-ref %coin.122 color))
+  (= #t %domain_sep.270 (public-ledger %_domain.1 (3) read))
+  (= #t
+     %contractAddress.271
+     (public-ledger %kernel.19 () self))
+  (= #t %t.545 (elt-ref %contractAddress.271 bytes))
+  (= #t %t.546 (tuple %domain_sep.270 %t.545))
+  (= #t
+     %t.547
+     (call
+       %persistentCommit.30
+       %t.546
+       #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+            101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+  (= #t %t.548 (== %t.544 %t.547))
+  (= #t %t.549 (select #t %t.548 #t))
+  (assert %t.549 "NativeShieldedToken: wrong token color")
+  (= #t %t.550 (tuple))
+  (= #t %t.551 (elt-ref %coin.122 value))
+  (= #t %t.552 (< 128 %t.551 %amount.121))
+  (= #t %t.553 (select %t.552 #t #f))
+  (= #t %t.554 (select %t.552 #f #t))
+  (= #t %t.555 (select %t.552 #f #t))
+  (= #t %t.556 (select #t %t.555 #t))
+  (assert
+    %t.556
+    "NativeShieldedToken: burn amount exceeds coin value")
+  (= #t %t.557 (tuple))
+  (= #t
+     %value.276
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= #t
+     %t.558
+     (default (tstruct ContractAddress (bytes (tbytes 32)))))
+  (= #t
+     %recipient.275
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #t
+          %value.276
+          %t.558))
+  (= #t %selfAddr.278 (public-ledger %kernel.19 () self))
+  (= #t %t.559 (call %createZswapInput.49 %coin.122))
+  (= #t %t.560 (elt-ref %coin.122 nonce))
+  (= #t %t.561 (elt-ref %coin.122 color))
+  (= #t %t.562 (elt-ref %coin.122 value))
+  (= #t
+     %coin.280
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.560
+          %t.561
+          %t.562))
+  (= #t %t.563 (elt-ref %selfAddr.278 bytes))
+  (= #t
+     %t.564
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 110 91 118 49 93)
+          %coin.280 #f %t.563))
+  (= #t %tmp.279 (call %persistentHash.68 %t.564))
+  (= #t
+     %t.565
+     (public-ledger %kernel.19 () claimZswapNullifier %tmp.279))
+  (= #t %t.284 (elt-ref %coin.122 value))
+  (= #t %t.566 (< 128 %t.284 %amount.121))
+  (= #t %t.567 (select %t.566 #t #f))
+  (= #t %t.568 (select %t.566 #f #t))
+  (= #t %t.569 (select %t.566 #f #t))
+  (= #t %t.570 (select #t %t.569 #t))
+  (assert %t.570 "result of subtraction would be negative")
+  (= #t %t.571 (tuple))
+  (= #t %change.283 (- 128 %t.284 %amount.121))
+  (= #t %t.572 (elt-ref %coin.122 nonce))
+  (= #t %t.573 (call %degradeToTransient.56 %t.572))
+  (= #t
+     %t.574
+     (tuple
+       10685258091935385184760267925849721347998787314052891846880509847917
+       %t.573))
+  (= #t %t.575 (call %transientHash.55 %t.574))
+  (= #t %t.576 (call %upgradeFromTransient.54 %t.575))
+  (= #t %t.577 (elt-ref %coin.122 color))
+  (= #t
+     %output.285
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.576
+          %t.577
+          %amount.121))
+  (= #t
+     %t.578
+     (call %createZswapOutput.37 %output.285 %recipient.275))
+  (= #t %t.579 (elt-ref %recipient.275 left))
+  (= #t %t.580 (elt-ref %t.579 bytes))
+  (= #t
+     %t.581
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %output.285 #t %t.580))
+  (= #t %tmp.286 (call %persistentHash.68 %t.581))
+  (= #t
+     %t.582
+     (public-ledger %kernel.19 () claimZswapCoinSpend %tmp.286))
+  (= #t %t.583 (== %change.283 0))
+  (= #t %t.584 (select %t.583 #t #f))
+  (= #t %t.585 (select %t.583 #f #t))
+  (= %t.584
+     %t.586
+     (default
+       (tstruct
+         ShieldedCoinInfo
+         (nonce (tbytes 32))
+         (color (tbytes 32))
+         (value
+           (tunsigned 340282366920938463463374607431768211455)))))
+  (= %t.584
+     %t.587
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #f
+          %t.586))
+  (= %t.584
+     %t.588
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.587
+          %output.285))
+  (= %t.585 %t.589 (elt-ref %coin.122 nonce))
+  (= %t.585 %t.590 (call %degradeToTransient.56 %t.589))
+  (= %t.585
+     %t.591
+     (tuple
+       346365120090976204827271903090867044985564393183692787556584961381525869
+       %t.590))
+  (= %t.585 %t.592 (call %transientHash.55 %t.591))
+  (= %t.585 %t.593 (call %upgradeFromTransient.54 %t.592))
+  (= %t.585 %t.594 (elt-ref %coin.122 color))
+  (= %t.585
+     %changeCoin.292
+     (new (tstruct
+            ShieldedCoinInfo
+            (nonce (tbytes 32))
+            (color (tbytes 32))
+            (value (tunsigned 340282366920938463463374607431768211455)))
+          %t.593
+          %t.594
+          %change.283))
+  (= %t.585
+     %t.595
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= %t.585
+     %t.596
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.595
+          %selfAddr.278))
+  (= %t.585
+     %t.597
+     (call %createZswapOutput.37 %changeCoin.292 %t.596))
+  (= %t.585 %t.598 (elt-ref %selfAddr.278 bytes))
+  (= %t.585
+     %t.599
+     (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+            (info
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455))))
+            (dataType (tboolean)) (data (tbytes 32)))
+          #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+               45 99 99 91 118 49 93)
+          %changeCoin.292 #f %t.598))
+  (= %t.585 %cm.294 (call %persistentHash.68 %t.599))
+  (= %t.585
+     %t.600
+     (public-ledger %kernel.19 () claimZswapCoinSpend %cm.294))
+  (= %t.585
+     %t.601
+     (public-ledger %kernel.19 () claimZswapCoinReceive %cm.294))
+  (= %t.585
+     %t.602
+     (new (tstruct
+            Maybe
+            (is_some (tboolean))
+            (value
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          #t
+          %changeCoin.292))
+  (= %t.585
+     %t.603
+     (new (tstruct
+            ShieldedSendResult
+            (change
+              (tstruct
+                Maybe
+                (is_some (tboolean))
+                (value
+                  (tstruct
+                    ShieldedCoinInfo
+                    (nonce (tbytes 32))
+                    (color (tbytes 32))
+                    (value
+                      (tunsigned
+                        340282366920938463463374607431768211455))))))
+            (sent
+              (tstruct
+                ShieldedCoinInfo
+                (nonce (tbytes 32))
+                (color (tbytes 32))
+                (value
+                  (tunsigned 340282366920938463463374607431768211455)))))
+          %t.602
+          %output.285))
+  (= #t %burned.273 (select %t.583 %t.588 %t.603))
+  (= #t %change.123 (elt-ref %burned.273 change))
+  (= #t %t.604 (public-ledger %_totalBurned.4 (5) read))
+  (= #t %t.605 (+ 129 %t.604 %amount.121))
+  (= #t
+     %tmp.300
+     (downcast-unsigned
+       680564733841876926926749214863536422910
+       340282366920938463463374607431768211455
+       %t.605))
+  (= #t
+     %t.606
+     (public-ledger %_totalBurned.4 (5) write %tmp.300))
+  (= #t
+     %t.607
+     (public-ledger %_treasury.6 (6) remove %key.120))
+  (= #t %t.608 (elt-ref %change.123 is_some))
+  (= #t %t.609 (select %t.608 #t #f))
+  (= #t %t.610 (select %t.608 #f #t))
+  (= %t.609 %t.611 (elt-ref %change.123 value))
+  (= %t.609 %tmp.143 (elt-ref %t.611 nonce))
+  (= %t.609 %tmp.144 (elt-ref %change.123 value))
+  (= %t.609 %value.301 (public-ledger %kernel.19 () self))
+  (= %t.609
+     %t.612
+     (default (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+  (= %t.609
+     %tmp.145
+     (new (tstruct
+            Either
+            (is_left (tboolean))
+            (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+            (right (tstruct ContractAddress (bytes (tbytes 32)))))
+          #f
+          %t.612
+          %value.301))
+  (= %t.609
+     %t.613
+     (public-ledger %_treasury.6 (6) insertCoin %tmp.143 %tmp.144
+       %tmp.145))
+  (= %t.610 %t.614 (tuple)) (= #t %t.615 (tuple)) %t.615))

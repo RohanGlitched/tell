@@ -1,0 +1,55 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.6 () (Kernel)))
+  (public-ledger-declaration
+    ((%result.3 (0) (__compact_Cell (tunsigned 65535)))))
+  (circuit %add.0
+    ((%num1.7 (tunsigned 65535)) (%num2.8 (tunsigned 65535)))
+    (ttuple) (= #t %t.26 (+ 17 %num1.7 %num2.8))
+    (= #t %tmp.22 (downcast-unsigned 131070 65535 %t.26))
+    (= #t %t.27 (public-ledger %result.3 (0) write %tmp.22))
+    (= #t %t.28 (tuple)) %t.28)
+  (circuit %subtract.5
+    ((%num1.9 (tunsigned 65535)) (%num2.10 (tunsigned 65535)))
+    (ttuple) (= #t %t.29 (< 16 %num1.9 %num2.10))
+    (= #t %t.30 (select %t.29 #t #f))
+    (= #t %t.31 (select %t.29 #f #t))
+    (= #t %t.32 (select %t.29 #f #t))
+    (= #t %t.33 (select #t %t.32 #t))
+    (assert %t.33 "result of subtraction would be negative")
+    (= #t %t.34 (tuple)) (= #t %tmp.23 (- 16 %num1.9 %num2.10))
+    (= #t %t.35 (public-ledger %result.3 (0) write %tmp.23))
+    (= #t %t.36 (tuple)) %t.36)
+  (circuit %multiply.2
+    ((%num1.11 (tunsigned 65535)) (%num2.12 (tunsigned 65535)))
+    (ttuple) (= #t %t.37 (* 32 %num1.11 %num2.12))
+    (= #t %tmp.24 (downcast-unsigned 4294836225 65535 %t.37))
+    (= #t %t.38 (public-ledger %result.3 (0) write %tmp.24))
+    (= #t %t.39 (tuple)) %t.39)
+  (circuit %square.4 ((%num1.13 (tunsigned 65535))) (ttuple)
+    (= #t %t.40 (* 32 %num1.13 %num1.13))
+    (= #t %tmp.25 (downcast-unsigned 4294836225 65535 %t.40))
+    (= #t %t.41 (public-ledger %result.3 (0) write %tmp.25))
+    (= #t %t.42 (tuple)) %t.42)
+  (witness
+    %divMod.14
+    ((%num1.15 (tunsigned 65535)) (%num2.16 (tunsigned 65535)))
+    (ttuple (tunsigned 65535) (tunsigned 65535)))
+  (circuit %divide.1
+    ((%num1.17 (tunsigned 65535)) (%num2.18 (tunsigned 65535)))
+    (ttuple)
+    (= #t
+       %__compact_pattern_tmp1.19
+       (call %divMod.14 %num1.17 %num2.18))
+    (= #t %quo.20 (tuple-ref %__compact_pattern_tmp1.19 0))
+    (= #t %rem.21 (tuple-ref %__compact_pattern_tmp1.19 1))
+    (= #t %t.43 (< 16 %rem.21 %num2.18))
+    (= #t %t.44 (select %t.43 #t #f))
+    (= #t %t.45 (select %t.43 #f #t))
+    (= %t.44 %t.46 (* 32 %quo.20 %num2.18))
+    (= %t.44 %t.47 (+ 32 %t.46 %rem.21))
+    (= %t.44 %t.48 (== %t.47 %num1.17))
+    (= #t %t.49 (select %t.43 %t.48 #f))
+    (= #t %t.50 (select #t %t.49 #t))
+    (assert %t.50 "incorrect division") (= #t %t.51 (tuple))
+    (= #t %t.52 (public-ledger %result.3 (0) write %quo.20))
+    (= #t %t.53 (tuple)) %t.53))

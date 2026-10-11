@@ -1,0 +1,14 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%players.1
+       (0)
+       (Set (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))))
+  (native
+    %ownPublicKey.3
+    ()
+    (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+  (circuit %join.0 () (ttuple) (= #t %tmp.4 (call %ownPublicKey.3))
+    (= #t %t.5 (public-ledger %players.1 (0) insert %tmp.4))
+    (= #t %t.6 (tuple)) %t.6))

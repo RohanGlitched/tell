@@ -1,0 +1,11 @@
+reduce-to-circuit:
+(program
+  (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration
+    ((%message.0 (0) (__compact_Cell (topaque "string")))))
+  (circuit %storeMessage.1 ((%newMessage.3 (topaque "string")))
+    (ttuple)
+    (= #t
+       %t.4
+       (public-ledger %message.0 (0) write %newMessage.3))
+    (= #t %t.5 (tuple)) %t.5))

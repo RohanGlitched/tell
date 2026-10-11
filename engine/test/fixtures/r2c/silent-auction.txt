@@ -1,0 +1,480 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.15 () (Kernel)))
+  (public-ledger-declaration
+    ((%auctionOrganizer.0 (0) (__compact_Cell (tbytes 32))) (%hiddenPrice.7 (1) (__compact_Cell (tbytes 32)))
+      (%maxBids.9 (2) (__compact_Cell (tunsigned 65535)))
+      (%depositAmount.6
+        (3)
+        (__compact_Cell (tunsigned 18446744073709551615)))
+      (%publicPrice.12 (4) (__compact_Cell (tunsigned 65535)))
+      (%bidders.3 (5) (Map (tbytes 32) (tunsigned 65535)))
+      (%highestBid.8 (6) (__compact_Cell (tunsigned 65535)))
+      (%auctionState.1 (7) (__compact_Cell (tunsigned 3)))
+      (%nftType.10 (8) (__compact_Cell (tbytes 32)))
+      (%organizerAddress.11
+        (9)
+        (__compact_Cell
+          (tstruct UserAddress (bytes (tbytes 32)))))))
+  (native
+    %persistentHash.39
+    ((%value.40 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.26
+    ((%value.41 (tvector 2 (tbytes 32))) (%rand.42 (tbytes 32)))
+    (tbytes 32))
+  (native
+    %persistentCommit.43
+    ((%value.44 (tunsigned 65535)) (%rand.45 (tbytes 32)))
+    (tbytes 32))
+  (witness %localSk.46 () (tbytes 32))
+  (witness %localSalt.47 () (tbytes 32))
+  (circuit %receiveTokens.13 () (ttuple)
+   (= #t %t.164 (public-ledger %auctionState.1 (7) read))
+   (= #t %t.165 (== %t.164 2))
+   (= #t %t.166 (select #t %t.165 #t))
+   (assert
+     %t.166
+     "The contract is not ready to receive Night tokens")
+   (= #t %t.167 (tuple)) (= #t %_sk.57 (call %localSk.46))
+   (= #t
+      %t.168
+      (tuple
+        #vu8(115 105 108 101 110 116 45 97 117 99 116 105 111 110 58
+             112 107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.57))
+   (= #t %hash.100 (call %persistentHash.39 %t.168))
+   (= #t %pubKey.58 %hash.100)
+   (= #t %t.169 (public-ledger %auctionOrganizer.0 (0) read))
+   (= #t %t.170 (== %t.169 %pubKey.58))
+   (= #t %t.171 (select #t %t.170 #t))
+   (assert %t.171 "You are not the auctionOrganizer")
+   (= #t %t.172 (tuple))
+   (= #t
+      %color.101
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t %amount.102 (public-ledger %depositAmount.6 (3) read))
+   (= #t %t.173 (default (tbytes 32)))
+   (= #t
+      %tmp.103
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.101
+           %t.173))
+   (= #t
+      %t.174
+      (public-ledger %kernel.15 () incUnshieldedInputs %tmp.103
+        %amount.102))
+   (= #t
+      %domain.59
+      #vu8(97 117 99 116 105 111 110 58 110 102 116 0 0 0 0 0 0 0
+           0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %value.108 (public-ledger %kernel.15 () self))
+   (= #t
+      %t.175
+      (default (tstruct UserAddress (bytes (tbytes 32)))))
+   (= #t
+      %recipient.107
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ContractAddress (bytes (tbytes 32))))
+             (right (tstruct UserAddress (bytes (tbytes 32)))))
+           #t
+           %value.108
+           %t.175))
+   (= #t
+      %t.176
+      (public-ledger %kernel.15 () mintUnshielded %domain.59 1))
+   (= #t
+      %contractAddress.111
+      (public-ledger %kernel.15 () self))
+   (= #t %t.177 (elt-ref %contractAddress.111 bytes))
+   (= #t %t.178 (tuple %domain.59 %t.177))
+   (= #t
+      %color.109
+      (call
+        %persistentCommit.26
+        %t.178
+        #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+             101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+   (= #t %t.179 (default (tbytes 32)))
+   (= #t
+      %tmp.112
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.109
+           %t.179))
+   (= #t
+      %t.180
+      (public-ledger %kernel.15 () claimUnshieldedCoinSpend
+        %tmp.112 %recipient.107 1))
+   (= #t %t.181 (elt-ref %recipient.107 left))
+   (= #t %t.182 (elt-ref %t.181 bytes))
+   (= #t %t.183 (public-ledger %kernel.15 () self))
+   (= #t %t.184 (elt-ref %t.183 bytes))
+   (= #t %t.185 (== %t.182 %t.184))
+   (= #t %t.186 (select %t.185 #t #f))
+   (= #t %t.187 (select %t.185 #f #t))
+   (= %t.186 %t.188 (default (tbytes 32)))
+   (= %t.186
+      %tmp.115
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.109
+           %t.188))
+   (= %t.186
+      %t.189
+      (public-ledger %kernel.15 () incUnshieldedInputs %tmp.115
+        1))
+   (= %t.187 %t.190 (tuple))
+   (= #t
+      %contractAddress.119
+      (public-ledger %kernel.15 () self))
+   (= #t %t.191 (elt-ref %contractAddress.119 bytes))
+   (= #t %t.192 (tuple %domain.59 %t.191))
+   (= #t
+      %tmp.94
+      (call
+        %persistentCommit.26
+        %t.192
+        #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+             101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+   (= #t %t.193 (public-ledger %nftType.10 (8) write %tmp.94))
+   (= #t %t.194 (public-ledger %auctionState.1 (7) write 1))
+   (= #t %t.195 (tuple)) %t.195)
+  (circuit %bid.2 ((%bidAmount.61 (tunsigned 65535))) (ttuple)
+   (= #t %t.81 (public-ledger %bidders.3 (5) size))
+   (= #t %t.196 (public-ledger %maxBids.9 (2) read))
+   (= #t %t.197 (< 64 %t.81 %t.196))
+   (= #t %t.198 (select #t %t.197 #t))
+   (assert %t.198 "Sorry, bids are full") (= #t %t.199 (tuple))
+   (= #t %t.200 (public-ledger %auctionState.1 (7) read))
+   (= #t %t.201 (== %t.200 1))
+   (= #t %t.202 (select #t %t.201 #t))
+   (assert %t.202 "The auction has ended")
+   (= #t %t.203 (tuple)) (= #t %_sk.62 (call %localSk.46))
+   (= #t
+      %t.204
+      (tuple
+        #vu8(115 105 108 101 110 116 45 97 117 99 116 105 111 110 58
+             112 107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.62))
+   (= #t %hash.121 (call %persistentHash.39 %t.204))
+   (= #t %key.63 %hash.121)
+   (= #t %t.205 (public-ledger %auctionOrganizer.0 (0) read))
+   (= #t %t.206 (== %t.205 %key.63))
+   (= #t %t.207 (select %t.206 #t #f))
+   (= #t %t.208 (select %t.206 #f #t))
+   (= #t %t.209 (select %t.206 #f #t))
+   (= #t %t.210 (select #t %t.209 #t))
+   (assert %t.210 "The auction organizer cannot bid")
+   (= #t %t.211 (tuple))
+   (= #t %t.212 (public-ledger %bidders.3 (5) member %key.63))
+   (= #t %t.213 (select %t.212 #t #f))
+   (= #t %t.214 (select %t.212 #f #t))
+   (= %t.213
+      %t.82
+      (public-ledger %bidders.3 (5) lookup %key.63))
+   (= %t.213 %t.215 (< 16 %t.82 %bidAmount.61))
+   (= #t %t.216 (select %t.213 %t.215 #t))
+   (assert %t.216 "New bid lower than your previous bid")
+   (= %t.213 %t.217 (tuple)) (= %t.214 %t.218 (tuple))
+   (= #t
+      %t.219
+      (public-ledger %bidders.3 (5) insert %key.63 %bidAmount.61))
+   (= #t %t.220 (public-ledger %highestBid.8 (6) read))
+   (= #t %t.221 (< 16 %t.220 %bidAmount.61))
+   (= #t %t.222 (select %t.221 #t #f))
+   (= #t %t.223 (select %t.221 #f #t))
+   (= %t.222
+      %t.224
+      (public-ledger %highestBid.8 (6) write %bidAmount.61))
+   (= %t.223 %t.225 (tuple))
+   (= #t %t.226 (public-ledger %bidders.3 (5) size))
+   (= #t %t.227 (public-ledger %maxBids.9 (2) read))
+   (= #t %t.228 (== %t.226 %t.227))
+   (= #t %t.229 (select %t.228 #t #f))
+   (= #t %t.230 (select %t.228 #f #t))
+   (= %t.229
+      %t.231
+      (public-ledger %auctionState.1 (7) write 0))
+   (= %t.230 %t.232 (tuple)) (= #t %t.233 (tuple)) %t.233)
+  (circuit %closeAuction.5 () (ttuple)
+   (= #t %_sk.66 (call %localSk.46))
+   (= #t
+      %t.234
+      (tuple
+        #vu8(115 105 108 101 110 116 45 97 117 99 116 105 111 110 58
+             112 107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.66))
+   (= #t %hash.123 (call %persistentHash.39 %t.234))
+   (= #t %pubKey.67 %hash.123)
+   (= #t %t.235 (public-ledger %auctionOrganizer.0 (0) read))
+   (= #t %t.236 (== %pubKey.67 %t.235))
+   (= #t %t.237 (select #t %t.236 #t))
+   (assert %t.237 "You are not the auction organizer")
+   (= #t %t.238 (tuple))
+   (= #t %t.239 (public-ledger %auctionState.1 (7) read))
+   (= #t %t.240 (== %t.239 1))
+   (= #t %t.241 (select #t %t.240 #t))
+   (assert %t.241 "The auction has already been closed")
+   (= #t %t.242 (tuple))
+   (= #t %t.243 (public-ledger %auctionState.1 (7) write 0))
+   (= #t %t.244 (tuple)) %t.244)
+  (circuit %revealWin.14 ((%minPrice.68 (tunsigned 65535)))
+   (ttuple) (= #t %_sk.69 (call %localSk.46))
+   (= #t
+      %t.245
+      (tuple
+        #vu8(115 105 108 101 110 116 45 97 117 99 116 105 111 110 58
+             112 107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.69))
+   (= #t %hash.125 (call %persistentHash.39 %t.245))
+   (= #t %pubKey.70 %hash.125)
+   (= #t %t.246 (public-ledger %auctionOrganizer.0 (0) read))
+   (= #t %t.247 (== %t.246 %pubKey.70))
+   (= #t %t.248 (select #t %t.247 #t))
+   (assert %t.248 "You are not the auction organizer")
+   (= #t %t.249 (tuple))
+   (= #t %t.250 (public-ledger %auctionState.1 (7) read))
+   (= #t %t.251 (== %t.250 0))
+   (= #t %t.252 (select #t %t.251 #t))
+   (assert %t.252 "The auction is still open")
+   (= #t %t.253 (tuple)) (= #t %_salt.71 (call %localSalt.47))
+   (= #t
+      %hashedPrice.72
+      (call %persistentCommit.43 %minPrice.68 %_salt.71))
+   (= #t %t.254 (public-ledger %hiddenPrice.7 (1) read))
+   (= #t %t.255 (== %hashedPrice.72 %t.254))
+   (= #t %t.256 (select #t %t.255 #t))
+   (assert
+     %t.256
+     "Attempt to change min price detected, shame on you.")
+   (= #t %t.257 (tuple))
+   (= #t %t.258 (public-ledger %auctionState.1 (7) write 0))
+   (= #t
+      %t.259
+      (public-ledger %publicPrice.12 (4) write %minPrice.68))
+   (= #t %t.83 (public-ledger %highestBid.8 (6) read))
+   (= #t %t.260 (public-ledger %publicPrice.12 (4) read))
+   (= #t %t.261 (< 16 %t.83 %t.260))
+   (= #t %t.262 (select %t.261 #t #f))
+   (= #t %t.263 (select %t.261 #f #t))
+   (= %t.262
+      %color.128
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= %t.262
+      %amount.129
+      (public-ledger %depositAmount.6 (3) read))
+   (= %t.262
+      %value.131
+      (public-ledger %organizerAddress.11 (9) read))
+   (= %t.262
+      %t.264
+      (default (tstruct ContractAddress (bytes (tbytes 32)))))
+   (= %t.262
+      %recipient.130
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ContractAddress (bytes (tbytes 32))))
+             (right (tstruct UserAddress (bytes (tbytes 32)))))
+           #f
+           %t.264
+           %value.131))
+   (= %t.262 %t.265 (default (tbytes 32)))
+   (= %t.262
+      %tmp.132
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.128
+           %t.265))
+   (= %t.262
+      %t.266
+      (public-ledger %kernel.15 () incUnshieldedOutputs %tmp.132
+        %amount.129))
+   (= %t.262 %t.267 (default (tbytes 32)))
+   (= %t.262
+      %tmp.134
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.128
+           %t.267))
+   (= %t.262
+      %t.268
+      (public-ledger %kernel.15 () claimUnshieldedCoinSpend
+        %tmp.134 %recipient.130 %amount.129))
+   (= %t.263 %t.269 (tuple)) (= #t %t.270 (tuple)) %t.270)
+  (circuit %claimWin.4
+   ((%winnerAddress.73
+      (tstruct UserAddress (bytes (tbytes 32)))))
+   (ttuple) (= #t %_sk.74 (call %localSk.46))
+   (= #t
+      %t.271
+      (tuple
+        #vu8(115 105 108 101 110 116 45 97 117 99 116 105 111 110 58
+             112 107 58 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.74))
+   (= #t %hash.139 (call %persistentHash.39 %t.271))
+   (= #t %pubKey.75 %hash.139)
+   (= #t
+      %t.272
+      (public-ledger %bidders.3 (5) member %pubKey.75))
+   (= #t %t.273 (select #t %t.272 #t))
+   (assert %t.273 "You are not in the bidders list")
+   (= #t %t.274 (tuple))
+   (= #t
+      %t.275
+      (public-ledger %bidders.3 (5) lookup %pubKey.75))
+   (= #t %t.276 (public-ledger %highestBid.8 (6) read))
+   (= #t %t.277 (== %t.275 %t.276))
+   (= #t %t.278 (select #t %t.277 #t))
+   (assert %t.278 "You are not the high bidder")
+   (= #t %t.279 (tuple))
+   (= #t %t.280 (public-ledger %auctionState.1 (7) read))
+   (= #t %t.281 (== %t.280 0))
+   (= #t %t.282 (select #t %t.281 #t))
+   (assert %t.282 "The auction is not yet closed")
+   (= #t %t.283 (tuple))
+   (= #t
+      %color.140
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t %amount.141 (public-ledger %highestBid.8 (6) read))
+   (= #t %t.284 (default (tbytes 32)))
+   (= #t
+      %tmp.142
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.140
+           %t.284))
+   (= #t
+      %t.285
+      (public-ledger %kernel.15 () incUnshieldedInputs %tmp.142
+        %amount.141))
+   (= #t %color.144 (public-ledger %nftType.10 (8) read))
+   (= #t
+      %t.286
+      (default (tstruct ContractAddress (bytes (tbytes 32)))))
+   (= #t
+      %recipient.146
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ContractAddress (bytes (tbytes 32))))
+             (right (tstruct UserAddress (bytes (tbytes 32)))))
+           #f
+           %t.286
+           %winnerAddress.73))
+   (= #t %t.287 (default (tbytes 32)))
+   (= #t
+      %tmp.148
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.144
+           %t.287))
+   (= #t
+      %t.288
+      (public-ledger %kernel.15 () incUnshieldedOutputs %tmp.148
+        1))
+   (= #t %t.289 (default (tbytes 32)))
+   (= #t
+      %tmp.150
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.144
+           %t.289))
+   (= #t
+      %t.290
+      (public-ledger %kernel.15 () claimUnshieldedCoinSpend
+        %tmp.150 %recipient.146 1))
+   (= #t %t.291 (public-ledger %highestBid.8 (6) read))
+   (= #t %t.292 (public-ledger %depositAmount.6 (3) read))
+   (= #t %total.76 (+ 65 %t.291 %t.292))
+   (= #t
+      %color.154
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t
+      %value.157
+      (public-ledger %organizerAddress.11 (9) read))
+   (= #t
+      %t.293
+      (default (tstruct ContractAddress (bytes (tbytes 32)))))
+   (= #t
+      %recipient.156
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ContractAddress (bytes (tbytes 32))))
+             (right (tstruct UserAddress (bytes (tbytes 32)))))
+           #f
+           %t.293
+           %value.157))
+   (= #t %t.294 (default (tbytes 32)))
+   (= #t
+      %tmp.158
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.154
+           %t.294))
+   (= #t
+      %t.295
+      (public-ledger %kernel.15 () incUnshieldedOutputs %tmp.158
+        %total.76))
+   (= #t %t.296 (default (tbytes 32)))
+   (= #t
+      %tmp.160
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.154
+           %t.296))
+   (= #t
+      %t.297
+      (public-ledger %kernel.15 () claimUnshieldedCoinSpend
+        %tmp.160 %recipient.156 %total.76))
+   (= #t %t.298 (public-ledger %auctionState.1 (7) write 3))
+   (= #t %t.299 (tuple)) %t.299))

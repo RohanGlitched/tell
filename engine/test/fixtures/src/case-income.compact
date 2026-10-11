@@ -1,0 +1,12 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger highEarners: Counter;
+export ledger others: Counter;
+witness individualIncome(): Uint<64>;
+export circuit file(): [] {
+  if (disclose(individualIncome() > 50000)) {
+    highEarners.increment(1);
+  } else {
+    others.increment(1);
+  }
+}

@@ -1,0 +1,419 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.20 () (Kernel)))
+  (public-ledger-declaration
+    ((%player1.12 (0) (__compact_Cell (tbytes 32))) (%player2.15 (1) (__compact_Cell (tbytes 32)))
+      (%turn.18 (2) (__compact_Cell (tunsigned 3)))
+      (%board1.1 (3) (Set (tbytes 32)))
+      (%board2.5 (4) (Set (tbytes 32)))
+      (%board1State.4 (5) (__compact_Cell (tunsigned 1)))
+      (%board2State.8 (6) (__compact_Cell (tunsigned 1)))
+      (%player1Shot.14 (7) (List (tunsigned 255)))
+      (%player2Shot.17 (8) (List (tunsigned 255)))
+      (%board1Hits.3 (9) (Set (tunsigned 255)))
+      (%board2Hits.7 (10) (Set (tunsigned 255)))
+      (%winState.19 (11) (__compact_Cell (tunsigned 2)))
+      (%board1HitCount.2 (12) (Counter))
+      (%board2HitCount.6 (13) (Counter))))
+  (native
+    %persistentHash.21
+    ((%value.22 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness
+    %localSetBoard.23
+    ((%_x1.24 (tunsigned 255)) (%_x2.25 (tunsigned 255)))
+    (tunsigned 1))
+  (witness
+    %localCheckBoard.26
+    ((%x.27 (tunsigned 255)))
+    (tunsigned 1))
+  (witness %localSk.28 () (tbytes 32))
+  (circuit %acceptGame.0
+   ((%_x1.37 (tunsigned 255)) (%_x2.38 (tunsigned 255)))
+   (ttuple) (= #t %_sk.39 (call %localSk.28))
+   (= #t
+      %t.94
+      (tuple
+        #vu8(98 97 116 116 108 101 115 104 105 112 58 112 107 58 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.39))
+   (= #t %pubKey.40 (call %persistentHash.21 %t.94))
+   (= #t %t.95 (public-ledger %player1.12 (0) read))
+   (= #t %t.96 (== %t.95 %pubKey.40))
+   (= #t %t.97 (select %t.96 #t #f))
+   (= #t %t.98 (select %t.96 #f #t))
+   (= #t %t.99 (select %t.96 #f #t))
+   (= #t %t.100 (select #t %t.99 #t))
+   (assert %t.100 "You cannot play against yourself")
+   (= #t %t.101 (tuple))
+   (= #t %t.102 (public-ledger %board2State.8 (6) read))
+   (= #t %t.103 (== %t.102 0))
+   (= #t %t.104 (select #t %t.103 #t))
+   (assert %t.104 "There is already a player2")
+   (= #t %t.105 (tuple)) (= #t %t.106 (== %_x1.37 %_x2.38))
+   (= #t %t.107 (select %t.106 #t #f))
+   (= #t %t.108 (select %t.106 #f #t))
+   (= #t %t.109 (select %t.106 #f #t))
+   (= #t %t.110 (select #t %t.109 #t))
+   (assert %t.110 "Cannot use the same number twice")
+   (= #t %t.111 (tuple)) (= #t %t.112 (< 8 0 %_x1.37))
+   (= #t %t.113 (select %t.112 #t #f))
+   (= #t %t.114 (select %t.112 #f #t))
+   (= %t.113 %t.115 (< 8 0 %_x2.38))
+   (= #t %t.116 (select %t.112 %t.115 #f))
+   (= #t %t.117 (select #t %t.116 #t))
+   (assert
+     %t.117
+     "No zero index, please keep ships on the board")
+   (= #t %t.118 (tuple)) (= #t %t.119 (< 8 20 %_x1.37))
+   (= #t %t.120 (select %t.119 #t #f))
+   (= #t %t.121 (select %t.119 #f #t))
+   (= #t %t.122 (select %t.119 #f #t))
+   (= #t %t.123 (select %t.122 #t #f))
+   (= #t %t.124 (select %t.122 #f #t))
+   (= %t.123 %t.125 (< 8 20 %_x2.38))
+   (= #t %t.126 (select %t.125 %t.123 #f))
+   (= #t %t.127 (select %t.125 #f %t.123))
+   (= %t.123 %t.128 (select %t.125 #f #t))
+   (= #t %t.129 (select %t.122 %t.128 #f))
+   (= #t %t.130 (select #t %t.129 #t))
+   (assert
+     %t.130
+     "Out of bounds, please keep ships on the board")
+   (= #t %t.131 (tuple))
+   (= #t
+      %t.132
+      (public-ledger %player2.15 (1) write %pubKey.40))
+   (= #t %_x.78 (field->bytes 32 %_x1.37))
+   (= #t %t.133 (tuple %_x.78 %_sk.39))
+   (= #t %hash.80 (call %persistentHash.21 %t.133))
+   (= #t %hash1.41 %hash.80)
+   (= #t %t.134 (public-ledger %board2.5 (4) insert %hash1.41))
+   (= #t %_x.81 (field->bytes 32 %_x2.38))
+   (= #t %t.135 (tuple %_x.81 %_sk.39))
+   (= #t %hash.83 (call %persistentHash.21 %t.135))
+   (= #t %hash2.42 %hash.83)
+   (= #t %t.136 (public-ledger %board2.5 (4) insert %hash2.42))
+   (= #t
+      %localBoardState.43
+      (call %localSetBoard.23 %_x1.37 %_x2.38))
+   (= #t %t.137 (== %localBoardState.43 1))
+   (= #t %t.138 (select #t %t.137 #t))
+   (assert
+     %t.138
+     "Please update the state of your board to SET")
+   (= #t %t.139 (tuple))
+   (= #t
+      %t.140
+      (public-ledger
+        %board2State.8
+        (6)
+        write
+        %localBoardState.43))
+   (= #t %t.141 (public-ledger %turn.18 (2) write 0))
+   (= #t %t.142 (tuple)) %t.142)
+  (circuit %player1Shoot.13 ((%x.44 (tunsigned 255))) (ttuple)
+   (= #t %_sk.45 (call %localSk.28))
+   (= #t
+      %t.143
+      (tuple
+        #vu8(98 97 116 116 108 101 115 104 105 112 58 112 107 58 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.45))
+   (= #t %pubKey.46 (call %persistentHash.21 %t.143))
+   (= #t %t.144 (public-ledger %player1.12 (0) read))
+   (= #t %t.145 (== %t.144 %pubKey.46))
+   (= #t %t.146 (select #t %t.145 #t))
+   (assert %t.146 "You are not player1") (= #t %t.147 (tuple))
+   (= #t %t.148 (public-ledger %board2State.8 (6) read))
+   (= #t %t.149 (== %t.148 1))
+   (= #t %t.150 (select #t %t.149 #t))
+   (assert %t.150 "Player 2 has not yet set their board")
+   (= #t %t.151 (tuple))
+   (= #t %t.152 (public-ledger %turn.18 (2) read))
+   (= #t %t.153 (== %t.152 0))
+   (= #t %t.154 (select #t %t.153 #t))
+   (assert %t.154 "It is not player1 turn to shoot")
+   (= #t %t.155 (tuple))
+   (= #t %t.156 (public-ledger %winState.19 (11) read))
+   (= #t %t.157 (== %t.156 0))
+   (= #t %t.158 (select #t %t.157 #t))
+   (assert %t.158 "A winner has already been declared")
+   (= #t %t.159 (tuple)) (= #t %t.160 (< 8 0 %x.44))
+   (= #t %t.161 (select %t.160 #t #f))
+   (= #t %t.162 (select %t.160 #f #t))
+   (= %t.161 %t.163 (< 8 20 %x.44))
+   (= #t %t.164 (select %t.163 %t.161 #f))
+   (= #t %t.165 (select %t.163 #f %t.161))
+   (= %t.161 %t.166 (select %t.163 #f #t))
+   (= #t %t.167 (select %t.160 %t.166 #f))
+   (= #t %t.168 (select #t %t.167 #t))
+   (assert
+     %t.168
+     "Shot out of bounds, please shoot on the board")
+   (= #t %t.169 (tuple))
+   (= #t
+      %t.170
+      (public-ledger %board2Hits.7 (10) member %x.44))
+   (= #t %t.171 (select %t.170 #t #f))
+   (= #t %t.172 (select %t.170 #f #t))
+   (= #t %t.173 (select %t.170 #f #t))
+   (= #t %t.174 (select #t %t.173 #t))
+   (assert
+     %t.174
+     "Cheat Detected: Player1: Attempt to repeat a previous HIT")
+   (= #t %t.175 (tuple))
+   (= #t
+      %t.176
+      (public-ledger %player1Shot.14 (7) pushFront %x.44))
+   (= #t %t.177 (public-ledger %turn.18 (2) write 3))
+   (= #t %t.178 (tuple)) %t.178)
+  (circuit %player2Shoot.16 ((%x.48 (tunsigned 255))) (ttuple)
+   (= #t %_sk.49 (call %localSk.28))
+   (= #t
+      %t.179
+      (tuple
+        #vu8(98 97 116 116 108 101 115 104 105 112 58 112 107 58 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.49))
+   (= #t %pubKey.50 (call %persistentHash.21 %t.179))
+   (= #t %t.180 (public-ledger %player2.15 (1) read))
+   (= #t %t.181 (== %t.180 %pubKey.50))
+   (= #t %t.182 (select #t %t.181 #t))
+   (assert %t.182 "You are not player2") (= #t %t.183 (tuple))
+   (= #t %t.184 (public-ledger %turn.18 (2) read))
+   (= #t %t.185 (== %t.184 2))
+   (= #t %t.186 (select #t %t.185 #t))
+   (assert %t.186 "It is not player2 turn to shoot")
+   (= #t %t.187 (tuple))
+   (= #t %t.188 (public-ledger %winState.19 (11) read))
+   (= #t %t.189 (== %t.188 0))
+   (= #t %t.190 (select #t %t.189 #t))
+   (assert %t.190 "A winner has already been declared")
+   (= #t %t.191 (tuple)) (= #t %t.192 (< 8 0 %x.48))
+   (= #t %t.193 (select %t.192 #t #f))
+   (= #t %t.194 (select %t.192 #f #t))
+   (= %t.193 %t.195 (< 8 20 %x.48))
+   (= #t %t.196 (select %t.195 %t.193 #f))
+   (= #t %t.197 (select %t.195 #f %t.193))
+   (= %t.193 %t.198 (select %t.195 #f #t))
+   (= #t %t.199 (select %t.192 %t.198 #f))
+   (= #t %t.200 (select #t %t.199 #t))
+   (assert
+     %t.200
+     "Shot out of bounds, please shoot on the board")
+   (= #t %t.201 (tuple))
+   (= #t %t.202 (public-ledger %board1Hits.3 (9) member %x.48))
+   (= #t %t.203 (select %t.202 #t #f))
+   (= #t %t.204 (select %t.202 #f #t))
+   (= #t %t.205 (select %t.202 #f #t))
+   (= #t %t.206 (select #t %t.205 #t))
+   (assert
+     %t.206
+     "Cheat Detected: Player2: Attempt to repeat a previous HIT")
+   (= #t %t.207 (tuple))
+   (= #t
+      %t.208
+      (public-ledger %player2Shot.17 (8) pushFront %x.48))
+   (= #t %t.209 (public-ledger %turn.18 (2) write 1))
+   (= #t %t.210 (tuple)) %t.210)
+  (circuit %checkBoard1.9 () (ttuple)
+   (= #t %_sk.52 (call %localSk.28))
+   (= #t
+      %t.211
+      (tuple
+        #vu8(98 97 116 116 108 101 115 104 105 112 58 112 107 58 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.52))
+   (= #t %pubKey.53 (call %persistentHash.21 %t.211))
+   (= #t %t.212 (public-ledger %player1.12 (0) read))
+   (= #t %t.213 (== %t.212 %pubKey.53))
+   (= #t %t.214 (select #t %t.213 #t))
+   (assert %t.214 "You are not player1") (= #t %t.215 (tuple))
+   (= #t %t.216 (public-ledger %winState.19 (11) read))
+   (= #t %t.217 (== %t.216 0))
+   (= #t %t.218 (select #t %t.217 #t))
+   (assert %t.218 "A winner has already been declared")
+   (= #t %t.219 (tuple))
+   (= #t %t.220 (public-ledger %turn.18 (2) read))
+   (= #t %t.221 (== %t.220 1))
+   (= #t %t.222 (select #t %t.221 #t))
+   (assert %t.222 "It is not Player 1 turn to CHECK")
+   (= #t %t.223 (tuple))
+   (= #t %t.224 (public-ledger %player2Shot.17 (8) isEmpty))
+   (= #t %t.225 (select %t.224 #t #f))
+   (= #t %t.226 (select %t.224 #f #t))
+   (= #t %t.227 (select %t.224 #f #t))
+   (= #t %t.228 (select #t %t.227 #t))
+   (assert %t.228 "No shot to check") (= #t %t.229 (tuple))
+   (= #t %t.230 (public-ledger %player2Shot.17 (8) head))
+   (= #t %currentShot.54 (elt-ref %t.230 value))
+   (= #t
+      %t.231
+      (public-ledger %board1Hits.3 (9) member %currentShot.54))
+   (= #t %t.232 (select %t.231 #t #f))
+   (= #t %t.233 (select %t.231 #f #t))
+   (= #t %t.234 (select %t.231 #f #t))
+   (= #t %t.235 (select #t %t.234 #t))
+   (assert
+     %t.235
+     "Cheat Detected: Player2: Attempt to repeat a previous HIT")
+   (= #t %t.236 (tuple))
+   (= #t %t.237 (public-ledger %player2Shot.17 (8) popFront))
+   (= #t %_x.87 (field->bytes 32 %currentShot.54))
+   (= #t %t.238 (tuple %_x.87 %_sk.52))
+   (= #t %hash.89 (call %persistentHash.21 %t.238))
+   (= #t %honestyCheckHash.55 %hash.89)
+   (= #t
+      %shotState.56
+      (call %localCheckBoard.26 %currentShot.54))
+   (= #t %t.239 (== %shotState.56 1))
+   (= #t %t.240 (select %t.239 #t #f))
+   (= #t %t.241 (select %t.239 #f #t))
+   (= %t.241 %t.242 (== %shotState.56 0))
+   (= #t %t.243 (select %t.239 #t %t.242))
+   (= #t %t.244 (select #t %t.243 #t))
+   (assert %t.244 "Please provide a valid state")
+   (= #t %t.245 (tuple)) (= #t %t.246 (== %shotState.56 0))
+   (= #t %t.247 (select %t.246 #t #f))
+   (= #t %t.248 (select %t.246 #f #t))
+   (= %t.247
+      %t.249
+      (public-ledger %board1.1 (3) member %honestyCheckHash.55))
+   (= #t %t.250 (select %t.249 %t.247 #f))
+   (= #t %t.251 (select %t.249 #f %t.247))
+   (= %t.247 %t.252 (select %t.249 #f #t))
+   (= #t %t.253 (select %t.247 %t.252 #t))
+   (assert
+     %t.253
+     "Cheat Detected: Player 1: claimed a MISS, when it was in fact a HIT")
+   (= %t.247 %t.254 (tuple))
+   (= %t.247 %t.255 (public-ledger %turn.18 (2) write 0))
+   (= %t.248
+      %t.256
+      (public-ledger %board1.1 (3) member %honestyCheckHash.55))
+   (= #t %t.257 (select %t.248 %t.256 #t))
+   (assert
+     %t.257
+     "Cheat Detected: Player 1: claimed a HIT, when is was in fact a MISS. Why would they do that?")
+   (= %t.248 %t.258 (tuple))
+   (= %t.248
+      %t.259
+      (public-ledger %board1HitCount.2 (12) increment 1))
+   (= %t.248
+      %t.260
+      (public-ledger %board1Hits.3 (9) insert %currentShot.54))
+   (= %t.248 %t.261 (public-ledger %turn.18 (2) write 0))
+   (= %t.248
+      %t.262
+      (public-ledger %board1HitCount.2 (12) read))
+   (= %t.248 %t.263 (== %t.262 2))
+   (= #t %t.264 (select %t.263 %t.248 #f))
+   (= #t %t.265 (select %t.263 #f %t.248))
+   (= %t.248 %tmp.67 (select %t.263 2 0))
+   (= %t.248
+      %t.266
+      (public-ledger %winState.19 (11) write %tmp.67))
+   (= #t %t.267 (tuple)) %t.267)
+  (circuit %checkBoard2.10 () (ttuple)
+   (= #t %_sk.57 (call %localSk.28))
+   (= #t
+      %t.268
+      (tuple
+        #vu8(98 97 116 116 108 101 115 104 105 112 58 112 107 58 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %_sk.57))
+   (= #t %pubKey.58 (call %persistentHash.21 %t.268))
+   (= #t %t.269 (public-ledger %player2.15 (1) read))
+   (= #t %t.270 (== %t.269 %pubKey.58))
+   (= #t %t.271 (select #t %t.270 #t))
+   (assert %t.271 "You are not player2") (= #t %t.272 (tuple))
+   (= #t %t.273 (public-ledger %board2State.8 (6) read))
+   (= #t %t.274 (== %t.273 1))
+   (= #t %t.275 (select #t %t.274 #t))
+   (assert %t.275 "Player 2 has not set the board yet")
+   (= #t %t.276 (tuple))
+   (= #t %t.277 (public-ledger %winState.19 (11) read))
+   (= #t %t.278 (== %t.277 0))
+   (= #t %t.279 (select #t %t.278 #t))
+   (assert %t.279 "A winner has already been declared")
+   (= #t %t.280 (tuple))
+   (= #t %t.281 (public-ledger %turn.18 (2) read))
+   (= #t %t.282 (== %t.281 3))
+   (= #t %t.283 (select #t %t.282 #t))
+   (assert %t.283 "It is not Player 2 turn to CHECK")
+   (= #t %t.284 (tuple))
+   (= #t %t.285 (public-ledger %player1Shot.14 (7) isEmpty))
+   (= #t %t.286 (select %t.285 #t #f))
+   (= #t %t.287 (select %t.285 #f #t))
+   (= #t %t.288 (select %t.285 #f #t))
+   (= #t %t.289 (select #t %t.288 #t))
+   (assert %t.289 "No shot to check") (= #t %t.290 (tuple))
+   (= #t %t.291 (public-ledger %player1Shot.14 (7) head))
+   (= #t %currentShot.59 (elt-ref %t.291 value))
+   (= #t
+      %t.292
+      (public-ledger %board2Hits.7 (10) member %currentShot.59))
+   (= #t %t.293 (select %t.292 #t #f))
+   (= #t %t.294 (select %t.292 #f #t))
+   (= #t %t.295 (select %t.292 #f #t))
+   (= #t %t.296 (select #t %t.295 #t))
+   (assert
+     %t.296
+     "Cheat Detected: Player 1: Attempt to repeat a previous HIT")
+   (= #t %t.297 (tuple))
+   (= #t %t.298 (public-ledger %player1Shot.14 (7) popFront))
+   (= #t %_x.91 (field->bytes 32 %currentShot.59))
+   (= #t %t.299 (tuple %_x.91 %_sk.57))
+   (= #t %hash.93 (call %persistentHash.21 %t.299))
+   (= #t %honestyCheckHash.60 %hash.93)
+   (= #t
+      %shotState.61
+      (call %localCheckBoard.26 %currentShot.59))
+   (= #t %t.300 (== %shotState.61 1))
+   (= #t %t.301 (select %t.300 #t #f))
+   (= #t %t.302 (select %t.300 #f #t))
+   (= %t.302 %t.303 (== %shotState.61 0))
+   (= #t %t.304 (select %t.300 #t %t.303))
+   (= #t %t.305 (select #t %t.304 #t))
+   (assert %t.305 "Please provide a valid state")
+   (= #t %t.306 (tuple)) (= #t %t.307 (== %shotState.61 0))
+   (= #t %t.308 (select %t.307 #t #f))
+   (= #t %t.309 (select %t.307 #f #t))
+   (= %t.308
+      %t.310
+      (public-ledger %board2.5 (4) member %honestyCheckHash.60))
+   (= #t %t.311 (select %t.310 %t.308 #f))
+   (= #t %t.312 (select %t.310 #f %t.308))
+   (= %t.308 %t.313 (select %t.310 #f #t))
+   (= #t %t.314 (select %t.308 %t.313 #t))
+   (assert
+     %t.314
+     "Cheat Detected: Player 2: claimed a MISS, when it was in fact a HIT")
+   (= %t.308 %t.315 (tuple))
+   (= %t.308 %t.316 (public-ledger %turn.18 (2) write 2))
+   (= %t.309
+      %t.317
+      (public-ledger %board2.5 (4) member %honestyCheckHash.60))
+   (= #t %t.318 (select %t.309 %t.317 #t))
+   (assert
+     %t.318
+     "Cheat Detected: Player 2: claimed a HIT, when it was in fact a MISS. Why would they do that?")
+   (= %t.309 %t.319 (tuple))
+   (= %t.309
+      %t.320
+      (public-ledger %board2HitCount.6 (13) increment 1))
+   (= %t.309
+      %t.321
+      (public-ledger %board2Hits.7 (10) insert %currentShot.59))
+   (= %t.309 %t.322 (public-ledger %turn.18 (2) write 2))
+   (= %t.309
+      %t.323
+      (public-ledger %board2HitCount.6 (13) read))
+   (= %t.309 %t.324 (== %t.323 2))
+   (= #t %t.325 (select %t.324 %t.309 #f))
+   (= #t %t.326 (select %t.324 #f %t.309))
+   (= %t.309 %tmp.69 (select %t.324 1 0))
+   (= %t.309
+      %t.327
+      (public-ledger %winState.19 (11) write %tmp.69))
+   (= #t %t.328 (tuple)) %t.328))

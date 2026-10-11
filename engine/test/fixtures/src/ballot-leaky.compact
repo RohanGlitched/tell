@@ -1,0 +1,37 @@
+// Tell leak zoo: a guessable hash.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// A "secret" ballot that stores each vote as hash(choice). There are four
+// choices, so anyone can hash all four and read every vote off the ledger.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger voters: Set<Bytes<32>>;
+export ledger ballots: Map<Bytes<32>, Bytes<32>>;
+
+witness voterKey(): Bytes<32>;
+witness choice(): Uint<8>;
+
+circuit voterTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "ballot:voter"), sk]);
+}
+
+export pure circuit choiceHash(c: Uint<8>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "ballot:choice"), (c as Field) as Bytes<32>]);
+}
+
+export circuit register(): [] {
+  voters.insert(disclose(voterTag(voterKey())));
+}
+
+export circuit vote(): [] {
+  const tag = disclose(voterTag(voterKey()));
+  assert(voters.member(tag), "not a registered voter");
+  assert(!ballots.member(tag), "already voted");
+  const c = choice();
+  assert(c < 4, "there are four candidates");
+  ballots.insert(tag, disclose(choiceHash(c)));
+}

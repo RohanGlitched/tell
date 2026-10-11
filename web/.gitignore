@@ -1,0 +1,6 @@
+bin
+.next
+node_modules
+
+.vercel
+.env*

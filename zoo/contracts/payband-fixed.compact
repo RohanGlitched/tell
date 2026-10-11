@@ -1,0 +1,34 @@
+// Tell leak zoo: the salary record, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The record is a commitment with a random salt the employer hands to the
+// employee alongside the payslip. Without the salt, every guess misses.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export struct Payslip { employee: Uint<32>; pay: Uint<32>; }
+
+export ledger employer: Bytes<32>;
+export ledger records: Map<Uint<32>, Bytes<32>>;
+
+witness employerKey(): Bytes<32>;
+witness salary(): Uint<32>;
+witness slipSalt(): Bytes<32>;
+
+constructor(owner: Bytes<32>) {
+  employer = disclose(owner);
+}
+
+export pure circuit keyHash(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "payband:employer"), sk]);
+}
+
+export circuit file(employee: Uint<32>): [] {
+  assert(keyHash(employerKey()) == employer, "only the employer files records");
+  const pay = salary();
+  assert(pay > 0, "salary must be positive");
+  records.insert(disclose(employee), disclose(persistentCommit<Payslip>(Payslip { employee: employee, pay: pay }, slipSalt())));
+}

@@ -1,0 +1,29 @@
+// Tell leak zoo: the key, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The ledger keeps a hash of the key; the circuit proves knowledge of the key
+// without it ever leaving the owner's device.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger owner: Bytes<32>;
+export ledger withdrawals: Counter;
+
+witness secretKey(): Bytes<32>;
+
+export pure circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "vault:owner"), sk]);
+}
+
+export circuit claim(): [] {
+  assert(owner == default<Bytes<32>>, "already claimed");
+  owner = disclose(publicKey(secretKey()));
+}
+
+export circuit withdraw(): [] {
+  assert(owner == publicKey(secretKey()), "not the owner");
+  withdrawals.increment(1);
+}

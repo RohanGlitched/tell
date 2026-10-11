@@ -1,0 +1,16 @@
+{
+  "name": "tell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "workspaces": ["engine", "zoo", "web", "chain"],
+  "scripts": {
+    "test": "npm test --workspaces --if-present"
+  },
+  "overrides": {
+    "@midnight-ntwrk/wallet-sdk": "1.2.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
+  }
+}
