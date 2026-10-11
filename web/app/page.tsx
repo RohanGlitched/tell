@@ -42,6 +42,9 @@ export default function Home() {
             {analyzed} apps, surveyed
           </Link>
         </div>
+        <p className="mt-4 text-[15px]">
+          <Link href="/live">Watch it read the votes of a ballot deployed on Midnight Preprod</Link>
+        </p>
       </Lamp>
 
       <section className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6">

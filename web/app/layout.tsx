@@ -36,6 +36,7 @@ const NAV = [
   ['/scan', 'Scan', 'Scan'],
   ['/survey', 'Survey', 'Survey'],
   ['/zoo', 'Leak zoo', 'Zoo'],
+  ['/live', 'Live on Midnight', 'Live'],
   ['/how', 'How it works', 'How'],
 ] as const;
 
@@ -98,6 +99,7 @@ function Footer() {
           links={[
             ['/survey', 'Buildathon survey'],
             ['/zoo', 'Leak zoo and attack tests'],
+            ['/live', 'Live attack on Midnight Preprod'],
             ['/how#limits', 'What Tell cannot see'],
           ]}
         />

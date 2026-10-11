@@ -70,7 +70,7 @@ function Column({ b, network }: { b: LiveBallot; network: LiveResponse['network'
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--rule)] px-5 py-4">
         <div>
           <h2 className="text-[22px] font-extrabold">{isLeaky ? 'ballot-leaky' : 'ballot-fixed'}</h2>
-          <a href={`${NETWORKS[network].explorer}/contract/${b.address}`} target="_blank" rel="noreferrer" className="mono text-[12.5px] text-[var(--graphite)]">
+          <a href={`${NETWORKS[network].explorer}/contracts/${b.address}`} target="_blank" rel="noreferrer" className="mono text-[12.5px] text-[var(--graphite)]">
             {short(b.address)}
           </a>
         </div>
@@ -94,19 +94,19 @@ function Column({ b, network }: { b: LiveBallot; network: LiveResponse['network'
           </li>
         ))}
       </ol>
-      <details className="border-t border-[var(--rule)] px-5 py-3 text-[13px]">
-        <summary className="cursor-pointer text-[var(--graphite)]">Transactions on the explorer</summary>
-        <ul className="mono mt-2 space-y-1">
+      <details className="border-t border-[var(--rule)] px-5 py-3 text-[14px]">
+        <summary className="cursor-pointer text-[var(--graphite)]">The transactions</summary>
+        <p className="mt-2 text-[var(--graphite)]">
+          Every deploy, registration and vote is listed on the{' '}
+          <a href={`${NETWORKS[network].explorer}/contracts/${b.address}`} target="_blank" rel="noreferrer">
+            contract’s explorer page
+          </a>
+          . Transaction identifiers as Midnight’s SDK reports them:
+        </p>
+        <ul className="mono mt-2 space-y-1 text-[12.5px] text-[var(--graphite)]">
           {b.txs.map((t) => (
-            <li key={t.voteTx}>
-              voter {t.voter}:{' '}
-              <a href={`${NETWORKS[network].explorer}/tx/${t.registerTx}`} target="_blank" rel="noreferrer">
-                register
-              </a>{' '}
-              ·{' '}
-              <a href={`${NETWORKS[network].explorer}/tx/${t.voteTx}`} target="_blank" rel="noreferrer">
-                vote
-              </a>
+            <li key={t.voteTx} className="break-all">
+              voter {t.voter}: register {short(t.registerTx)}, vote {short(t.voteTx)}
             </li>
           ))}
         </ul>

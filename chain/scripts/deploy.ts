@@ -30,6 +30,20 @@ type Deployment = { contract: string; address: string; deployTx: string; votes: 
 const state: Record<string, Deployment> = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : {};
 const save = () => fs.writeFileSync(OUT, JSON.stringify(state, null, 2));
 
+// The node rejects a transaction that spends DUST the wallet has not yet seen settle; resync and retry.
+async function retry<T>(what: string, f: () => Promise<T>, tries = 4): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await f();
+    } catch (e) {
+      if (i >= tries) throw e;
+      logger.warn(`${what} failed (${String(e).slice(0, 160)}); resyncing and retrying (${i}/${tries - 1})`);
+      await new Promise((r) => setTimeout(r, 20_000 * i));
+      await house.sync();
+    }
+  }
+}
+
 const house = await House.open();
 await house.start();
 await house.sync();
@@ -55,7 +69,7 @@ for (const name of ['ballot-leaky', 'ballot-fixed']) {
   if (!dep) {
     logger.info(`deploying ${name}…`);
     const t = Date.now();
-    const deployed = await deployContract(p as never, { compiledContract: compiled as never, privateStateId: 'deployer', initialPrivateState: voters[0] } as never);
+    const deployed = await retry(`deploy ${name}`, () => deployContract(p as never, { compiledContract: compiled as never, privateStateId: 'deployer', initialPrivateState: voters[0] } as never));
     const d = deployed as unknown as { deployTxData: { public: { contractAddress: string; txId: string } } };
     dep = state[name] = { contract: name, address: d.deployTxData.public.contractAddress, deployTx: d.deployTxData.public.txId, votes: [] };
     save();
@@ -68,8 +82,12 @@ for (const name of ['ballot-leaky', 'ballot-fixed']) {
     const id = `voter-${i}`;
     await p.privateStateProvider.set(id, v as never);
     const t = Date.now();
-    const reg = (await submitCallTx(p as never, { compiledContract: compiled as never, contractAddress: dep.address, privateStateId: id, circuitId: 'register', args: [] } as never)) as unknown as { public: { txId: string } };
-    const vote = (await submitCallTx(p as never, { compiledContract: compiled as never, contractAddress: dep.address, privateStateId: id, circuitId: 'vote', args: [] } as never)) as unknown as { public: { txId: string } };
+    const call = (circuitId: string) =>
+      retry(`${name} voter ${i} ${circuitId}`, async () =>
+        (await submitCallTx(p as never, { compiledContract: compiled as never, contractAddress: dep.address, privateStateId: id, circuitId, args: [] } as never)) as unknown as { public: { txId: string } },
+      );
+    const reg = await call('register');
+    const vote = await call('vote');
     dep.votes.push({ voter: i, choice: CANDIDATES[Number(v.choice)], registerTx: reg.public.txId, voteTx: vote.public.txId });
     save();
     logger.info(`${name}: voter ${i} voted ${CANDIDATES[Number(v.choice)]} (${Math.round((Date.now() - t) / 1000)} s)`);
