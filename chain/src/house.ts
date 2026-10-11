@@ -70,6 +70,18 @@ export const logger: Logger = pino({ level: process.env.LOG_LEVEL ?? 'info', tra
 const strict = (p: unknown) =>
   !!p && typeof (p as { isStrictlyComplete?: unknown }).isStrictlyComplete === 'function' && (p as { isStrictlyComplete: () => boolean }).isStrictlyComplete();
 
+// "applied/highest" for each sub-wallet, as far as the SDK exposes it.
+function progressText(st: FacadeState): string {
+  const p = (x: unknown) => {
+    const o = x as Record<string, unknown> | undefined;
+    if (!o) return '?';
+    const a = o.appliedIndex;
+    const h = o.highestRelevantIndex ?? o.highestRelevantWalletIndex ?? o.highestIndex;
+    return `${a ?? '?'}/${h ?? '?'}`;
+  };
+  return `shielded ${p(st.shielded.state.progress)}, dust ${p(st.dust.state.progress)}, unshielded ${p(st.unshielded.progress)}`;
+}
+
 const stateDir = () => path.join(SECRETS, NETWORK === 'preview' ? 'house-state' : `house-state-${NETWORK}`);
 
 export function readSeed(): string {
@@ -122,16 +134,25 @@ export class House implements WalletProvider, MidnightProvider {
     await this.facade.stop();
   }
 
-  async sync(timeoutMs = 1_800_000): Promise<FacadeState> {
+  // Fails only when the chain stops sending updates for `stallMs`; saves progress as it goes,
+  // so an interrupted first sync resumes where it stopped.
+  async sync(stallMs = 300_000): Promise<FacadeState> {
     let n = 0;
+    let saving = false;
     const t = Date.now();
     const s = await Rx.firstValueFrom(
       this.facade.state().pipe(
+        Rx.timeout({ each: stallMs, with: () => Rx.throwError(() => new Error(`wallet sync stalled: no update for ${stallMs} ms`)) }),
         Rx.tap((st) => {
-          if (++n % 200 === 0) logger.info(`syncing… ${n} updates, ${Math.round((Date.now() - t) / 1000)} s`);
+          if (++n % 200 === 0) logger.info(`syncing… ${n} updates, ${Math.round((Date.now() - t) / 1000)} s; ${progressText(st)}`);
+          if (n % 2000 === 0 && !saving) {
+            saving = true;
+            this.save()
+              .catch((e) => logger.warn(`could not save wallet state: ${e}`))
+              .finally(() => (saving = false));
+          }
         }),
         Rx.filter((st) => strict(st.shielded.state.progress) && strict(st.dust.state.progress) && strict(st.unshielded.progress)),
-        Rx.timeout({ each: timeoutMs, with: () => Rx.throwError(() => new Error(`wallet sync timed out after ${timeoutMs} ms`)) }),
       ),
     );
     logger.info(`synced in ${Math.round((Date.now() - t) / 1000)} s (${n} updates)`);
