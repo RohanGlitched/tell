@@ -1,0 +1,14 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger owner: ZswapCoinPublicKey;
+export ledger epochs: Set<Bytes<32>>;
+export ledger log: Counter;
+export circuit initialize(): [] {
+  owner = disclose(ownPublicKey());
+}
+export circuit advance(newEpoch: Uint<32>): [] {
+  if (disclose(ownPublicKey() == owner)) {
+    log.increment(1);
+  }
+  epochs.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "epoch"), (newEpoch as Field) as Bytes<32>])));
+}

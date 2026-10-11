@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-11T18:42:08.090Z",
+  "generatedAt": "2026-10-11T19:34:57.262Z",
   "method": "Every public GitHub repository linked from a Midnight Buildathon submission on AKINDO, cloned at its default branch and scanned with Tell. Compiler chosen per contract from its pragma, preferring 0.31.1 (the compiler for the ledger live today).",
   "repositoriesListed": 111,
   "repositoriesWithCompact": 101,
@@ -21,24 +21,25 @@
     }
   ],
   "grades": {
-    "A": 49,
-    "B": 38,
-    "C": 8,
+    "A": 48,
+    "B": 37,
+    "C": 10,
     "D": 1,
     "F": 0
   },
   "kinds": {
     "linkable": {
-      "low": 22,
-      "info": 43
+      "info": 52,
+      "low": 22
     },
     "published": {
       "info": 86,
-      "low": 36
+      "low": 39,
+      "medium": 2
     },
     "branch": {
-      "info": 20,
-      "low": 5,
+      "info": 18,
+      "low": 6,
       "medium": 4
     },
     "predicate": {
@@ -53,8 +54,8 @@
       "high": 1
     }
   },
-  "linkableProjects": 59,
-  "publishedValues": 2499,
+  "linkableProjects": 64,
+  "publishedValues": 2801,
   "cases": [
     {
       "project": "Project 04",
@@ -71,6 +72,14 @@
       "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
       "bits": 16,
       "count": 3
+    },
+    {
+      "project": "Project 17",
+      "severity": "medium",
+      "kind": "published",
+      "title": "A private value is written to the ledger in readable form",
+      "bits": 256,
+      "count": 1
     },
     {
       "project": "Project 21",
@@ -103,6 +112,14 @@
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
       "bits": 0,
       "count": 1
+    },
+    {
+      "project": "Project 53",
+      "severity": "medium",
+      "kind": "published",
+      "title": "A private value is written to the ledger in readable form",
+      "bits": 256,
+      "count": 2
     },
     {
       "project": "Project 58",
@@ -263,11 +280,11 @@
     },
     {
       "p": "Project 17",
-      "grade": "B",
+      "grade": "C",
       "contracts": 12,
       "worst": {
-        "severity": "low",
-        "kind": "guessable-hash"
+        "severity": "medium",
+        "kind": "published"
       }
     },
     {
@@ -363,7 +380,7 @@
       "contracts": 1,
       "worst": {
         "severity": "low",
-        "kind": "linkable"
+        "kind": "published"
       }
     },
     {
@@ -515,9 +532,12 @@
     },
     {
       "p": "Project 50",
-      "grade": "A",
+      "grade": "B",
       "contracts": 1,
-      "worst": null
+      "worst": {
+        "severity": "low",
+        "kind": "published"
+      }
     },
     {
       "p": "Project 51",
@@ -539,11 +559,11 @@
     },
     {
       "p": "Project 53",
-      "grade": "B",
+      "grade": "C",
       "contracts": 3,
       "worst": {
-        "severity": "low",
-        "kind": "linkable"
+        "severity": "medium",
+        "kind": "published"
       }
     },
     {
@@ -558,7 +578,7 @@
       "contracts": 1,
       "worst": {
         "severity": "low",
-        "kind": "published"
+        "kind": "linkable"
       }
     },
     {
@@ -714,7 +734,7 @@
       "contracts": 31,
       "worst": {
         "severity": "low",
-        "kind": "guessable-hash"
+        "kind": "published"
       }
     },
     {
@@ -825,7 +845,7 @@
       "contracts": 11,
       "worst": {
         "severity": "low",
-        "kind": "linkable"
+        "kind": "published"
       }
     },
     {

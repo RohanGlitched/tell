@@ -4,8 +4,8 @@
 
 import { useEffect, useState } from 'react';
 import type { LiveResponse, LiveBallot } from '@/lib/live';
+import { NETWORKS } from '@/lib/networks';
 
-const EXPLORER = 'https://preview.midnightexplorer.com';
 const CANDIDATES = ['Asha', 'Bilal', 'Chen', 'Dara'];
 const short = (h: string) => `${h.slice(0, 8)}…${h.slice(-6)}`;
 
@@ -50,19 +50,19 @@ export default function LiveBoard() {
   return (
     <div className="mt-10">
       <p className="text-[13px] text-[var(--graphite)]">
-        Read from <span className="mono">indexer.preview.midnight.network</span> at {new Date(data.readAt).toLocaleTimeString()}; refreshes every 20 s.
+        Read from <span className="mono">{NETWORKS[data.network].indexerHost}</span> at {new Date(data.readAt).toLocaleTimeString()}; refreshes every 20 s.
         {error && <span className="ml-2 text-[var(--red)]">Last refresh failed: {error}</span>}
       </p>
       <div className="mt-5 grid gap-6 lg:grid-cols-2">
-        {leaky && <Column b={leaky} />}
-        {fixed && <Column b={fixed} />}
+        {leaky && <Column b={leaky} network={data.network} />}
+        {fixed && <Column b={fixed} network={data.network} />}
       </div>
       {leaky?.tally && <Tally tally={leaky.tally} total={leaky.ballots.length} />}
     </div>
   );
 }
 
-function Column({ b }: { b: LiveBallot }) {
+function Column({ b, network }: { b: LiveBallot; network: LiveResponse['network'] }) {
   const isLeaky = b.contract === 'ballot-leaky';
   const recovered = b.ballots.filter((x) => x.recovered).length;
   return (
@@ -70,7 +70,7 @@ function Column({ b }: { b: LiveBallot }) {
       <header className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--rule)] px-5 py-4">
         <div>
           <h2 className="text-[22px] font-extrabold">{isLeaky ? 'ballot-leaky' : 'ballot-fixed'}</h2>
-          <a href={`${EXPLORER}/contract/${b.address}`} target="_blank" rel="noreferrer" className="mono text-[12.5px] text-[var(--graphite)]">
+          <a href={`${NETWORKS[network].explorer}/contract/${b.address}`} target="_blank" rel="noreferrer" className="mono text-[12.5px] text-[var(--graphite)]">
             {short(b.address)}
           </a>
         </div>
@@ -100,11 +100,11 @@ function Column({ b }: { b: LiveBallot }) {
           {b.txs.map((t) => (
             <li key={t.voteTx}>
               voter {t.voter}:{' '}
-              <a href={`${EXPLORER}/tx/${t.registerTx}`} target="_blank" rel="noreferrer">
+              <a href={`${NETWORKS[network].explorer}/tx/${t.registerTx}`} target="_blank" rel="noreferrer">
                 register
               </a>{' '}
               ·{' '}
-              <a href={`${EXPLORER}/tx/${t.voteTx}`} target="_blank" rel="noreferrer">
+              <a href={`${NETWORKS[network].explorer}/tx/${t.voteTx}`} target="_blank" rel="noreferrer">
                 vote
               </a>
             </li>

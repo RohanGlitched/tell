@@ -103,6 +103,15 @@ const isHint = (n: string) => {
   const w = words(n);
   return w.some((x) => ['divmod', 'quotient', 'remainder', 'sqrt', 'hint', 'inverse', 'timestamp', 'clock'].includes(x)) || ['div', 'mod', 'now', 'time'].includes(lastWord(n));
 };
+// Arguments are usually public inputs the caller chose; these names say the value is personal.
+const isPersonal = (n: string) =>
+  words(n).some((x) =>
+    ['vote', 'ballot', 'choice', 'option', 'bid', 'offer', 'amount', 'salary', 'wage', 'income', 'balance', 'age', 'score', 'answer', 'guess', 'move', 'pick', 'selection', 'rating', 'location', 'gps', 'lat', 'lon', 'coords', 'birth', 'dob', 'secret'].includes(x),
+  );
+// Fields that hold a contract's own officers: publishing an admin's key there is the usual design.
+const isRoleField = (n: string) =>
+  words(n).some((x) => ['owner', 'admin', 'authority', 'operator', 'issuer', 'governor', 'manager', 'treasury', 'recipient', 'deployer', 'controller', 'organizer', 'organiser', 'platform', 'pool'].includes(x));
+const isSetup = (circuit: string) => ['init', 'initialize', 'initialise', 'setup', 'constructor', 'bootstrap'].includes(words(circuit)[0] ?? '');
 const isFresh = (n: string) => words(n).some((x) => ['nonce', 'salt', 'rand', 'random', 'randomness', 'fresh', 'blind', 'blinding', 'ephemeral', 'entropy'].includes(x));
 // Shielded-token plumbing: coin commitments and nullifiers are the protocol's own privacy.
 // Kernel operations of the shielded token protocol carry commitments and nullifiers by design.
@@ -399,7 +408,9 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
             ? 'low'
             : 'medium'
           : s.kind === 'argument' && !isSecretish(s.name)
-            ? 'medium'
+            ? isPersonal(s.name) && !isPositional(s.name) && !isHint(s.name)
+              ? 'medium'
+              : 'low'
             : bits <= 40
               ? 'critical'
               : 'high';
@@ -428,7 +439,8 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
           report({
             circuit: c.name,
             kind: 'published',
-            severity: 'medium',
+            // An officer's key set once (owner, authority) is the usual admin design; users' keys are the leak.
+            severity: isRoleField(field) || isSetup(c.name) ? 'low' : 'medium',
             field,
             op,
             sources: src,
@@ -517,7 +529,13 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
         circuit: c.name,
         kind: 'branch',
         // A branch on a key reveals which authorised path the caller took, not the key.
-        severity: s.kind === 'argument' ? 'info' : isPositional(s.name) || isHint(s.name) || (isSecretish(s.name) && hasBytes(s.type)) ? 'low' : 'medium',
+        // ownPublicKey in a guard is an access check: it shows whether the caller is the officer.
+        severity:
+          s.kind === 'argument'
+            ? 'info'
+            : s.name === 'ownPublicKey' || isPositional(s.name) || isHint(s.name) || (isSecretish(s.name) && hasBytes(s.type))
+              ? 'low'
+              : 'medium',
         field,
         op,
         sources: [describe(k)],
@@ -556,10 +574,13 @@ function analyzeCircuit(p: Program, c: Circuit, unknown: Set<string>, known: Set
         });
       const guardedBy = [...g].filter(([, f]) => !(f.flow === 'hidden' && !f.tag)).map(([k]) => sources.get(k)!.name);
       if (ops.length < 400) ops.push({ field, op, operands: (/^checkRoot/.test(op) ? [] : l.slice(4)).map((x) => note(val(x))), guardedBy: [...new Set(guardedBy)] });
+      // A branch on a value this same operation publishes in the clear tells nothing new.
+      const shown = new Set([...union(...operands)].filter(([, f]) => f.flow === 'reveal').map(([k]) => k));
+      const gs: Label = shown.size ? new Map([...g].filter(([k]) => !shown.has(k))) : g;
       if (operands.length === 2 && /^(insert|write)/.test(op)) {
-        sink(field, op, operands[0], g, 'key');
+        sink(field, op, operands[0], gs, 'key');
         sink(field, op, operands[1], new Map(), 'value', anyVarying([operands[0]]));
-      } else sink(field, op, { label: union(...operands) }, g, op === 'write' ? 'value' : 'key');
+      } else sink(field, op, { label: union(...operands) }, gs, op === 'write' ? 'value' : 'key');
       continue;
     }
     const v = val(expr);

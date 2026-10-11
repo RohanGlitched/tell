@@ -1,0 +1,39 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%owner.4
+       (0)
+       (__compact_Cell
+         (tstruct ZswapCoinPublicKey (bytes (tbytes 32)))))
+      (%epochs.1 (1) (Set (tbytes 32)))
+      (%log.3 (2) (Counter))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %ownPublicKey.8
+    ()
+    (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+  (circuit %initialize.2 () (ttuple)
+    (= #t %tmp.10 (call %ownPublicKey.8))
+    (= #t %t.13 (public-ledger %owner.4 (0) write %tmp.10))
+    (= #t %t.14 (tuple)) %t.14)
+  (circuit %advance.0 ((%newEpoch.9 (tunsigned 4294967295))) (ttuple)
+    (= #t %t.15 (call %ownPublicKey.8))
+    (= #t %t.16 (public-ledger %owner.4 (0) read))
+    (= #t %t.17 (== %t.15 %t.16))
+    (= #t %t.18 (select %t.17 #t #f))
+    (= #t %t.19 (select %t.17 #f #t))
+    (= %t.18 %t.20 (public-ledger %log.3 (2) increment 1))
+    (= %t.19 %t.21 (tuple))
+    (= #t %t.22 (field->bytes 32 %newEpoch.9))
+    (= #t
+       %t.23
+       (tuple
+         #vu8(101 112 111 99 104 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0)
+         %t.22))
+    (= #t %tmp.12 (call %persistentHash.6 %t.23))
+    (= #t %t.24 (public-ledger %epochs.1 (1) insert %tmp.12))
+    (= #t %t.25 (tuple)) %t.25))

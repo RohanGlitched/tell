@@ -12,6 +12,6 @@ export async function GET() {
     return NextResponse.json(await readLive(), { headers: { 'cache-control': 's-maxage=10, stale-while-revalidate=30' } });
   } catch (e) {
     console.error('live read failed', e);
-    return NextResponse.json({ error: 'The Midnight Preview indexer did not answer. The contracts are still there; try again in a minute.' }, { status: 502 });
+    return NextResponse.json({ error: 'The Midnight indexer did not answer. The contracts are still there; try again in a minute.' }, { status: 502 });
   }
 }

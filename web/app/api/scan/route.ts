@@ -1,8 +1,14 @@
 // Copyright (C) 2026 Rohan Borade
 // SPDX-License-Identifier: Apache-2.0
 
+import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { scanRepo, scanSource, UserError } from '@/lib/scan';
+import precomputed from '@/data/sample-results.json';
+
+// The sample contracts' results, made by scripts/sample-results.ts with the same engine.
+const SAMPLES = precomputed as Record<string, unknown>;
+const sha = (s: string) => crypto.createHash('sha256').update(s).digest('hex');
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -38,7 +44,8 @@ export async function POST(req: Request) {
       typeof body.repo === 'string' && body.repo.trim()
         ? await scanRepo(body.repo)
         : typeof body.source === 'string'
-          ? await scanSource(body.source, typeof body.name === 'string' ? body.name : undefined)
+          ? ((typeof body.name !== 'string' ? SAMPLES[sha(body.source)] : undefined) as Awaited<ReturnType<typeof scanSource>> | undefined) ??
+            (await scanSource(body.source, typeof body.name === 'string' ? body.name : undefined))
           : null;
     if (!out) return NextResponse.json({ error: 'Send a contract (`source`) or a repository (`repo`).' }, { status: 400 });
     return new NextResponse(JSON.stringify(out, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)), {

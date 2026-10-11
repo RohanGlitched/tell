@@ -10,7 +10,13 @@ for (const c of ['ballot-leaky', 'ballot-fixed']) {
   fs.mkdirSync(dst, { recursive: true });
   for (const f of ['index.js', 'index.d.ts']) fs.copyFileSync(path.join(src, f), path.join(dst, f));
 }
-const dep = path.resolve(here, '../../chain/deployments.json');
+// Preprod wins when both exist: it is where the live demo runs.
 const out = path.resolve(here, '../data/deployments.json');
-fs.writeFileSync(out, fs.existsSync(dep) ? fs.readFileSync(dep) : '{}\n');
+const pick = ['preprod', 'preview']
+  .map((n) => [n, path.resolve(here, '../../chain', n === 'preview' ? 'deployments.json' : `deployments-${n}.json`)])
+  .find(([, f]) => fs.existsSync(f));
+if (pick) fs.writeFileSync(out, JSON.stringify({ network: pick[0], contracts: JSON.parse(fs.readFileSync(pick[1], 'utf8')) }, null, 2) + '
+');
+else if (!fs.existsSync(out)) fs.writeFileSync(out, '{}
+');
 console.log('contracts copied');

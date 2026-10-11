@@ -115,7 +115,7 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
       <section className="mt-16">
         <h2 className="text-[24px] font-semibold">The serious ones</h2>
         <p className="mt-2 max-w-[66ch] text-[15px] text-[var(--graphite)]">
-          Every finding at medium or above was read by hand against the source before it was counted. Each team is contacted privately; none is named here
+          Every finding at medium or above was read by hand against the source before it was counted. Each team gets its findings privately; none is named here
           without their agreement.
         </p>
         <ol className="mt-5 space-y-2">

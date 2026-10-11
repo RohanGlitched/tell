@@ -42,7 +42,7 @@ export default function Home() {
           </h2>
           <p className="text-[17px] text-[var(--graphite)]">
             All {survey.repositoriesListed} public repositories linked from the buildathon, {survey.contractsAnalyzed} contracts compiled with the
-            compiler each one asks for. Every serious finding was read by hand against the source. No team is named; each is contacted privately.
+            compiler each one asks for. Every serious finding was read by hand against the source. No team is named, and each team gets its findings privately before anything more is said.
           </p>
         </div>
         <dl className="mt-10 grid gap-6 sm:grid-cols-3">
@@ -124,6 +124,37 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-[1180px] px-4 pt-16 sm:px-6">
+        <h2 className="text-[34px] font-extrabold sm:text-[40px]">Add it to your repository</h2>
+        <p className="mt-2 max-w-[62ch] text-[16px] text-[var(--graphite)]">Three steps, and every pull request that touches a contract gets checked.</p>
+        <ol className="mt-8 grid gap-4 lg:grid-cols-3">
+          <li className="sheet flex flex-col rounded-sm p-5">
+            <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">1</span>
+            <h3 className="mt-3 text-[19px] font-bold">Try it here</h3>
+            <p className="mt-2 text-[15px] text-[var(--graphite)]">Paste a contract or a public GitHub repository on the scan page. Nothing to install.</p>
+            <Link href="/scan" className="mt-auto pt-4 font-semibold">
+              Open the scanner
+            </Link>
+          </li>
+          <li className="sheet flex flex-col rounded-sm p-5">
+            <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">2</span>
+            <h3 className="mt-3 text-[19px] font-bold">Run it in CI</h3>
+            <pre className="mono mt-3 overflow-x-auto rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`- uses: RohanGlitched/tell@v1
+  with:
+    path: contract
+    fail-on: high`}</pre>
+            <p className="mt-3 text-[15px] text-[var(--graphite)]">Findings show up in GitHub code scanning, on the line that leaks.</p>
+          </li>
+          <li className="sheet flex flex-col rounded-sm p-5">
+            <span className="display text-[40px] font-extrabold leading-none text-[var(--faint)]">3</span>
+            <h3 className="mt-3 text-[19px] font-bold">Mark what you meant</h3>
+            <pre className="mono mt-3 overflow-x-auto rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`// the reveal publishes the seed
+seeds.insert(slot, s); // tell:allow secret-published`}</pre>
+            <p className="mt-3 text-[15px] text-[var(--graphite)]">Some disclosures are the point. Say so once and Tell stops reporting them.</p>
+          </li>
+        </ol>
+      </section>
+
       <section className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6">
         <h2 className="text-[34px] font-extrabold sm:text-[40px]">Five ways a private contract talks</h2>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -145,6 +176,35 @@ export default function Home() {
         <p className="mt-6 text-[15px] text-[var(--graphite)]">
           Each one comes with its fix and an attack test that recovers the secret from public state. <Link href="/zoo">Open the leak zoo</Link>.
         </p>
+      </section>
+
+      <section className="mx-auto max-w-[1180px] px-4 pb-8 sm:px-6">
+        <div className="grid gap-10 border-t-2 border-[var(--ink)] pt-10 lg:grid-cols-[1fr_1.3fr]">
+          <div>
+            <h2 className="text-[30px] font-extrabold leading-[1.08] sm:text-[38px]">Where Tell goes next</h2>
+            <p className="mt-4 text-[16px] text-[var(--graphite)]">
+              Tell stays free and open source: the scanner, the command line and the GitHub Action. Its rules come from reading real contracts, and they get
+              better with every one it reads.
+            </p>
+            <p className="mt-3 text-[16px] text-[var(--graphite)]">
+              It pays for itself the way developer tools on other chains do. An ecosystem tooling grant funds the rule research. Teams that want history and
+              dashboards pay for hosted checks. Audit firms add a privacy section to their Compact reviews.
+            </p>
+          </div>
+          <ol className="grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2">
+            {[
+              ['Now', 'Scanner, CLI, GitHub Action with SARIF, leak zoo with attack tests, survey of every buildathon app.'],
+              ['Wave 3', 'Pull request comments with the fix inline. Constructor and return-value analysis. Shielded token and DUST patterns in the zoo.'],
+              ['Next', 'A VS Code extension that marks leaking lines as you type. A Tell check in Midnight’s project templates.'],
+              ['Later', 'Hosted checks with history per contract, team dashboards, and a privacy report auditors can attach.'],
+            ].map(([w, d]) => (
+              <li key={w} className="bg-[var(--sheet)] p-5">
+                <span className="text-[17px] font-bold">{w}</span>
+                <p className="mt-2 text-[15px] text-[var(--graphite)]">{d}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
     </div>
   );

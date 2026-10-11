@@ -39,22 +39,26 @@ const KINDS = [
   ['Secret in the clear', 'critical', 'A value that looks like a secret key reaches the ledger as a readable value.'],
   ['Secret-dependent branch', 'medium', 'Which ledger operations run depends on a private value. Includes count leaks: a fixed-size loop that only touches the ledger for used slots.'],
   ['Same tag on every action', 'medium', 'Each repeated action stores the same hash of a key, so one identified action unmasks the rest.'],
+  ['Wallet key published', 'medium / low', 'A user’s ownPublicKey() is stored, tying all their activity to one wallet. Low when it is an officer key set once (owner, authority).'],
   ['Linkable tag', 'low / info', 'The same hash of a key is published by several circuits, tying a user’s transactions together. Fine for registrations and nullifiers.'],
   ['Published value', 'low / info', 'A private input is written as a readable value. Usually on purpose; listed so nothing is hidden.'],
   ['Published yes/no fact', 'info', 'A comparison over a private value is stored: one bit per call.'],
 ];
 
 const QUIET = [
+  'An officer key set once (owner, authority) and access checks against it: the usual admin design.',
+  'A branch on a value the same operation already publishes in the clear: nothing new is learned.',
   'A commitment whose randomness is a strong private value: hiding and unlinkable.',
   'Shielded-coin plumbing (coin commitments, nullifiers): the protocol’s own privacy.',
   'A Merkle root passed to checkRoot: it must equal a public root anyway.',
   'An input the same call already publishes: it adds no secrecy to a hash, and is not reported twice.',
   'Hashes that mix in a per-use nonce, salt or a changing counter: one-time values link nothing.',
   'Branches on tree positions, division hints and the current time: public in practice, reported as low.',
-  'Caller-supplied arguments: Compact treats them as private, but they are usually public inputs, so they are capped at low.',
+  'Caller-supplied arguments: Compact treats them as private, but they are usually public inputs, so they are reported low unless the name says the value is personal (a vote, a bid, an amount, a location).',
 ];
 
 const CHANGELOG = [
+  ['2026-10-12', 'Live demo on Midnight Preprod. Unshielded transfers, mints and ownPublicKey() analysed; casts are no longer read as hashes; officer keys, access checks and public arguments reported low; a branch on a value the same operation publishes is not reported.'],
   ['2026-10-12', 'Survey of every public Midnight Buildathon repository; compiler fallback across pragma ranges; count-leak wording; per-use nonce and struct-field rules.'],
   ['2026-10-12', 'Web scanner with leak map; SARIF export; suppression comments.'],
   ['2026-10-11', 'Engine: compiler trace reader, information flow, five finding kinds; leak zoo with attack tests.'],

@@ -116,6 +116,17 @@ describe('review cases', () => {
   it('a guessable hash of a circuit argument is not waved through', () => {
     expect(one('case-vote-arg')).toMatchObject([{ kind: 'guessable-hash', severity: 'medium', sources: [{ name: 'choice' }] }]);
   });
+  it('an officer key set in setup, an access check and a public epoch argument stay low', () => {
+    const r = load('case-admin');
+    expect(r.findings.filter((f) => f.severity !== 'info' && f.severity !== 'low')).toEqual([]);
+    expect(r.findings.map((f) => [f.kind, f.severity]).sort()).toEqual(
+      expect.arrayContaining([
+        ['branch', 'low'],
+        ['guessable-hash', 'low'],
+        ['published', 'low'],
+      ]),
+    );
+  });
 });
 
 describe('suppression', () => {
