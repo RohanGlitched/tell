@@ -13,7 +13,9 @@
   <b><a href="https://tell-midnight.vercel.app/survey">Buildathon survey</a></b> ·
   <b><a href="https://tell-midnight.vercel.app/zoo">Leak zoo</a></b> ·
   <b><a href="https://tell-midnight.vercel.app/live">Live on Midnight</a></b> ·
-  <b><a href="https://tell-midnight.vercel.app/how">How it works</a></b>
+  <b><a href="https://tell-midnight.vercel.app/how">How it works</a></b> ·
+  <b><a href="https://youtu.be/UXauGr1tmhI">Demo video</a></b> ·
+  <b><a href="docs/tell-deck.pdf">Deck</a></b>
 </p>
 
 Midnight keeps a contract's private inputs off the chain. What the contract does with them can still give them away: a hash of a vote, a branch on a balance, the same tag on every post. **Tell** reads a Compact contract the way the compiler does and shows, in bits, what each circuit tells the world. It runs in the browser, on the command line and as a GitHub Action, and it has already been run over every public app in the Midnight Buildathon.
