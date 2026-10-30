@@ -70,6 +70,15 @@ Grades run from A (nothing above info) to F (anything critical). Severity follow
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json)): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed circuit by circuit. Every medium-or-worse finding was read by hand against the source. Results are published in aggregate under salted numbers; no team is named, and findings are for the team concerned.
 - **Live on Midnight** ([`chain/`](chain)): the leaky and fixed ballots deployed on Midnight Preprod with the same votes. The site reads both from the indexer and runs the attack Tell predicted.
 
+### Deployed contracts (Midnight Preprod)
+
+| Contract | Address | Deploy transaction | Votes cast |
+|---|---|---|---|
+| Leaky ballot | [`817fd936…741ed0ae`](https://preprod.midnightexplorer.com/contracts/817fd9366be8778cbf4d7d0d501582abd94c79275855ba35fafd3fbd741ed0ae) | `00e8312d4d65f1673f11065954185dc229a80acbdd926d0656cfb14015860e8949` | 6 |
+| Fixed ballot | [`df593aea…3dc673b2`](https://preprod.midnightexplorer.com/contracts/df593aea56bf44c6aead1e085d784cde8fe3f2a09348c997fff3bd173dc673b2) | `00fa5a230c0bb2093f8b12f28d6aade9078f415633def2a168ac9b838091d43429` | 6 |
+
+Full addresses: leaky `817fd9366be8778cbf4d7d0d501582abd94c79275855ba35fafd3fbd741ed0ae`, fixed `df593aea56bf44c6aead1e085d784cde8fe3f2a09348c997fff3bd173dc673b2`. Every register and vote transaction is in [`chain/deployments-preprod.json`](chain/deployments-preprod.json); [tell-midnight.vercel.app/live](https://tell-midnight.vercel.app/live) reads both contracts from the indexer and recovers 6 of 6 votes from the leaky one, 0 of 6 from the fixed one.
+
 ## Run it
 
 ```bash
