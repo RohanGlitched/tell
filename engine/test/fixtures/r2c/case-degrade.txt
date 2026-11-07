@@ -8,3 +8,5 @@ reduce-to-circuit:
     (= #t %tmp.6 (call %degradeToTransient.3 %t.7))
     (= #t %t.8 (public-ledger %pk.0 (0) write %tmp.6))
     (= #t %t.9 (tuple)) %t.9))
+tell-constructor:
+(constructor () (tuple))

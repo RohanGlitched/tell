@@ -1,0 +1,40 @@
+// Review case: what a constructor writes is the contract's initial public state.
+// Covers a helper circuit, a branch, an unrolled loop and constructor arguments.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger owner: Bytes<32>;
+export ledger mode: Uint<8>;
+export ledger tags: Set<Bytes<32>>;
+export ledger nonce: Bytes<32>;
+export ledger counter: Counter;
+export ledger fee: Uint<16>;
+
+witness secretKey(): Bytes<32>;
+witness level(): Uint<8>;
+witness seed(): Bytes<32>;
+
+circuit ownerKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "case:owner"), sk]);
+}
+
+constructor(initialFee: Uint<16>, adminSecret: Bytes<32>) {
+  owner = disclose(ownerKey(secretKey()));
+  fee = disclose(initialFee);
+  const l = level();
+  if (disclose(l > 3)) {
+    mode = 1;
+  } else {
+    tags.insert(disclose(adminSecret));
+  }
+  for (const i of 0..2) {
+    counter.increment(1);
+  }
+  nonce = disclose(seed());
+}
+
+export circuit bump(): [] {
+  assert(owner == ownerKey(secretKey()), "not the owner");
+  counter.increment(1);
+}

@@ -1,0 +1,125 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.2 () (Kernel)))
+  (public-ledger-declaration ((%claims.1 (0) (Counter))))
+  (native
+    %transientHash.22
+    ((%value.27 (tvector 3 (tfield))))
+    (tfield))
+  (native
+    %persistentHash.26
+    ((%value.28
+       (tstruct CoinPreimage (domain_sep (tbytes 21))
+         (info
+           (tstruct
+             ShieldedCoinInfo
+             (nonce (tbytes 32))
+             (color (tbytes 32))
+             (value
+               (tunsigned 340282366920938463463374607431768211455))))
+         (dataType (tboolean)) (data (tbytes 32)))))
+    (tbytes 32))
+  (native
+    %persistentCommit.8
+    ((%value.29 (tvector 2 (tbytes 32))) (%rand.30 (tbytes 32)))
+    (tbytes 32))
+  (native
+    %degradeToTransient.23
+    ((%x.31 (tbytes 32)))
+    (tfield))
+  (native
+    %upgradeFromTransient.21
+    ((%x.32 (tfield)))
+    (tbytes 32))
+  (native
+    %ownPublicKey.33
+    ()
+    (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+  (native
+    %createZswapOutput.15
+    ((%coin.34
+       (tstruct
+         ShieldedCoinInfo
+         (nonce (tbytes 32))
+         (color (tbytes 32))
+         (value
+           (tunsigned 340282366920938463463374607431768211455))))
+      (%recipient.35
+        (tstruct
+          Either
+          (is_left (tboolean))
+          (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+          (right (tstruct ContractAddress (bytes (tbytes 32)))))))
+    (ttuple))
+  (witness %nonceSeed.36 () (tbytes 32))
+  (circuit %claim.0 () (ttuple)
+   (= %index.39 (public-ledger #t %claims.1 (0) read))
+   (= %nonce.40 (call #t %nonceSeed.36))
+   (= %t.52 (call #t %degradeToTransient.23 %nonce.40))
+   (= %t.53
+      (tuple
+        10685258091935385184760267925849721347998787314052891846880509847917
+        %index.39
+        %t.52))
+   (= %t.54 (call #t %transientHash.22 %t.53))
+   (= %n.37 (call #t %upgradeFromTransient.21 %t.54))
+   (= %t.55 (public-ledger #t %claims.1 (0) increment 1))
+   (= %domain_sep.41
+      #vu8(102 97 117 99 101 116 58 116 111 107 101 110 0 0 0 0 0
+           0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= %value.45 (call #t %ownPublicKey.33))
+   (= %t.56
+      (default (tstruct ContractAddress (bytes (tbytes 32)))))
+   (= %recipient.44
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tstruct ZswapCoinPublicKey (bytes (tbytes 32))))
+             (right (tstruct ContractAddress (bytes (tbytes 32)))))
+           #t
+           %value.45
+           %t.56))
+   (= %contractAddress.48 (public-ledger #t %kernel.2 () self))
+   (= %t.57 (elt-ref %contractAddress.48 bytes))
+   (= %t.58 (tuple %domain_sep.41 %t.57))
+   (= %t.59
+      (call
+        #t
+        %persistentCommit.8
+        %t.58
+        #vu8(109 105 100 110 105 103 104 116 58 100 101 114 105 118
+             101 95 116 111 107 101 110 0 0 0 0 0 0 0 0 0 0 0)))
+   (= %coin.46
+      (new (tstruct
+             ShieldedCoinInfo
+             (nonce (tbytes 32))
+             (color (tbytes 32))
+             (value (tunsigned 340282366920938463463374607431768211455)))
+           %n.37
+           %t.59
+           100))
+   (= %t.60
+      (public-ledger #t %kernel.2 () mintShielded %domain_sep.41
+        100))
+   (= %t.61
+      (call #t %createZswapOutput.15 %coin.46 %recipient.44))
+   (= %t.62 (elt-ref %recipient.44 left))
+   (= %t.63 (elt-ref %t.62 bytes))
+   (= %t.64
+      (new (tstruct CoinPreimage (domain_sep (tbytes 21))
+             (info
+               (tstruct
+                 ShieldedCoinInfo
+                 (nonce (tbytes 32))
+                 (color (tbytes 32))
+                 (value
+                   (tunsigned 340282366920938463463374607431768211455))))
+             (dataType (tboolean)) (data (tbytes 32)))
+           #vu8(109 105 100 110 105 103 104 116 58 122 115 119 97 112
+                45 99 99 91 118 49 93)
+           %coin.46 #t %t.63))
+   (= %cm.49 (call #t %persistentHash.26 %t.64))
+   (= %t.65
+      (public-ledger #t %kernel.2 () claimZswapCoinSpend %cm.49))
+   (= %t.66 (tuple)) %t.66))
+tell-constructor:
+(constructor () (tuple))

@@ -105,3 +105,5 @@ reduce-to-circuit:
       (public-ledger %kernel.2 () claimZswapCoinSpend %cm.38))
    (= #t %t.50 (public-ledger %mintCount.1 (0) increment 1))
    (= #t %t.51 (tuple)) %t.51))
+tell-constructor:
+(constructor () (tuple))

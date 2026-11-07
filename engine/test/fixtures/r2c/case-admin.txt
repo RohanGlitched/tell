@@ -37,3 +37,5 @@ reduce-to-circuit:
     (= #t %tmp.12 (call %persistentHash.6 %t.23))
     (= #t %t.24 (public-ledger %epochs.1 (1) insert %tmp.12))
     (= #t %t.25 (tuple)) %t.25))
+tell-constructor:
+(constructor () (tuple))

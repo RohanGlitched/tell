@@ -1,0 +1,56 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.3 () (Kernel)))
+  (public-ledger-declaration
+    ((%ballots.0 (0) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.4
+    ((%value.5 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.6
+    ((%value.7 (tunsigned 255)) (%rand.8 (tbytes 32)))
+    (tbytes 32))
+  (witness %voterKey.9 () (tbytes 32))
+  (witness %choice.10 () (tunsigned 255))
+  (witness %ballotSalt.11 () (tbytes 32))
+  (circuit %vote.1 () (ttuple) (= #t %sk.17 (call %voterKey.9))
+   (= #t
+      %t.18
+      (tuple
+        #vu8(112 111 108 108 58 118 111 116 101 114 0 0 0 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.17))
+   (= #t %tag.13 (call %persistentHash.4 %t.18))
+   (= #t %t.19 (public-ledger %ballots.0 (0) member %tag.13))
+   (= #t %t.20 (select %t.19 #t #f))
+   (= #t %t.21 (select %t.19 #f #t))
+   (= #t %t.22 (select %t.19 #f #t))
+   (= #t %t.23 (select #t %t.22 #t))
+   (assert %t.23 "already voted") (= #t %t.24 (tuple))
+   (= #t %c.14 (call %choice.10)) (= #t %t.25 (< 8 %c.14 4))
+   (= #t %t.26 (select #t %t.25 #t))
+   (assert %t.26 "four options") (= #t %t.27 (tuple))
+   (= #t %t.28 (call %ballotSalt.11))
+   (= #t %sealedVote.15 (call %persistentCommit.6 %c.14 %t.28))
+   (= #t
+      %t.29
+      (public-ledger %ballots.0 (0) insert %tag.13
+        %sealedVote.15))
+   (= #t %t.30 (bytes->vector 32 %sealedVote.15))
+   (= #t
+      %t.31
+      (tuple 112 111 108 108 58 118 111 116 101 100 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+       0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0))
+   (= #t %t.32 (vector (spread 32 %t.30) (spread 256 %t.31)))
+   (= #t %t.33 (vector->bytes 288 %t.32))
+   (= #t %t.34 (emit 1 10 288 %t.33)) (= #t %t.35 (tuple))
+   %t.35))
+tell-constructor:
+(constructor () (tuple))

@@ -251,3 +251,5 @@ reduce-to-circuit:
    (= %t.214 %t.216 (public-ledger %yes.5 (2) increment 1))
    (= %t.215 %t.217 (public-ledger %no.1 (3) increment 1))
    (= #t %t.218 (tuple)) %t.218))
+tell-constructor:
+(constructor () (tuple))

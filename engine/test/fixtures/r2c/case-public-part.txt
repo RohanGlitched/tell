@@ -1,0 +1,107 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.10 () (Kernel)))
+  (public-ledger-declaration
+    ((%voters.9 (0) (Set (tbytes 32)))
+      (%ballots.0 (1) (Map (tbytes 32) (tbytes 32)))
+      (%late.2 (2) (Map (tbytes 32) (tbytes 32)))
+      (%slips.6 (3) (Map (tunsigned 4294967295) (tbytes 32)))
+      (%notes.4 (4) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.11
+    ((%value.12
+       (tstruct
+         Slip
+         (employee (tunsigned 4294967295))
+         (pay (tunsigned 4294967295)))))
+    (tbytes 32))
+  (native
+    %persistentHash.13
+    ((%value.14 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %voterKey.15 () (tbytes 32))
+  (witness %choice.16 () (tunsigned 255))
+  (witness %salary.17 () (tunsigned 4294967295))
+  (witness %noteSecret.18 () (tbytes 32))
+  (circuit %register.5 () (ttuple) (= #t %sk.34 (call %voterKey.15))
+    (= #t
+       %t.38
+       (tuple
+         #vu8(99 97 115 101 58 118 111 116 101 114 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.34))
+    (= #t %tmp.29 (call %persistentHash.13 %t.38))
+    (= #t %t.39 (public-ledger %voters.9 (0) insert %tmp.29))
+    (= #t %t.40 (tuple)) %t.40)
+  (circuit %vote.7 () (ttuple)
+   (= #t %sk.35 (call %voterKey.15))
+   (= #t
+      %t.41
+      (tuple
+        #vu8(99 97 115 101 58 118 111 116 101 114 0 0 0 0 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.35))
+   (= #t %tag.21 (call %persistentHash.13 %t.41))
+   (= #t %t.42 (public-ledger %voters.9 (0) member %tag.21))
+   (= #t %t.43 (select #t %t.42 #t))
+   (assert %t.43 "not registered") (= #t %t.44 (tuple))
+   (= #t %c.22 (call %choice.16)) (= #t %t.45 (< 8 %c.22 4))
+   (= #t %t.46 (select #t %t.45 #t))
+   (assert %t.46 "four options") (= #t %t.47 (tuple))
+   (= #t %t.48 (field->bytes 32 %c.22))
+   (= #t %t.49 (tuple %tag.21 %t.48))
+   (= #t %tmp.30 (call %persistentHash.13 %t.49))
+   (= #t
+      %t.50
+      (public-ledger %ballots.0 (1) insert %tag.21 %tmp.30))
+   (= #t %t.51 (tuple)) %t.51)
+  (circuit %voteLate.8 ((%slot.23 (tbytes 32))) (ttuple)
+    (= #t %sk.36 (call %voterKey.15))
+    (= #t
+       %t.52
+       (tuple
+         #vu8(99 97 115 101 58 118 111 116 101 114 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.36))
+    (= #t %tag.24 (call %persistentHash.13 %t.52))
+    (= #t %c.25 (call %choice.16)) (= #t %t.53 (< 8 %c.25 4))
+    (= #t %t.54 (select #t %t.53 #t))
+    (assert %t.54 "four options") (= #t %t.55 (tuple))
+    (= #t %t.56 (field->bytes 32 %c.25))
+    (= #t %t.57 (tuple %tag.24 %t.56))
+    (= #t %tmp.31 (call %persistentHash.13 %t.57))
+    (= #t
+       %t.58
+       (public-ledger %late.2 (2) insert %slot.23 %tmp.31))
+    (= #t %t.59 (tuple)) %t.59)
+  (circuit %file.1 ((%employee.26 (tunsigned 4294967295))) (ttuple)
+    (= #t %t.60 (call %salary.17))
+    (= #t
+       %s.27
+       (new (tstruct
+              Slip
+              (employee (tunsigned 4294967295))
+              (pay (tunsigned 4294967295)))
+            %employee.26
+            %t.60))
+    (= #t %tmp.32 (call %persistentHash.11 %s.27))
+    (= #t
+       %t.61
+       (public-ledger %slips.6 (3) insert %employee.26 %tmp.32))
+    (= #t %t.62 (tuple)) %t.62)
+  (circuit %note.3 () (ttuple) (= #t %sk.37 (call %voterKey.15))
+    (= #t
+       %t.63
+       (tuple
+         #vu8(99 97 115 101 58 118 111 116 101 114 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.37))
+    (= #t %tag.28 (call %persistentHash.13 %t.63))
+    (= #t %t.64 (call %noteSecret.18))
+    (= #t %t.65 (tuple %tag.28 %t.64))
+    (= #t %tmp.33 (call %persistentHash.13 %t.65))
+    (= #t
+       %t.66
+       (public-ledger %notes.4 (4) insert %tag.28 %tmp.33))
+    (= #t %t.67 (tuple)) %t.67))
+tell-constructor:
+(constructor () (tuple))

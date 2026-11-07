@@ -47,3 +47,5 @@ reduce-to-circuit:
    (= %t.38
       (public-ledger #t %ballots.0 (1) insert %tag.13 %tmp.16))
    (= %t.39 (tuple)) %t.39))
+tell-constructor:
+(constructor () (tuple))

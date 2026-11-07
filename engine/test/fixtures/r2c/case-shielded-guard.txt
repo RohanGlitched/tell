@@ -82,3 +82,5 @@ reduce-to-circuit:
     (= %t.28 %t.35 (tuple))
     (= #t %t.36 (public-ledger %deposits.1 (0) increment 1))
     (= #t %t.37 (tuple)) %t.37))
+tell-constructor:
+(constructor () (tuple))
