@@ -79,9 +79,9 @@
         "Fix suggestions on the pull request",
         "Grade history per contract"
       ],
-      "status": "pilot",
+      "status": "planned",
       "price": "$20 per contributor a month",
-      "priceNote": "Pilot price we are testing; public repositories stay free."
+      "priceNote": "Planned price, to test with the first pilot; public repositories stay free."
     },
     {
       "id": "audit-license",

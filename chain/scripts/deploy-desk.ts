@@ -77,10 +77,17 @@ if (!fs.existsSync(path.join(KEYS, 'keys'))) throw new Error(`No proving keys at
 const house = await House.open();
 await house.start();
 await house.sync();
+// After a restore from saved state the wallet may not have applied every DUST event yet; building a
+// fee before then is rejected as InvalidDustSpendProof (node error 170). Give it time, then resync.
+await new Promise((r) => setTimeout(r, Number(process.env.DESK_SETTLE_MS ?? 60_000)));
+await house.sync();
 logger.info(await house.summary());
 
 // The node rejects a transaction that spends DUST the wallet has not yet seen settle; resync and retry.
-async function retry<T>(what: string, f: () => Promise<T>, tries = 4): Promise<T> {
+// A failed submission can leave this wallet instance holding a lock on its DUST UTXO, so with
+// DESK_TRIES=1 the script exits instead and an outer loop restarts it with a fresh wallet; finished
+// steps are skipped because they are recorded in the output file.
+async function retry<T>(what: string, f: () => Promise<T>, tries = Number(process.env.DESK_TRIES ?? 4)): Promise<T> {
   for (let i = 1; ; i++) {
     try {
       return await f();
@@ -102,6 +109,9 @@ async function step(name: string, f: () => Promise<{ txId: string; [k: string]: 
   out.steps.push(s);
   save();
   logger.info(`${name}: ${r.txId} (${Math.round((Date.now() - t) / 1000)} s)`);
+  // Let the DUST change from this transaction settle before the next one pays a fee.
+  await new Promise((r) => setTimeout(r, Number(process.env.DESK_STEP_PAUSE_MS ?? 45_000)));
+  await house.sync();
   return s;
 }
 

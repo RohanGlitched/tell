@@ -41,6 +41,13 @@ if (fs.existsSync(path.join(deskSrc, 'view.ts'))) {
 }
 // Desk's deployment record (address, demo steps, published reports and grades).
 const deskDep = ['preprod', 'preview'].map((n) => path.resolve(here, '../../chain', `desk-${n}.json`)).find((f) => fs.existsSync(f));
-if (deskDep) fs.copyFileSync(deskDep, path.resolve(here, '../data/desk-deployment.json'));
+if (deskDep) {
+  // Publish the deployment record without anything a sealed report keeps private: a report's digest
+  // stays off the site until it is revealed on chain, when anyone can read it there anyway.
+  const dep = JSON.parse(fs.readFileSync(deskDep, 'utf8'));
+  for (const r of Object.values(dep.reports ?? {})) if (!r.revealed) delete r.digest;
+  fs.writeFileSync(path.resolve(here, '../data/desk-deployment.json'), JSON.stringify(dep, null, 2) + '
+');
+}
 else if (!fs.existsSync(path.resolve(here, '../data/desk-deployment.json'))) fs.writeFileSync(path.resolve(here, '../data/desk-deployment.json'), '{}\n');
 console.log('contracts copied');
