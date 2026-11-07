@@ -20,6 +20,7 @@
   <b><a href="https://tell-midnight.vercel.app/live">Live on Midnight</a></b> ·
   <b><a href="https://tell-midnight.vercel.app/how">How it works</a></b> ·
   <b><a href="https://youtu.be/UXauGr1tmhI">Demo video (Wave 2)</a></b> ·
+  <b><a href="docs/tell-deck-wave3.pdf">Deck (Wave 3)</a></b> ·
   <b><a href="docs/tell-deck.pdf">Deck (Wave 2)</a></b>
 </p>
 
@@ -398,6 +399,7 @@ What would help: a Tell check in `create-mn-app` and Midnight's example reposito
 | [`vscode/`](vscode) | VS Code extension |
 | [`web/`](web) | the website: scanner, Wave 3, Desk, users, adoption, survey, zoo, live demo (Next.js) |
 | [`action.yml`](action.yml), [`docs/action.md`](docs/action.md), [`examples/`](examples) | the GitHub Action, its documentation and a workflow to copy |
+| [`docs/tell-deck-wave3.pdf`](docs/tell-deck-wave3.pdf) | the Wave 3 deck |
 | [`docs/tell-deck.pdf`](docs/tell-deck.pdf) | the Wave 2 deck |
 
 ## Setup and tests
