@@ -19,6 +19,7 @@
   <b><a href="https://tell-midnight.vercel.app/survey">Survey</a></b> ·
   <b><a href="https://tell-midnight.vercel.app/live">Live on Midnight</a></b> ·
   <b><a href="https://tell-midnight.vercel.app/how">How it works</a></b> ·
+  <b><a href="https://youtu.be/S28cWOXppfI">Demo video (Wave 3)</a></b> ·
   <b><a href="https://youtu.be/UXauGr1tmhI">Demo video (Wave 2)</a></b> ·
   <b><a href="docs/tell-deck-wave3.pdf">Deck (Wave 3)</a></b> ·
   <b><a href="docs/tell-deck.pdf">Deck (Wave 2)</a></b>
