@@ -101,8 +101,9 @@ jobs:
     # The site as Vercel builds it (the prebuild vendors the engine and fetches six compilers),
     # served by `next start`, then the Playwright suite against it, API tests included. Tests that
     # scan a real repository stay behind TELL_E2E_NETWORK; the Preprod reads have no indexer key
-    # here, so /desk and /live show their marked fallback states.
-    runs-on: ubuntu-latest
+    # here, so /desk and /live show their marked fallback states. Ubuntu 24.04: Playwright 1.55
+    # has no browser builds for 26.04, which ubuntu-latest now is.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
