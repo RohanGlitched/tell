@@ -36,7 +36,7 @@
       "source": "Backend engineering review, 29/30",
       "quote": "You implemented genuine private state with implemented witnesses and a commitment/hash, exactly what a Midnight app should do.",
       "did": "We built a second contract where private state does real work. Tell Desk seals a privacy finding as a commitment with a per-report tag; maintainers answer with a zero-knowledge proof over a Merkle tree of credentials, without revealing who they are or which project; the opening is published only after the fix or the embargo. It also keeps Tell's grades by code hash for wallets to read. {tests.desk} contract tests, including an attacker who reads only public data. Version 2 is live on Preprod and has run its whole lifecycle (17 transactions): five credentials, four sealed reports, a finding acknowledged, fixed and revealed, and four grades.",
-      "status": "in progress",
+      "status": "done",
       "evidence": [{ "label": "Tell Desk: public ledger and private state", "href": "/desk" }]
     },
     {
