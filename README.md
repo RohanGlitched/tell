@@ -87,7 +87,11 @@ npm install
 npx tsx engine/src/cli.ts path/to/contracts                      # readable report
 npx tsx engine/src/cli.ts . --json                               # machine-readable
 npx tsx engine/src/cli.ts . --sarif tell.sarif --fail-on high    # for CI
+npx tsx engine/src/cli.ts path/to/contracts --fix-dry-run        # verified fixes as a diff
+npx tsx engine/src/cli.ts path/to/contracts --fix                # apply them
 ```
+
+A fix is only offered after Tell has compiled the patched contract with the same compiler and scanned it again: it must compile, the finding must be gone, and nothing new at medium or worse may appear. Every leaky contract in the zoo gets one, and the zoo's attacks recover nothing from the patched contracts ([`zoo/test/autofix.test.ts`](zoo/test/autofix.test.ts)). For the board, the fix stops posts grouping by author on the ledger and says that the membership check still links them; the zoo's Merkle-proof version is the full fix.
 
 ### In CI
 
@@ -98,7 +102,7 @@ npx tsx engine/src/cli.ts . --sarif tell.sarif --fail-on high    # for CI
     fail-on: high
 ```
 
-Findings appear in GitHub code scanning on the line that leaks.
+Findings appear in GitHub code scanning on the line that leaks. On pull requests Tell also comments on the changed lines, with the bits revealed and the verified fix as a suggestion, and writes a job summary with the grade before and after the fixes. See [docs/action.md](docs/action.md) for permissions, inputs and a workflow to copy.
 
 ### In your editor and your coding agent
 
