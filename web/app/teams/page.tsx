@@ -4,15 +4,23 @@ import { business, fmtDate } from '@/lib/content';
 import { CtaRow, Page, PageHead, Section, StatusPill } from '@/components/ui';
 import InterestForm from '@/components/InterestForm';
 import CompareTable from '@/components/CompareTable';
+import compare from '@/data/compare.json';
 
 export const metadata: Metadata = {
   title: 'For teams',
   description: 'Who Tell is for and who pays: free open-source core, a hosted pull-request bot for private repositories, an audit-firm license and ecosystem sponsorship.',
 };
 
+// $15,000, or $15,000–30,000 for a range; rounded to the nearest thousand
+const usd = (n: number) => `$${(Math.round(n / 1000) * 1000).toLocaleString('en-US')}`;
+const range = (a: number, b: number) => (a === b ? `≈ ${usd(a)}` : `${usd(a)}–${usd(b).slice(1)}`);
+
 export default function TeamsPage() {
   const b = business;
   const segName = new Map(b.segments.map((s) => [s.id, s.name]));
+  const m = b.market;
+  const low = m.lines.reduce((n, l) => n + l.low, 0);
+  const high = m.lines.reduce((n, l) => n + l.high, 0);
   return (
     <Page>
       <PageHead kicker={`For teams · updated ${fmtDate(b.updatedAt)}`} title="Who Tell is for, and who pays">
@@ -51,7 +59,7 @@ export default function TeamsPage() {
         </ol>
       </Section>
 
-      <Section id="offers" tone="mist" note="Offers" noteText="Prices come from data/business.json and stay empty until set." title="What is free, what is paid" intro="Prices appear here once they are set. Until then, an offer says what it includes and whether anyone can use it yet.">
+      <Section id="offers" tone="mist" note="Offers" noteText="Planned prices are hypotheses to test in pilots. Nothing is sold yet." title="What is free, what is paid" intro="Each offer says what it includes, whether anyone can use it yet, and the price we will test. Public code never pays.">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse bg-white text-[14.5px]" data-testid="offers-table">
             <thead>
@@ -93,11 +101,60 @@ export default function TeamsPage() {
       </Section>
 
       <Section
+        id="market"
+        note="Market"
+        noteText={`Counts are sourced; prices are hypotheses. As of ${fmtDate(m.asOf)}.`}
+        title="How big it can get, counted from the bottom"
+        intro={m.intro}
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] border-collapse bg-white text-[14.5px]" data-testid="market-table">
+            <thead>
+              <tr className="border-b-2 border-[var(--indigo)] text-left align-bottom">
+                <th className="py-2 pl-4 pr-4 font-semibold">Stream</th>
+                <th className="py-2 pr-4 font-semibold">Count</th>
+                <th className="py-2 pr-4 font-semibold">Price we will test</th>
+                <th className="py-2 pr-4 text-right font-semibold">A year</th>
+              </tr>
+            </thead>
+            <tbody>
+              {m.lines.map((l) => (
+                <tr key={l.label} className="border-b border-[var(--rule)] align-top">
+                  <td className="py-3 pl-4 pr-4">
+                    <span className="font-medium">{l.label}</span>
+                    <p className="mt-1 max-w-[52ch] text-[13.5px] text-[var(--graphite)]">{l.basis}</p>
+                    <p className="mt-1 text-[12.5px] text-[var(--faint)]">{l.status}</p>
+                  </td>
+                  <td className="num whitespace-nowrap py-3 pr-4">
+                    {l.count} {l.unit}
+                  </td>
+                  <td className="py-3 pr-4 text-[var(--graphite)]">{l.price}</td>
+                  <td className="num whitespace-nowrap py-3 pr-4 text-right">{range(l.low, l.high)}</td>
+                </tr>
+              ))}
+              <tr className="border-t-2 border-[var(--indigo)] align-top">
+                <td className="py-3 pl-4 pr-4 font-semibold" colSpan={3}>
+                  Ceiling today, if every one of them paid
+                </td>
+                <td className="num whitespace-nowrap py-3 pr-4 text-right font-[family-name:var(--serif)] text-[19px] font-medium" data-testid="market-total">
+                  {range(low, high)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <p className="border-t border-[var(--rule)] pt-4 text-[15px] text-[var(--graphite)]">{m.seats}</p>
+          <p className="border-t border-[var(--rule)] pt-4 text-[15px]">{m.path}</p>
+        </div>
+      </Section>
+
+      <Section
         id="compare"
         note="Benchmark"
         noteText="Five tools, 69 Compact files, every number reproducible from bench/."
         title="How Tell compares"
-        intro="The other analyzers a Midnight team can run today, on the same files: Tell's leak zoo, 30 cases written for the benchmark, and Midnight's official examples."
+        intro={`The other analyzers a Midnight team can run today, on the same files: ${compare.corpus.replace(/^69 Compact files: /, '')}.`}
       >
         <CompareTable />
       </Section>

@@ -10,6 +10,7 @@ import businessJson from '@/data/business.json';
 import adoptionJson from '@/data/adoption.json';
 import rerunJson from '@/data/survey-rerun.json';
 import deskJson from '@/data/desk.json';
+import zooJson from '@/data/zoo.json';
 
 // Work status. "done": shipped and linked; "in progress": being built now; "planned": not
 // started; "pilot": offered to a first user; "live": an offer anyone can use today.
@@ -74,6 +75,14 @@ export type Business = {
   offers: Offer[];
   numbers: { label: string; value: string | null; source: string | null }[];
   principles: { title: string; text: string }[];
+  // a bottom-up sum: sourced counts times hypothesis prices (BUSINESS-RESEARCH.md)
+  market: {
+    asOf: string;
+    intro: string;
+    lines: { label: string; count: number; unit: string; price: string; low: number; high: number; basis: string; status: string }[];
+    seats: string;
+    path: string;
+  };
   contact: { repo: string; label: string };
 };
 export const business = businessJson as Business;
@@ -132,6 +141,22 @@ export type Desk = {
   flow: { step: string; text: string }[];
 };
 export const desk = deskJson as Desk;
+
+// ---- zoo.json ---------------------------------------------------------------------------------
+// Counts for copy, taken from the zoo itself (scripts/samples.mjs copies every pair), so a new
+// pair updates every page that mentions the zoo.
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+export const numberWord = (n: number, capital = false) => {
+  const w = WORDS[n] ?? String(n);
+  return capital ? w[0].toUpperCase() + w.slice(1) : w;
+};
+const isLedger9 = (z: { leaky: string }) => /Ledger 9/.test(z.leaky.split('\n')[0] ?? '');
+export const zooCounts = {
+  pairs: zooJson.length,
+  contracts: zooJson.length * 2,
+  ledger9: zooJson.filter(isLedger9).length,
+  ledger8: zooJson.filter((z) => !isLedger9(z)).length,
+};
 
 export const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'not yet';

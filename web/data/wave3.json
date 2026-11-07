@@ -79,9 +79,9 @@
       "criterion": "business",
       "source": "Business review",
       "quote": "the closest Web2 analogues (Slither, Semgrep, Snyk) are free or sold per developer seat",
-      "did": "We price the same way they do. The analyzer is free and open source. Money comes from hosted checks on private code and from audit firms, not from per-seat licenses for the scanner.",
+      "did": "Free like them, but not sold per seat: Midnight has about 150 active developers a month, too few for seats to carry a product. The analyzer stays free and open source. Money comes from audit-firm licenses and an ecosystem grant first, and later from hosted checks priced per private repository, not per developer.",
       "status": "done",
-      "evidence": [{ "label": "Offers and status", "href": "/teams#offers" }]
+      "evidence": [{ "label": "Offers and status", "href": "/teams#offers" }, { "label": "The market, counted", "href": "/teams#market" }]
     },
     {
       "id": "buyer-pool",

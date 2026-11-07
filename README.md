@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml"><img src="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-0d1220" alt="Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/Compact-0.29%E2%80%930.36-1a1040" alt="Compact 0.29 to 0.36">
+  <img src="https://img.shields.io/badge/Compact-0.30%E2%80%930.36%20tested%2C%200.29%20supported-1a1040" alt="Compact 0.30 to 0.36 tested in CI, 0.29 supported">
   <img src="https://img.shields.io/badge/Ledger-8%20%2B%209-1a1040" alt="Ledger 8 and 9">
   <img src="https://img.shields.io/badge/Midnight-Preprod-ff4fd8" alt="Midnight Preprod">
 </p>
@@ -39,7 +39,7 @@ Every point from the Wave 2 review (jkato, October 30) and the recap sent to all
 | "genuine private state with implemented witnesses and a commitment/hash" | A second contract where private state carries the design: Tell Desk seals a finding as a commitment, maintainers answer with a zero-knowledge Merkle membership proof, and nothing about the report, the project or either party is public until the reveal. Every `disclose()` is justified in a table. | [Tell Desk](#tell-desk-disclosure-and-grades-on-midnight), [`desk/`](desk) | deployed; demo lifecycle partly run |
 | "Genuinely interesting ecosystem tool, but as a business it is small." | We researched who pays and why now, wrote it down with sources, and started pilots: requests to two audit firms (sent November 7), notes to 11 teams and one issue on Midnight's own examples. No revenue yet. | [Who it's for and who pays](#who-its-for-and-who-pays), [/teams](https://tell-midnight.vercel.app/teams) | in progress |
 | "Your real substitutes are the Compact compiler itself and manual review by security firms" | The compiler answers *whether*, Tell *how much*, from the compiler's own output. Audit firms are buyers, not rivals: Tell's per-circuit map is the first day of a privacy review. We also measured Tell against every other Compact analyzer we could find. | [How Tell compares](#how-tell-compares), [`bench/RESULTS.md`](bench/RESULTS.md) | done |
-| "the closest Web2 analogues (Slither, Semgrep, Snyk) are free or sold per developer seat" | Same model: the analyzer stays free and open source. None of them parses Compact ([Semgrep's supported languages](https://docs.semgrep.dev/supported-languages) list Solidity, Cairo, Circom and Move, not Compact). | [/teams#offers](https://tell-midnight.vercel.app/teams#offers) | done |
+| "the closest Web2 analogues (Slither, Semgrep, Snyk) are free or sold per developer seat" | Free like them, but not sold per seat: Midnight has about 150 active developers a month, too few for seats. The analyzer stays free and open source; money comes from audit-firm licenses and an ecosystem grant first, and later from hosted checks priced per private repository. None of them parses Compact ([Semgrep's supported languages](https://docs.semgrep.dev/supported-languages) list Solidity, Cairo, Circom and Move, not Compact). | [/teams#offers](https://tell-midnight.vercel.app/teams#offers) | done |
 | "the buyer pool here is the few dozen teams building on Midnight" | Right for paying production teams today, and we say so. The buyers that matter are audit firms (each serves many teams), the Foundation, and teams who need a privacy report as evidence. Users also reach Tell through coding agents (MCP), VS Code and the on-chain grade registry. | [Honest size](#honest-size) | in progress |
 | "please consider applying to our technical fellowship program" | The Aliit application is drafted; it is not submitted yet. | — | in progress |
 | "if you already have a live product, active users, or revenue, we'd love to hear from you, even if [...] the numbers are small" | Tell is live (site, CLI, Action, badge). The numbers are small and shown as they are, read from GitHub's API by a script: 0 stars and 0 outside repositories using the Action on November 7; 12 issues opened, 0 replies so far. | [/adoption](https://tell-midnight.vercel.app/adoption) | in progress |
@@ -244,7 +244,7 @@ Read honestly: the brute force found nothing outside Tell's own leaky contract, 
 
 ## How Tell compares
 
-[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 69 Compact files: Tell's leak zoo (10), 30 cases written for the benchmark (21 planted leaks, 18 safe files, 1 non-privacy bug) and 29 contracts from Midnight's official examples. Numbers from [`bench/RESULTS.md`](bench/RESULTS.md) as of November 7, 2026, measured on the **Wave 2 engine** (`d3a9104`); a re-run with the Wave 3 engine is in progress and will update that file.
+[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 69 Compact files: the Wave 2 leak zoo (10 files: 5 leaky, 5 fixed), 30 cases written for the benchmark (16 leaky, 13 safe, 1 non-privacy bug) and 29 contracts from Midnight's official examples. Zoo and cases together are the labelled set: 21 planted leaks (16 + 5) and 19 files without one (13 + 5 + the non-privacy bug). Numbers from [`bench/RESULTS.md`](bench/RESULTS.md) as of November 7, 2026, measured on the **Wave 2 engine** (`d3a9104`); a re-run with the Wave 3 engine is in progress and will update that file.
 
 **Bias, stated first:** Tell's author wrote the benchmark, the zoo is Tell's own development set, and the cases were written knowing what Tell looks for. Read the labelled-set numbers as "does each tool handle these patterns", not as accuracy. The examples set has no planted leaks and is the less biased half.
 
@@ -312,15 +312,26 @@ Every ballot register and vote transaction is in [`chain/deployments-preprod.jso
 |---|---|---|---|
 | Open-source core | everyone | free: CLI, Action, rules, zoo, web scanner, public repositories | live |
 | Audit-firm license | firms reviewing Compact | first engagement free, then per engagement or $3,000–6,000 a year per firm | pilot requests sent to 2 firms on November 7; no reply yet |
-| Ecosystem maintenance grant | Midnight Foundation | 12 months of compiler and ledger tracking, all output open source | planned |
+| Ecosystem maintenance grant | Midnight Foundation | $30,000–60,000 for 12 months of compiler and ledger tracking, all output open source | planned |
 | Release privacy report | teams handling personal data | per release, tied to the compiled artifacts | planned |
-| Hosted pull-request checks for private repositories | production teams | per contributor a month, below Semgrep's $30 ([pricing](https://semgrep.dev/pricing)) | planned |
+| Hosted pull-request checks for private repositories | production teams | $49 per private repository a month, not per seat | planned |
 
 The anchor for audit work: ZK circuit audits already cost 80–120% more than Solidity audits ([Sherlock, 2026](https://www.sherlock.xyz/post/smart-contract-audit-pricing-a-market-reference-for-2026)); a privacy map that saves an auditor a day is worth more than the license. Free analyzers elsewhere are paid for by audit work and grants (Slither, Aderyn); hosted-only analysis has the weakest record ([MythX](https://mythx.io/sunset/) shut down, [OpenZeppelin Defender](https://www.openzeppelin.com/news/doubling-down-on-open-source-and-phasing-out-defender) retired).
 
 ### Honest size
 
-Today only a few dozen teams run production contracts on Midnight: about 19 projects went through the mainnet deploy review in six months ([archived records](https://github.com/midnightntwrk/midnight-improvement-proposals/tree/main/deployments)). The developer base is larger and growing: about 150 monthly active developers in 2026 ([Electric Capital via Midnight](https://midnight.network/blog/electric-capital-report)), active contributors up 325% in a year ([Midnight, August 2026](https://midnight.network/blog/developer-activity-surges)). Seats alone cannot carry Tell, which is why seats are last on the list. The path is audit firms (each serves many teams), the Foundation, and later the same leak class on other ZK chains (Aztec's docs list the same channels: [privacy considerations](https://docs.aztec.network/developers/docs/resources/considerations/privacy_considerations)).
+Today only a few dozen teams run production contracts on Midnight: about 19 projects went through the mainnet deploy review in six months ([archived records](https://github.com/midnightntwrk/midnight-improvement-proposals/tree/main/deployments)). The developer base is larger and growing: about 150 monthly active developers in 2026 ([Electric Capital via Midnight](https://midnight.network/blog/electric-capital-report)), active contributors up 325% in a year ([Midnight, August 2026](https://midnight.network/blog/developer-activity-surges)). Seats cannot carry Tell: at Semgrep's $30 a seat ([pricing](https://semgrep.dev/pricing)), all 150 paying would be $54,000 a year, and most of them work on public code that stays free. So Tell does not sell seats.
+
+Counted from the bottom, with sourced counts and the prices above (hypotheses, nothing sold):
+
+| Stream | Count | Price we will test | A year |
+|---|---|---|---|
+| Audit-firm licenses | 5 firms with Compact or Midnight work we can point to, or named in the Wave 2 review | $3,000–6,000 each | $15,000–30,000 |
+| Ecosystem maintenance grant | 1 | $30,000–60,000 for 12 months | $30,000–60,000 |
+| Private-repository checks, later | ~19 production teams, one repository each | $49 a month | ≈ $11,000 |
+| **Ceiling today, if every one paid** | | | **$56,000–101,000** |
+
+The realistic funding path is an ecosystem grant plus audit-firm licenses, with the Aliit fellowship for reach (it pays no stipend); hosted checks on private repositories come later. Our year-one target is below the ceiling: $15,000–40,000, mostly grant and services. The same table is at [/teams#market](https://tell-midnight.vercel.app/teams#market). The path is audit firms (each serves many teams), the Foundation, and later the same leak class on other ZK chains (Aztec's docs list the same channels: [privacy considerations](https://docs.aztec.network/developers/docs/resources/considerations/privacy_considerations)).
 
 Money for tooling is thin right now: Catalyst's Midnight category was paused ([CryptoSlate](https://cryptoslate.com/?p=521853)) and the Aliit fellowship pays no stipend ([Midnight blog](https://midnight.network/blog/aliit-fellowship-now-accepting-cohort-2-applications)).
 

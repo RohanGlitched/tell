@@ -46,6 +46,8 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
   const topRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const autoran = useRef(false);
+  // the sample whose text is in the editor, if it is unedited
+  const currentSample = samples.find((s) => s.source === source) ?? null;
 
   async function run(body: { source?: string; repo?: string; name?: string }, text = '', fixed?: { before: Grade; original: string }) {
     setError(null);
@@ -191,22 +193,49 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
             void run({ source }, source);
           }}
         >
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-[13.5px]">
-            <span className="text-[var(--faint)]">Samples:</span>
-            {samples.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setSource(s.source);
-                  void run({ source: s.source, name: `${s.id}.compact` }, s.source);
-                }}
-                className="min-h-[44px] rounded-md border border-[var(--rule)] bg-white px-3 hover:border-[var(--ink-3)] sm:min-h-[32px] sm:px-2.5"
-                title={s.note}
-              >
-                {s.label}
-              </button>
-            ))}
+          {/* One row that scrolls sideways on a phone, so the editor and the Scan button stay in view;
+              it wraps on wider screens. The sample in the editor is marked. */}
+          <div className="mb-3 text-[13.5px]">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3 sm:hidden">
+              <span className="text-[var(--faint)]" aria-hidden="true">
+                Samples ({samples.length}), swipe for more
+              </span>
+            </div>
+            <div
+              role="group"
+              aria-label="Sample contracts"
+              data-testid="sample-row"
+              className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:thin] sm:mx-0 sm:flex-wrap sm:items-center sm:overflow-visible sm:px-0 sm:pb-0"
+            >
+              <span className="hidden shrink-0 text-[var(--faint)] sm:inline">Samples:</span>
+              {samples.map((s) => {
+                const on = s.id === currentSample?.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      setSource(s.source);
+                      void run({ source: s.source, name: `${s.id}.compact` }, s.source);
+                    }}
+                    className={`min-h-[44px] shrink-0 snap-start whitespace-nowrap rounded-md border px-3 sm:min-h-[32px] sm:px-2.5 ${on ? 'border-[var(--indigo)] bg-[var(--indigo)] text-white' : 'border-[var(--rule)] bg-white hover:border-[var(--ink-3)]'}`}
+                    title={s.note}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-1.5 text-[12.5px] text-[var(--graphite)]" aria-live="polite" data-testid="sample-current">
+              {currentSample ? (
+                <>
+                  In the editor: <b className="font-semibold text-[var(--ink)]">{currentSample.label}</b>, {currentSample.note}.
+                </>
+              ) : (
+                'In the editor: your own contract.'
+              )}
+            </p>
           </div>
           <label htmlFor="src" className="sr-only">
             Compact source

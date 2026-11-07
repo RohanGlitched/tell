@@ -6,10 +6,11 @@ import zoo from '@/data/zoo.json';
 import precomputed from '@/data/sample-results.json';
 import type { ScanResponse } from '@/lib/types';
 import { PageHead } from '@/components/ui';
+import { numberWord, zooCounts } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'Leak zoo',
-  description: 'Five small Compact contracts that leak, each with its fix, Tell’s finding, and an attack test that recovers the secret from public state.',
+  description: `${numberWord(zooCounts.pairs, true)} small Compact contracts that leak, each with its fix, Tell’s finding, and an attack test that recovers the secret from public state.`,
 };
 
 type Case = {
@@ -122,9 +123,9 @@ export default function ZooPage() {
     <>
       <PageHead kicker="Evidence" title="The leak zoo">
         <p>
-          Nine small contracts, each with one leak a careful developer could ship, and its fix: votes, salaries, bids, keys, tags, a constructor, shielded and
-          unshielded tokens, and a Ledger 9 event. For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public
-          state. 18 attack tests, and auto-fix tests that patch each leaky contract and scan it again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+          {numberWord(zooCounts.pairs, true)} pairs of small contracts ({zooCounts.contracts} in all, {zooCounts.ledger8} pairs on Ledger 8 and {zooCounts.ledger9} on Ledger 9), each a leak
+          a careful developer could ship and its fix: votes, salaries, bids, keys, tags, a constructor, shielded and unshielded tokens, and a Ledger 9 event.
+          For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public state. 18 attack tests, and auto-fix tests that patch each leaky contract and scan it again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
         </p>
       </PageHead>
     <div className="wrap pb-16 pt-12 sm:pt-14">
