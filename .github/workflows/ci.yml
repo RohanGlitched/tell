@@ -12,13 +12,17 @@ jobs:
         with: { node-version: '22' }
       - uses: midnightntwrk/setup-compact-action@v1
         with: { compact-version: '0.31.1' }
-      - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --include-workspace-root
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --workspace desk --include-workspace-root
       - name: Compile the zoo
         run: npm run compact -w zoo
       - name: Engine precision tests
         run: npm test -w engine
       - name: Zoo attack tests
         run: npm test -w zoo
+      - name: Compile Tell Desk
+        run: npm run compact -w desk
+      - name: Tell Desk lifecycle, rejection and attacker tests
+        run: npm test -w desk
   compilers:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.
@@ -58,3 +62,9 @@ jobs:
       - name: Expect the leaky scan to fail
         if: steps.leaky.outcome != 'failure'
         run: echo "Tell missed a leak in the zoo" && exit 1
+      - name: Tell Desk scans at grade A (nothing above info)
+        uses: ./
+        with:
+          path: desk/contracts/desk.compact
+          fail-on: low
+          upload-sarif: 'false'
