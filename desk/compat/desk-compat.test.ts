@@ -33,7 +33,8 @@ type Any = any;
 class Sim {
   time = 1_790_000_000;
   readonly address = dummyContractAddress();
-  readonly views: { circuit: string; view: unknown }[] = [];
+  // per call: what the network sees (`view`) and, apart, what only the prover sees (`prover`)
+  readonly views: { circuit: string; view: unknown; prover: unknown }[] = [];
   private constructor(
     readonly contract: Any,
     private state: Any,
@@ -66,10 +67,17 @@ class Sim {
     } as Any);
     const r = await this.contract.impureCircuits[circuit](ctx, ...args);
     this.state = r.context.callContext.currentQueryContext.state;
-    // what the network sees of the call: inputs, outputs and the public transcript (never the
-    // private transcript outputs, which stay with the prover)
-    const trace = (r.context.callProofDataTrace ?? []).map((p: Any) => ({ input: p.input, output: p.output, transcript: p.publicTranscript }));
-    this.views.push({ circuit, view: trace });
+    // What the network sees of a call is its public transcript. A contract call on chain carries
+    // the address, entry point, transcripts, proof and a hiding commitment to the call's inputs and
+    // outputs (ledger `ContractCall.communicationCommitment`), not the inputs and outputs
+    // themselves; those, like the private transcript outputs, stay with the prover. Same split as
+    // src/simulator.ts (PublicView / ProverView) for the full suite on 0.31.1.
+    const trace: Any[] = r.context.callProofDataTrace ?? [];
+    this.views.push({
+      circuit,
+      view: trace.map((p) => ({ transcript: p.publicTranscript })),
+      prover: trace.map((p) => ({ input: p.input, output: p.output })),
+    });
     return { result: r.result, privateState: r.context.callContext.currentPrivateState };
   }
 }
@@ -181,5 +189,18 @@ describe('Desk on the newer runtime', () => {
     expect(pub.some((h) => h.includes(toHex(id)))).toBe(true);
     for (const secret of [w.researcher.researcherSecret!, w.maintainerA.maintainerSecret!, w.tell.attesterSecret!, opening.nonce, opening.finding.digest, opening.finding.project])
       expect(appears(secret, pub)).toBe(false);
+  });
+
+  it('learns only the leaf from a registration: neither the maintainer key nor the project', () => {
+    const reg = w.sim.views.filter((v) => v.circuit === 'registerMaintainer');
+    expect(reg).toHaveLength(2);
+    const pk = Desk.pureCircuits.maintainerKey(w.maintainerA.maintainerSecret!);
+    const leaf = Desk.pureCircuits.maintainerLeaf(pk, w.projectA);
+    const pub = publicAtoms(w.sim);
+    expect(appears(leaf, pub)).toBe(true); // the leaf is published on purpose
+    for (const x of [pk, w.projectA, w.projectB]) expect(appears(x, pub)).toBe(false);
+    // control: the key and the project are the circuit's inputs, which only the prover sees
+    expect(appears(w.projectA, atoms(reg[0].prover))).toBe(true);
+    expect(appears(pk, atoms(reg[0].prover))).toBe(true);
   });
 });
