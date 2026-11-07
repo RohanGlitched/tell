@@ -247,8 +247,8 @@
     }
   ],
   "learned": [
-    { "title": "Finding the leak is not enough", "basis": "assumption", "text": "We expect a team that sees a finding to ask next how to fix it; no team has replied yet, so this is a design assumption. That is why the fix view and auto-fix exist: a finding without a patch is extra work, and a verified patch is easy to say yes to." },
-    { "title": "Privacy grades need to be seen", "basis": "assumption", "text": "Our assumption, not yet tested: a grade only on the developer's screen changes little. When a wallet or a dApp store can read it from the chain, users can see it too, and teams have a reason to earn a good one. That is the job of Tell Desk's registry." },
+    { "title": "Finding the leak is not enough", "basis": "assumption", "text": "We expect a team that sees a finding to ask next how to fix it; no team has replied yet. That is why the fix view and auto-fix exist: a finding without a patch is extra work, and a verified patch is easy to say yes to." },
+    { "title": "Privacy grades need to be seen", "basis": "assumption", "text": "A grade only on the developer's screen changes little. When a wallet or a dApp store can read it from the chain, users can see it too, and teams have a reason to earn a good one. That is the job of Tell Desk's registry." },
     { "title": "Tell teams before telling anyone else", "basis": "practice", "text": "We never name a team on this site. Each team got a public GitHub issue on its own repository naming the file, the line and the kind of finding, and asking where to send the details; the details themselves are not public. This site shows only totals. A leak in a public contract is the team's to fix, not ours to announce." },
     { "title": "The compiler moves fast", "basis": "observed", "text": "Several compiler releases in one buildathon, 0.36.0 and Ledger 9 among them, and the circuit form Tell reads changed shape more than once. Keeping up with each release is the main maintenance cost, and it is exactly what ecosystem support would pay for." }
   ],

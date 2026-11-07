@@ -210,7 +210,8 @@
         "low": 8232,
         "high": 8232,
         "basis": "About 14 projects went through Midnight's mainnet deploy review in six months (19 review records, some of them Midnight's own); one private repository each.",
-        "status": "planned"
+        "status": "planned",
+        "approx": true
       }
     ],
     "seats": "Why not seats: about 150 developers are active on Midnight in a month. At Semgrep's $30 a seat, all of them paying would be $54,000 a year, and most of them work on public code that stays free.",

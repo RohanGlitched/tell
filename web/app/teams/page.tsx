@@ -103,11 +103,32 @@ export default function TeamsPage() {
       <Section
         id="market"
         note="Market"
-        noteText={`Counts are sourced; prices are hypotheses. As of ${fmtDate(m.asOf)}.`}
+        noteText={`Nothing is sold yet. As of ${fmtDate(m.asOf)}.`}
         title="How big it can get, counted from the bottom"
         intro={m.intro}
       >
-        <div className="overflow-x-auto">
+        {/* phones: one card per stream, the yearly figure in view; wider screens: the table */}
+        <ol className="grid gap-3 md:hidden" data-testid="market-cards">
+          {m.lines.map((l) => (
+            <li key={l.label} className="rounded-lg border border-[var(--rule)] bg-white p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-medium">{l.label}</span>
+                <span className="num whitespace-nowrap">{range(l.low, l.high)}</span>
+              </div>
+              <p className="mt-1 text-[13.5px] text-[var(--ink)]">
+                {l.approx ? 'About ' : ''}
+                {l.count} {l.unit} × {l.price}
+              </p>
+              <p className="mt-1 text-[13.5px] text-[var(--graphite)]">{l.basis}</p>
+              <p className="mt-1 text-[12.5px] text-[var(--faint)]">{l.status}</p>
+            </li>
+          ))}
+          <li className="flex items-baseline justify-between gap-3 border-t-2 border-[var(--indigo)] px-1 pt-3">
+            <span className="font-semibold">Ceiling today, if every one of them paid</span>
+            <span className="num whitespace-nowrap font-[family-name:var(--serif)] text-[19px] font-medium">{range(low, high)}</span>
+          </li>
+        </ol>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[680px] border-collapse bg-white text-[14.5px]" data-testid="market-table">
             <thead>
               <tr className="border-b-2 border-[var(--indigo)] text-left align-bottom">
@@ -126,7 +147,7 @@ export default function TeamsPage() {
                     <p className="mt-1 text-[12.5px] text-[var(--faint)]">{l.status}</p>
                   </td>
                   <td className="num whitespace-nowrap py-3 pr-4">
-                    {l.count} {l.unit}
+                    {l.approx ? 'about ' : ''}{l.count} {l.unit}
                   </td>
                   <td className="py-3 pr-4 text-[var(--graphite)]">{l.price}</td>
                   <td className="num whitespace-nowrap py-3 pr-4 text-right">{range(l.low, l.high)}</td>

@@ -80,7 +80,7 @@ export type Business = {
   market: {
     asOf: string;
     intro: string;
-    lines: { label: string; count: number; unit: string; price: string; low: number; high: number; basis: string; status: string }[];
+    lines: { label: string; count: number; approx?: boolean; unit: string; price: string; low: number; high: number; basis: string; status: string }[];
     seats: string;
     path: string;
   };
