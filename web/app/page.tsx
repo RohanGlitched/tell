@@ -73,8 +73,8 @@ export default function Home() {
             </div>
             <ol className="px-5 pb-2.5 pt-1.5">
               {leaky.rows.map((r) => (
-                <li key={r.voteTx} className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-dashed border-[var(--rule)] py-2 text-[14px] last:border-b-0 sm:grid-cols-[124px_1fr_auto]">
-                  <span className="mono text-[12.5px] text-[var(--graphite)]" title={r.voteTx}>
+                <li key={r.voteTx} className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-dashed border-[var(--rule)] py-2 text-[14px] last:border-b-0 sm:grid-cols-[150px_1fr_auto]">
+                  <span className="mono whitespace-nowrap text-[12.5px] text-[var(--graphite)]" title={r.voteTx}>
                     vote {short(r.voteTx, 6, 4)}
                   </span>
                   <span className="mono hidden truncate text-[12px] text-[var(--faint)] sm:block" title={r.value ?? ''}>
