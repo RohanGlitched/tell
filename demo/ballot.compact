@@ -35,5 +35,6 @@ export circuit vote(): [] {
   assert(!ballots.member(tag), "already voted");
   const c = choice();
   assert(c < 4, "there are four candidates");
-  ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, ballotSalt())));
+  // Store a hash of the vote so anyone can check a ballot was counted.
+  ballots.insert(tag, disclose(choiceHash(c)));
 }
