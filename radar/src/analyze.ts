@@ -48,7 +48,25 @@ export type ContractResult = {
 export type FamilyRun = { family: string; size: number; ms: number; hits: number };
 export type Analysis = { contracts: ContractResult[]; families: FamilyRun[]; crossContract: { value: string; contracts: string[] }[]; targets: number };
 
-type Seen = { state: DecodedState | null; calls: { txHash: string; entryPoint: string; atoms: Atom[] }[] };
+/** A contract reduced to what the analysis needs; raw transactions are dropped. */
+export type Digested = { address: string; state: DecodedState | null; calls: { txHash: string; entryPoint: string; atoms: Atom[] }[] };
+
+export function digest(r: ContractRecord): Digested {
+  let state: DecodedState | null = null;
+  try {
+    state = decodeState(r.state);
+  } catch {
+    state = null;
+  }
+  const calls: Digested['calls'] = [];
+  for (const a of r.actions) {
+    if (a.type !== 'ContractCall') continue;
+    // keep only digest-like atoms: everything else is ignored downstream
+    for (const c of decodeCalls(a.raw, r.address)) calls.push({ txHash: a.txHash, entryPoint: c.entryPoint, atoms: c.atoms.filter(isOpaque32) });
+  }
+  if (state) state = { ...state, cells: state.cells.map((c) => ({ ...c, atoms: c.atoms.filter(isOpaque32) })) };
+  return { address: r.address, state, calls };
+}
 
 function familiesFor(entryPoints: Set<string>, o: Options): { tables: Family[]; streamed: Family[] } {
   const words = vocabulary(entryPoints);
@@ -76,9 +94,9 @@ function familiesFor(entryPoints: Set<string>, o: Options): { tables: Family[]; 
   return { tables, streamed };
 }
 
-export async function analyze(records: ContractRecord[], o: Options = {}): Promise<Analysis> {
+export async function analyze(records: Digested[], o: Options = {}): Promise<Analysis> {
   const log = o.log ?? (() => {});
-  const seen = new Map<string, Seen>();
+  const seen = new Map<string, Digested>();
   const entryPoints = new Set<string>();
   const targets = new Targets();
   const where = new Map<string, Location[]>(); // digest -> locations
@@ -91,18 +109,8 @@ export async function analyze(records: ContractRecord[], o: Options = {}): Promi
   };
 
   for (const r of records) {
-    let state: DecodedState | null = null;
-    try {
-      state = decodeState(r.state);
-    } catch {
-      state = null;
-    }
-    const calls: Seen['calls'] = [];
-    for (const a of r.actions) {
-      if (a.type !== 'ContractCall') continue;
-      for (const c of decodeCalls(a.raw, r.address)) calls.push({ txHash: a.txHash, entryPoint: c.entryPoint, atoms: c.atoms });
-    }
-    seen.set(r.address, { state, calls });
+    const { state, calls } = r;
+    seen.set(r.address, r);
     for (const e of state?.entryPoints ?? []) entryPoints.add(e);
     for (const c of state?.cells ?? []) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'state', path: c.path, role: c.role });
     for (const c of calls) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'call', txHash: c.txHash, entryPoint: c.entryPoint });

@@ -13,8 +13,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { analyze } from './analyze.js';
-import { BLOCKS_PER_REQUEST, crawl, fetchContract, harvestCandidates, loadCrawl, tip, verifyAddresses, type ContractRecord } from './chain.js';
+import { analyze, digest, type Digested } from './analyze.js';
+import { BLOCKS_PER_REQUEST, crawl, fetchContract, harvestCandidates, loadCrawl, tip, verifyAddresses } from './chain.js';
 import { BudgetExceeded, Indexer, type Network } from './indexer.js';
 import { aggregate, details, type Own } from './report.js';
 
@@ -91,12 +91,12 @@ async function main() {
       const list = [...addrs].slice(0, num(flags.max, Infinity));
       const limit = num(flags.actions, 100);
       log(`scanning ${list.length} contracts (up to ${limit} recent actions each)`);
-      const records: ContractRecord[] = [];
+      const records: Digested[] = [];
       let missing = 0;
       for (const [i, a] of list.entries()) {
         try {
           const r = await fetchContract(ix, a, limit);
-          if (r) records.push(r);
+          if (r) records.push(digest(r));
           else missing++;
         } catch (e) {
           if (e instanceof BudgetExceeded) { log(`stopped fetching after ${i} contracts: ${e.message}`); break; }

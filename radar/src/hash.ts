@@ -8,6 +8,7 @@
 // recovered values in a report are re-checked with the runtime too.
 
 import { createHash, hash } from 'node:crypto';
+import os from 'node:os';
 
 // crypto.hash (one-shot, a little faster) returns a Buffer only on newer Node releases.
 const oneShot = (() => {
@@ -50,3 +51,10 @@ export function key48(h: Uint8Array): number {
 }
 
 export const hex = (b: Uint8Array) => Buffer.from(b).toString('hex');
+
+/** Worker threads for hashing: RADAR_THREADS, else up to 4 (machines are often shared). */
+export function defaultThreads(): number {
+  const env = Number(process.env.RADAR_THREADS);
+  if (env > 0) return env;
+  return Math.max(1, Math.min(4, os.cpus().length - 1));
+}

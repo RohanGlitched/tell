@@ -5,10 +5,9 @@
 // the 32-byte values seen on chain. Large families are split across worker
 // threads. Each hit is checked in full (not just the 6-byte key).
 
-import os from 'node:os';
 import { Worker } from 'node:worker_threads';
 import { type Family, familySize, preimage } from './families.js';
-import { key48, sha256 } from './hash.js';
+import { defaultThreads, key48, sha256 } from './hash.js';
 
 export type Hit = { family: Family; index: number; digest: string };
 
@@ -49,7 +48,7 @@ const WORKER_SOURCE = new URL('./brute-worker.ts', import.meta.url);
 export async function bruteForce(f: Family, targets: Targets, opts: { threads?: number } = {}): Promise<{ hits: Hit[]; hashed: number; ms: number }> {
   const n = familySize(f);
   const t0 = Date.now();
-  const threads = Math.max(1, Math.min(opts.threads ?? os.cpus().length - 1, Math.ceil(n / 200_000)));
+  const threads = Math.max(1, Math.min(opts.threads ?? defaultThreads(), Math.ceil(n / 200_000)));
   let candidates: number[];
   if (threads === 1) {
     candidates = scanRange(f, 0, n, new Set(targets.keys()));

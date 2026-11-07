@@ -7,11 +7,10 @@
 // lookup by binary search; the index is then re-hashed to confirm the match.
 
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { type Family, familyName, familySize, preimage } from './families.js';
-import { sha256 } from './hash.js';
+import { defaultThreads, sha256 } from './hash.js';
 
 const IDX_BITS = 24n;
 export const MAX_TABLE = 1 << 24;
@@ -20,10 +19,9 @@ function key40(h: Uint8Array): bigint {
   return BigInt(h[0] + h[1] * 2 ** 8 + h[2] * 2 ** 16 + h[3] * 2 ** 24 + h[4] * 2 ** 32);
 }
 
-export function tableSlice(f: Family, start: number, end: number): BigUint64Array {
-  const out = new BigUint64Array(end - start);
-  for (let i = start; i < end; i++) out[i - start] = (key40(sha256(preimage(f, i))) << IDX_BITS) | BigInt(i);
-  return out;
+/** Fills out[start..end) with the table words for those indices. */
+export function tableSlice(f: Family, start: number, end: number, out: BigUint64Array): void {
+  for (let i = start; i < end; i++) out[i] = (key40(sha256(preimage(f, i))) << IDX_BITS) | BigInt(i);
 }
 
 export class Table {
@@ -62,23 +60,21 @@ export async function loadTable(f: Family, dir: string, opts: { threads?: number
     return new Table(f, new BigUint64Array(buf.buffer, buf.byteOffset, n));
   }
   const t0 = Date.now();
-  const threads = Math.max(1, Math.min(opts.threads ?? os.cpus().length - 1, Math.ceil(n / 100_000)));
-  let words: BigUint64Array;
-  if (threads === 1) words = tableSlice(f, 0, n);
+  const threads = Math.max(1, Math.min(opts.threads ?? defaultThreads(), Math.ceil(n / 100_000)));
+  // One shared typed array (8 bytes an entry); workers fill their own ranges in place.
+  const words = new BigUint64Array(new SharedArrayBuffer(n * 8));
+  if (threads === 1) tableSlice(f, 0, n, words);
   else {
     const step = Math.ceil(n / threads);
-    const parts = await Promise.all(
+    await Promise.all(
       Array.from({ length: threads }, (_, t) =>
-        new Promise<BigUint64Array>((resolve, reject) => {
-          const w = new Worker(WORKER_SOURCE, { execArgv: ['--import', 'tsx'], workerData: { mode: 'table', family: f, start: t * step, end: Math.min(n, (t + 1) * step) } });
-          w.once('message', (m: BigUint64Array) => { resolve(m); void w.terminate(); });
+        new Promise<void>((resolve, reject) => {
+          const w = new Worker(WORKER_SOURCE, { execArgv: ['--import', 'tsx'], workerData: { mode: 'table', family: f, start: t * step, end: Math.min(n, (t + 1) * step), shared: words.buffer } });
+          w.once('message', () => { resolve(); void w.terminate(); });
           w.once('error', reject);
         }),
       ),
     );
-    words = new BigUint64Array(n);
-    let o = 0;
-    for (const p of parts) { words.set(p, o); o += p.length; }
   }
   words.sort();
   fs.mkdirSync(dir, { recursive: true });

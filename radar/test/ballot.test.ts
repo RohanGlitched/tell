@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { analyze, type Analysis } from '../src/analyze.js';
+import { analyze, type Analysis, digest } from '../src/analyze.js';
 import type { ContractRecord } from '../src/chain.js';
 import { aggregate } from '../src/report.js';
 import { decodeCalls, decodeState, isOpaque32 } from '../src/state.js';
@@ -51,7 +51,7 @@ describe('state decoding', () => {
 describe('ballot acceptance', () => {
   let a: Analysis;
   it('runs the default brute force over both ballots', async () => {
-    a = await analyze([leaky, fixed]);
+    a = await analyze([leaky, fixed].map(digest));
     expect(a.contracts).toHaveLength(2);
   });
 

@@ -8,10 +8,10 @@ import { scanRange } from './brute.js';
 import type { Family } from './families.js';
 import { tableSlice } from './table.js';
 
-const d = workerData as { mode?: 'table'; family: Family; start: number; end: number; keys?: number[] };
+const d = workerData as { mode?: 'table'; family: Family; start: number; end: number; keys?: number[]; shared?: SharedArrayBuffer };
 if (d.mode === 'table') {
-  const slice = tableSlice(d.family, d.start, d.end);
-  parentPort!.postMessage(slice, [slice.buffer as ArrayBuffer]);
+  tableSlice(d.family, d.start, d.end, new BigUint64Array(d.shared!));
+  parentPort!.postMessage(true);
 } else {
   parentPort!.postMessage(scanRange(d.family, d.start, d.end, new Set(d.keys)));
 }
