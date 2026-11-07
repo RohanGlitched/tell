@@ -19,6 +19,25 @@ jobs:
         run: npm test -w engine
       - name: Zoo attack tests
         run: npm test -w zoo
+  integrations:
+    # The MCP server (an MCP client calls every tool against the zoo) and the VS Code extension
+    # (finding-to-diagnostic mapping, CLI parsing, the runner with the real compiler), then the .vsix.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        with: { compact-version: '0.31.1' }
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace mcp --workspace vscode --include-workspace-root
+      - name: MCP server tests
+        run: npm test -w mcp
+      - name: Package the extension
+        run: npm run package -w vscode
+      - name: VS Code extension tests (including the packaged bundle)
+        run: npm test -w vscode
+      - name: Typecheck
+        run: npm run typecheck -w mcp && npm run typecheck -w vscode
   compilers:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.

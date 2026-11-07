@@ -1,0 +1,80 @@
+{
+  "name": "tell-vscode",
+  "displayName": "Tell: privacy leaks in Compact",
+  "description": "Marks the lines of a Midnight Compact contract that give private data away, in bits, with the fix.",
+  "version": "0.1.0",
+  "publisher": "rohanglitched",
+  "license": "Apache-2.0",
+  "type": "module",
+  "author": "Rohan Borade",
+  "homepage": "https://tell-midnight.vercel.app",
+  "repository": { "type": "git", "url": "https://github.com/RohanGlitched/tell.git", "directory": "vscode" },
+  "bugs": { "url": "https://github.com/RohanGlitched/tell/issues" },
+  "keywords": ["midnight", "compact", "privacy", "zero-knowledge", "static analysis"],
+  "categories": ["Linters", "Programming Languages"],
+  "engines": { "vscode": "^1.90.0" },
+  "main": "./dist/extension.cjs",
+  "extensionKind": ["workspace"],
+  "activationEvents": [
+    "onLanguage:compact",
+    "workspaceContains:**/*.compact"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Tell runs the Compact compiler on the workspace's contracts."
+    }
+  },
+  "contributes": {
+    "commands": [
+      { "command": "tell.scanFile", "title": "Scan this contract", "category": "Tell" },
+      { "command": "tell.showFix", "title": "Show Tell's fix", "category": "Tell" },
+      { "command": "tell.showOutput", "title": "Show output", "category": "Tell" }
+    ],
+    "configuration": {
+      "title": "Tell",
+      "properties": {
+        "tell.enable": { "type": "boolean", "default": true, "description": "Scan Compact contracts with Tell." },
+        "tell.scanOnSave": { "type": "boolean", "default": true, "description": "Scan a contract each time it is saved." },
+        "tell.scanOnOpen": { "type": "boolean", "default": true, "description": "Scan a contract when it is opened." },
+        "tell.minSeverity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low", "info"],
+          "default": "low",
+          "description": "Show findings at this severity or worse. Info findings are values published on purpose."
+        },
+        "tell.compilerVersion": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Compact compiler version to use, for example `0.31.1`. Empty: the version the contract's pragma accepts, preferring 0.31.1."
+        },
+        "tell.compilerDirs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "markdownDescription": "Directories holding `compactc.bin` (or paths to `compactc.bin`). Empty: every version installed by `compact update` under `~/.compact/versions`."
+        },
+        "tell.cliPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Path to a Tell CLI to run instead of the engine bundled with the extension: a clone's `engine/src/cli.ts` (run with tsx) or a `tell` executable. It is called with `--json`."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "package": "node scripts/build.mjs && vsce package --no-dependencies --out dist/tell-vscode.vsix",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@tell/engine": "0.1.0",
+    "@types/node": "^22.0.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "^4.1.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
+  }
+}
