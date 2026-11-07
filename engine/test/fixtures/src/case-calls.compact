@@ -1,0 +1,56 @@
+// Review case (Ledger 9, Compact 0.33+): cross-contract calls and events are public.
+pragma language_version >= 0.25.0;
+
+import CompactStandardLibrary;
+
+contract Registry {
+  circuit record(tag: Bytes<32>, amount: Uint<64>): [];
+}
+
+export ledger reg: Registry;
+export ledger other: Registry;
+
+witness secretKey(): Bytes<32>;
+witness choice(): Uint<8>;
+witness bonus(): Uint<64>;
+
+constructor(r: Registry, o: Registry) {
+  reg = disclose(r);
+  other = disclose(o);
+}
+
+// A guessable hash passed to another contract: the callee sees it, and so does everyone.
+export circuit pushChoice(): [] {
+  const c = choice();
+  assert(c < 4, "four options");
+  reg.record(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "case:choice"), (c as Field) as Bytes<32>])), 1);
+}
+
+// Which contract gets called depends on a private value, and the caller is identified.
+export circuit route(): [] {
+  const tag = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "case:who"), secretKey()]));
+  if (disclose(choice() > 1)) {
+    reg.record(tag, 1);
+  } else {
+    other.record(tag, 1);
+  }
+}
+
+// The same call on both paths: the transcript looks the same. Not reported.
+export circuit balanced(): [] {
+  if (disclose(choice() > 1)) {
+    reg.record(pad(32, "a"), 1);
+  } else {
+    reg.record(pad(32, "a"), 2);
+  }
+}
+
+// A private amount in a standard event.
+export circuit announce(): [] {
+  emit(UnshieldedMint { domainSep: pad(32, "case:d"), tokenType: pad(32, "case:t"), amount: disclose(bonus()) as Uint<128> });
+}
+
+// An argument in an event: published on purpose. Info only.
+export circuit spend(n: Bytes<32>): [] {
+  emit(ShieldedSpend { nullifier: disclose(n) });
+}

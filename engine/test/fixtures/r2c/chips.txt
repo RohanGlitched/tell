@@ -1410,3 +1410,28 @@ reduce-to-circuit:
      (public-ledger %_treasury.6 (6) insertCoin %tmp.143 %tmp.144
        %tmp.145))
   (= %t.610 %t.614 (tuple)) (= #t %t.615 (tuple)) %t.615))
+tell-constructor:
+(constructor
+     ((%name_.84 (topaque "string"))
+       (%symbol_.85 (topaque "string"))
+       (%decimals_.86 (tunsigned 255))
+       (%domain_.87 (tbytes 32)))
+     (seq (seq (public-ledger %_name.2 (0) write %name_.84)
+               (public-ledger %_symbol.3 (1) write %symbol_.85)
+               (public-ledger %_decimals.0 (2) write %decimals_.86)
+               (public-ledger %_domain.1 (3) write %domain_.87)
+               (let* ([(%_sk.88 (tbytes 32)) (call %localSecretKey.83)])
+                 (let* ([(%tmp.134 (tbytes 32)) (let* ([(%_secret.146
+                                                          (tbytes 32)) %_sk.88])
+                                                  (call
+                                                    %persistentHash.73
+                                                    (tuple
+                                                      #vu8(114 111 117 108
+                                                           101 116 116 101
+                                                           58 112 107 58 0
+                                                           0 0 0 0 0 0 0 0
+                                                           0 0 0 0 0 0 0 0
+                                                           0 0 0)
+                                                      %_secret.146)))])
+                   (public-ledger %theHouse.14 (7) write %tmp.134))))
+          (tuple)))

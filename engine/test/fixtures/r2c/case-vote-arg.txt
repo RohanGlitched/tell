@@ -21,3 +21,5 @@ reduce-to-circuit:
     (= #t %tmp.6 (call %persistentHash.3 %t.11))
     (= #t %t.12 (public-ledger %ballots.0 (0) insert %tmp.6))
     (= #t %t.13 (tuple)) %t.13))
+tell-constructor:
+(constructor () (tuple))

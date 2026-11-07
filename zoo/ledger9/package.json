@@ -1,0 +1,11 @@
+{
+  "name": "@tell/zoo-ledger9",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Ledger 9 zoo contracts (events, cross-contract calls) compiled with Compact 0.36 and run on compact-runtime 0.21. Kept apart from the zoo package, which runs Ledger 8 contracts on runtime 0.16.",
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.21.0"
+  }
+}

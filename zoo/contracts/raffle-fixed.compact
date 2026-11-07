@@ -1,0 +1,36 @@
+// Tell leak zoo: the raffle seal, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The constructor seals the winning number with a commitment salted by 32
+// random bytes from the organiser's private state. The initial state shows
+// that a number is sealed, and nothing about which; opening it needs the salt.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger sealedDraw: Bytes<32>;
+export ledger drawn: Uint<16>;
+export ledger open: Boolean;
+
+witness winningNumber(): Uint<16>;
+witness sealSalt(): Bytes<32>;
+
+export pure circuit seal(n: Uint<16>, salt: Bytes<32>): Bytes<32> {
+  return persistentCommit<Uint<16>>(n, salt);
+}
+
+constructor() {
+  const n = winningNumber();
+  assert(n < 10000, "tickets run from 0 to 9999");
+  sealedDraw = disclose(seal(n, sealSalt()));
+  open = false;
+}
+
+export circuit reveal(n: Uint<16>, salt: Bytes<32>): [] {
+  assert(!open, "already drawn");
+  assert(seal(n, salt) == sealedDraw, "that is not the sealed number");
+  drawn = disclose(n);
+  open = true;
+}

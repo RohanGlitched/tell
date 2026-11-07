@@ -57,3 +57,5 @@ reduce-to-circuit:
     (= #t %tmp.26 (call %persistentHash.13 %t.40))
     (= #t %t.41 (public-ledger %ages.0 (4) insert %tmp.26))
     (= #t %t.42 (tuple)) %t.42))
+tell-constructor:
+(constructor () (tuple))

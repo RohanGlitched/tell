@@ -6,7 +6,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { analyzeIr, gradeOf, pragmaAccepts, isContractFile, type Finding } from '../src/index.js';
+import { analyzeIr, gradeOf, pragmaAccepts, isContractFile, constructorForm, isTypeForm, type Finding } from '../src/index.js';
+import { parseAll } from '../src/sexpr.js';
 import { declaredPublic as declaredPublicForTest } from '../src/analyze.js';
 import { toSarif } from '../src/sarif.js';
 import { spawnSync } from 'node:child_process';
@@ -41,6 +42,11 @@ const ZOO: [string, Finding['kind'], Finding['severity'], string][] = [
   ['reserve', 'branch', 'medium', 'amount'],
   ['vault', 'secret-published', 'critical', 'secretKey'],
   ['board', 'attributable', 'medium', 'memberKey'],
+  // Wave 3: the constructor, token operations, and Ledger 9 events
+  ['raffle', 'guessable-hash', 'critical', 'winningNumber'],
+  ['faucet', 'shielded-coin', 'medium', 'ownPublicKey.bytes'],
+  ['deposit', 'published', 'medium', 'bidAmount'],
+  ['poll', 'guessable-hash', 'critical', 'choice'],
 ];
 
 describe('the leak zoo', () => {
@@ -86,7 +92,8 @@ describe('official Midnight examples', () => {
   it('election: the voter tag links register, commit and reveal; the vote commitment stays separate', () => {
     const l = load('election').findings.filter((f) => f.kind === 'linkable');
     const tag = l.filter((f) => f.severity === 'low');
-    expect(new Set(tag.map((f) => f.circuit))).toEqual(new Set(['registerToVote', 'commitVote', 'revealVote']));
+    // the constructor stores the organiser's tag, made the same way: an organiser who also votes is recognisable
+    expect(new Set(tag.map((f) => f.circuit))).toEqual(new Set(['constructor', 'registerToVote', 'commitVote', 'revealVote']));
     expect(new Set(tag.map((f) => f.tagFp)).size).toBe(1);
     expect(l.some((f) => f.severity === 'info' && f.sources.some((s) => s.name === 'localGetVote'))).toBe(true);
   });
@@ -100,8 +107,9 @@ describe('official Midnight examples', () => {
   });
 
   it('shielded-coin plumbing is not reported as a leak; a mint amount is public', () => {
+    // (a coin whose nonce is public is a separate finding, below)
     for (const n of ['chips', 'token-transfers', 'private-tip-jar'])
-      expect(load(n).findings.filter((f) => (f.fields ?? []).some((x) => /claimZswap|kernel\.self/.test(x)))).toEqual([]);
+      expect(load(n).findings.filter((f) => f.kind !== 'shielded-coin' && (f.fields ?? []).some((x) => /claimZswap|kernel\.self/.test(x)))).toEqual([]);
     expect(load('token-transfers').findings.some((f) => (f.fields ?? []).includes('kernel.mintShielded') && f.kind === 'published')).toBe(true);
   });
 
@@ -171,6 +179,18 @@ export circuit f(role: Uint<8>): [] { const r = disclose(role); }`;
     declaredPublicForTest([f, g], src);
     expect([f.severity, g.severity]).toEqual(['low', 'high']);
   });
+  it('a hash whose other inputs are public is only as strong as its private part', () => {
+    const r = load('case-public-part');
+    const g = (c: string) => r.findings.filter((f) => f.circuit === c && f.kind === 'guessable-hash');
+    // the tag is written in the same call
+    expect(g('vote')).toMatchObject([{ severity: 'critical', bits: 2, sources: [{ name: 'choice' }] }]);
+    // the tag is on the ledger from another circuit
+    expect(g('voteLate')).toMatchObject([{ severity: 'critical', bits: 2, sources: [{ name: 'choice' }] }]);
+    // a struct with a public field
+    expect(g('file')).toMatchObject([{ severity: 'critical', bits: 32, sources: [{ name: 'salary' }] }]);
+    // a public tag next to 32 private bytes is fine
+    expect(r.findings.filter((f) => f.circuit === 'note' && f.severity !== 'info' && f.severity !== 'low')).toEqual([]);
+  });
   it('an officer key set in setup, an access check and a public epoch argument stay low', () => {
     const r = load('case-admin');
     expect(r.findings.filter((f) => f.severity !== 'info' && f.severity !== 'low')).toEqual([]);
@@ -181,6 +201,110 @@ export circuit f(role: Uint<8>): [] { const r = disclose(role); }`;
         ['published', 'low'],
       ]),
     );
+  });
+});
+
+// Wave 3: the constructor is read from the last compiler pass that still has it and analysed
+// like a circuit, since what it writes is the contract's initial public state.
+describe('constructors', () => {
+  const ctor = (name: string) => load(name).findings.filter((f) => f.circuit === 'constructor');
+  it('the raffle seal is a guessable hash written at deploy, on the constructor line', () => {
+    const [f] = ctor('raffle-leaky').filter((f) => f.kind === 'guessable-hash');
+    expect(f).toMatchObject({ severity: 'critical', bits: 14, sources: [{ name: 'winningNumber', kind: 'witness' }] });
+    expect(fs.readFileSync(path.join(dir, 'src', 'raffle-leaky.compact'), 'utf8').split('\n')[f.line! - 1]).toContain('sealedDraw = disclose(seal(n))');
+  });
+  it('helpers, branches, loops and arguments in a constructor', () => {
+    const fs_ = ctor('case-constructor');
+    const by = (kind: string) => fs_.filter((f) => f.kind === kind);
+    // a secret-named argument stored as-is
+    expect(by('secret-published')).toMatchObject([{ severity: 'high', sources: [{ name: 'adminSecret', kind: 'argument' }] }]);
+    // which field the deploy wrote depends on a private value (the loop and the else-branch are lowered)
+    expect(by('branch')).toMatchObject([{ severity: 'medium', sources: [{ name: 'level' }] }]);
+    // 32 private bytes written as-is
+    expect(by('published').filter((f) => f.severity === 'medium')).toMatchObject([{ field: 'nonce', sources: [{ name: 'seed' }] }]);
+    // a hash of the deployer's key through a helper circuit: an identifier, not a leak
+    expect(by('linkable')).toMatchObject([{ severity: 'info', field: 'owner', sources: [{ name: 'secretKey' }] }]);
+    // a fee passed in and disclosed on purpose
+    expect(by('published').some((f) => f.severity === 'info' && f.sources[0].name === 'initialFee')).toBe(true);
+    expect(fs_.every((f) => f.line && f.line >= 22 && f.line <= 35)).toBe(true);
+  });
+  it('a field only the constructor writes is constant: hashing it does not scope a tag', () => {
+    // payband's employer is set at deploy; the circuit that compares against it still gets no new findings
+    expect(serious(load('payband-fixed').findings)).toEqual([]);
+  });
+  it('official examples: constructors add nothing above low', () => {
+    for (const n of ['battleship', 'bboard', 'canary', 'chips', 'election', 'private-bid', 'private-party', 'private-tip-jar', 'roulette', 'secret-message', 'silent-auction'])
+      expect(serious(ctor(n)), n).toEqual([]);
+  });
+  it('lowering keeps the guard: a ledger write under an if runs only on that path', () => {
+    const r = load('case-constructor');
+    const c = r.circuits.find((c) => c.name === 'constructor')!;
+    expect(c.ops.find((o) => o.field === 'tags')!.guardedBy).toContain('level');
+    expect(c.ops.filter((o) => o.field === 'counter')).toHaveLength(2);
+  });
+});
+
+// Wave 3: token operations. Minted and unshielded amounts are public by design; a coin's nonce
+// decides whether its commitment hides the recipient.
+describe('tokens', () => {
+  const coin = (name: string) => load(name).findings.filter((f) => f.kind === 'shielded-coin');
+  it('a nonce from public state or a wallet key: the recipient can be confirmed', () => {
+    const fs_ = coin('case-coin-nonce');
+    expect(fs_.map((f) => f.circuit)).toEqual(['mintKeyed']);
+    expect(fs_[0]).toMatchObject({ severity: 'medium', sources: [{ name: 'ownPublicKey.bytes' }] });
+  });
+  it('a seeded nonce, or a mint to the contract itself, is not reported', () => {
+    expect(coin('faucet-fixed')).toEqual([]);
+    expect(coin('token-transfers')).toEqual([]);
+  });
+  it('a coin paid out of contract state: sendShielded derives its nonce from the stored, public nonce', () => {
+    // private-tip-jar's withdraw sends a pot coin to ownPublicKey(): the pot coin's nonce, color and value are
+    // public ledger state, so whether the withdrawal went to a given wallet can be checked.
+    expect(coin('private-tip-jar')).toMatchObject([{ circuit: 'withdraw', severity: 'medium', sources: [{ name: 'ownPublicKey.bytes' }] }]);
+  });
+  it('a nonce the circuit returns is public too (low: the recipient is the caller\'s own argument)', () => {
+    expect(coin('chips')).toMatchObject([{ circuit: 'mint', severity: 'low', sources: [{ name: 'recipient.bytes', kind: 'argument' }] }]);
+  });
+  it('a wallet key from private state written publicly is medium; from an argument it is info', () => {
+    const fs_ = load('case-coin-nonce').findings.filter((f) => f.field === 'payees');
+    expect(fs_.filter((f) => f.circuit === 'recordPayee' && f.severity !== 'info')).toMatchObject([{ kind: 'published', severity: 'medium', sources: [{ name: 'payee' }] }]);
+    expect(fs_.filter((f) => f.circuit === 'registerPayee' && f.severity !== 'info')).toEqual([]);
+  });
+  it('a private amount moved as an unshielded transfer is medium; a public bond is nothing', () => {
+    const [f] = load('deposit-leaky').findings.filter((f) => f.field === 'kernel' && f.severity === 'medium');
+    expect(f.sources[0].name).toBe('bidAmount');
+    expect(f.title).toContain('public token amount');
+    expect(load('deposit-fixed').findings.filter((f) => f.field === 'kernel')).toEqual([]);
+  });
+  it('arguments as token amounts stay info (the caller chose them)', () => {
+    const fs_ = load('token-transfers').findings.filter((f) => f.field === 'kernel');
+    expect(fs_.every((f) => f.severity === 'info')).toBe(true);
+  });
+});
+
+// Wave 3: Ledger 9 (Compact 0.33 and later). Events and cross-contract calls are public sinks.
+describe('Ledger 9: events and contract calls', () => {
+  const r = () => load('case-calls');
+  const by = (c: string) => r().findings.filter((f) => f.circuit === c && f.severity !== 'info');
+  it('a guessable hash passed to another contract is caught on the call', () => {
+    expect(by('pushChoice')).toMatchObject([{ kind: 'guessable-hash', severity: 'critical', field: 'reg', op: 'record' }]);
+  });
+  it('which contract is called shows a private choice', () => {
+    const [f] = by('route').filter((f) => f.kind === 'branch');
+    expect(f).toMatchObject({ severity: 'medium', sources: [{ name: 'choice' }] });
+    expect(f.fields).toEqual(expect.arrayContaining(['reg.record', 'other.record']));
+  });
+  it('the same call on both paths is not a branch', () => {
+    expect(by('balanced').filter((f) => f.kind === 'branch')).toEqual([]);
+  });
+  it('a private amount in a token event is medium; an argument in an event is info', () => {
+    expect(by('announce')).toMatchObject([{ kind: 'published', severity: 'medium', field: 'event', op: 'UnshieldedMint', sources: [{ name: 'bonus' }] }]);
+    expect(by('spend')).toEqual([]);
+    expect(r().findings.find((f) => f.circuit === 'spend')).toMatchObject({ field: 'event', op: 'ShieldedSpend', severity: 'info' });
+  });
+  it('events point at the emit line', () => {
+    const f = by('announce')[0];
+    expect(fs.readFileSync(path.join(dir, 'src', 'case-calls.compact'), 'utf8').split('\n')[f.line! - 1]).toContain('emit(UnshieldedMint');
   });
 });
 
@@ -203,13 +327,45 @@ describe('pragmas and contract files', () => {
     expect(pragmaAccepts('>= 0.25.0', '0.23.0')).toBe(false);
     expect(pragmaAccepts('>= 0.25.0', '0.27.0')).toBe(true);
   });
+  it('0.36 prints types as operands; they are skipped, conversions are not', () => {
+    const t = (s: string) => isTypeForm(parseAll(s)[0]);
+    expect(t('(field-native)')).toBe(true);
+    expect(t('(tfield (field-base (curve-secp256k1)))')).toBe(true);
+    expect(t('(tunsigned 255)')).toBe(true);
+    expect(t('(field->bytes 32 (field-native) %x.1)')).toBe(false);
+    expect(t('(tuple %a.1 %b.2)')).toBe(false);
+  });
+  it('reads let* bindings in brackets, as the constructor pass prints them', () => {
+    expect(parseAll('(let* ([(%x.1 (tbytes 32)) %y.2]) %x.1)')).toEqual(parseAll('(let* (((%x.1 (tbytes 32)) %y.2)) %x.1)'));
+  });
+  it('a Ledger 9 pragma skips 0.31.1 (language 0.23) and takes 0.36.0 (language 0.28)', () => {
+    expect(pragmaAccepts('>= 0.25.0', '0.23.0')).toBe(false);
+    expect(pragmaAccepts('>= 0.25.0', '0.28.0')).toBe(true);
+    expect(pragmaAccepts('0.28', '0.28.0')).toBe(true);
+  });
+  it('takes the constructor from the last pass after inlining that still has it', () => {
+    const trace = [
+      'parse-file:',
+      '(program (constructor () (seq (tuple))))',
+      'inline-circuits:',
+      '(program (public-ledger-declaration () (constructor () (seq "a (b" (tuple)))))',
+      'drop-safe-casts:',
+      '(program (public-ledger-declaration () (constructor ((%a.1 (tbytes 32))) (seq (public-ledger %f.0 (0) write %a.1) (tuple)))))',
+      'resolve-indices/simplify:',
+      '(program)',
+      'reduce-to-circuit:',
+      '(program)',
+    ].join('\n');
+    expect(constructorForm(trace, trace.indexOf('\nreduce-to-circuit:\n'))).toBe('(constructor ((%a.1 (tbytes 32))) (seq (public-ledger %f.0 (0) write %a.1) (tuple)))');
+    expect(constructorForm('parse-file:\n(program (constructor () (tuple)))\nreduce-to-circuit:\n(program)', 50)).toBeNull();
+  });
   it('tells contracts from modules', () => {
     expect(isContractFile('pragma language_version 0.23;\nexport circuit f(): [] {}')).toBe(true);
     expect(isContractFile('module Util { export circuit f(): [] {} }')).toBe(false);
   });
 });
 
-describe('older compilers', () => {
+describe('other compilers', () => {
   // test/fixtures/r2c-legacy: the zoo compiled with 0.30.0, whose output binds `(= target expr)`
   // with guards inside calls. Findings must not depend on which compiler built the circuit.
   const sig = (fs: Finding[]) =>
@@ -217,13 +373,16 @@ describe('older compilers', () => {
       .filter((f) => f.severity !== 'info')
       .map((f) => `${f.circuit}/${f.kind}/${f.severity}/${f.field}`)
       .sort();
-  for (const f of fs.readdirSync(path.join(dir, 'r2c-legacy')).map((f) => f.replace('.txt', '')))
-    it(`${f}: 0.30.0 and 0.31.1 agree`, () => {
-      const src = fs.readFileSync(path.join(dir, 'src', f + '.compact'), 'utf8');
-      const legacy = analyzeIr(fs.readFileSync(path.join(dir, 'r2c-legacy', f + '.txt'), 'utf8'), src);
-      expect(legacy.unknownForms).toEqual([]);
-      expect(sig(legacy.findings)).toEqual(sig(load(f).findings));
-    });
+  // test/fixtures/r2c-0.36: the same zoo compiled with 0.36.0 (Ledger 9), which prints field types
+  // as operands, e.g. (field->bytes 32 (field-native) x).
+  for (const [sub, version] of [['r2c-legacy', '0.30.0'], ['r2c-0.36', '0.36.0']])
+    for (const f of fs.readdirSync(path.join(dir, sub)).map((f) => f.replace('.txt', '')))
+      it(`${f}: ${version} and 0.31.1 agree`, () => {
+        const src = fs.readFileSync(path.join(dir, 'src', f + '.compact'), 'utf8');
+        const other = analyzeIr(fs.readFileSync(path.join(dir, sub, f + '.txt'), 'utf8'), src);
+        expect(other.unknownForms).toEqual([]);
+        expect(sig(other.findings)).toEqual(sig(load(f).findings));
+      });
 });
 
 describe('SARIF', () => {

@@ -33,6 +33,11 @@ const RULES: Record<FindingKind, { name: string; short: string; help: string }> 
     short: 'A yes/no fact about a private value is written to the public ledger',
     help: 'Usually intended. Use assert() when the chain does not need to store the fact.',
   },
+  'shielded-coin': {
+    name: 'GuessableCoinCommitment',
+    short: 'A shielded coin is minted or sent with a nonce anyone can compute',
+    help: 'A coin commitment hashes the nonce, color, value and recipient. With a public nonce, the recipient can be confirmed from a list of wallet keys and a private value brute-forced. Derive nonces with evolveNonce(index, seed) from a random seed in private state.',
+  },
   attributable: {
     name: 'AttributableActions',
     short: 'Each action stores the same tag derived from a private key',

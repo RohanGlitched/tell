@@ -1,0 +1,35 @@
+// Tell leak zoo (Ledger 9): a guessable hash in an event.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The ledger keeps each vote as a salted commitment, which is done right.
+// Then the contract emits a receipt event so voters can find their vote in
+// an indexer, and the receipt is hash(choice). Events are part of the public
+// transaction like ledger writes, and four hashes recover every vote.
+
+pragma language_version >= 0.25.0;
+
+import CompactStandardLibrary;
+
+export ledger ballots: Map<Bytes<32>, Bytes<32>>;
+
+witness voterKey(): Bytes<32>;
+witness choice(): Uint<8>;
+witness ballotSalt(): Bytes<32>;
+
+export pure circuit voterTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "poll:voter"), sk]);
+}
+
+export pure circuit receipt(c: Uint<8>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "poll:receipt"), (c as Field) as Bytes<32>]);
+}
+
+export circuit vote(): [] {
+  const tag = disclose(voterTag(voterKey()));
+  assert(!ballots.member(tag), "already voted");
+  const c = choice();
+  assert(c < 4, "four options");
+  ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, ballotSalt())));
+  emit(Misc { name: disclose(receipt(c)), payload: pad(256, "poll:voted") });
+}

@@ -100,3 +100,8 @@ reduce-to-circuit:
       (public-ledger %revealedBids.4 (2) insert %bidder.22
         %amount.20))
    (= #t %t.69 (tuple)) %t.69))
+tell-constructor:
+(constructor
+      ((%minimum.12 (tunsigned 18446744073709551615)))
+      (seq (public-ledger %minimumBid.1 (0) write %minimum.12)
+           (tuple)))

@@ -1,0 +1,90 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.7 () (Kernel)))
+  (public-ledger-declaration
+    ((%owner.5 (0) (__compact_Cell (tbytes 32))) (%mode.3 (1) (__compact_Cell (tunsigned 255)))
+      (%tags.6 (2) (Set (tbytes 32)))
+      (%nonce.4 (3) (__compact_Cell (tbytes 32)))
+      (%counter.1 (4) (Counter))
+      (%fee.2 (5) (__compact_Cell (tunsigned 65535)))))
+  (native
+    %persistentHash.8
+    ((%value.9 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %secretKey.10 () (tbytes 32))
+  (witness %level.11 () (tunsigned 255))
+  (witness %seed.12 () (tbytes 32))
+  (circuit %bump.0 () (ttuple)
+    (= #t %t.36 (public-ledger %owner.5 (0) read))
+    (= #t %sk.35 (call %secretKey.10))
+    (= #t
+       %t.37
+       (tuple
+         #vu8(99 97 115 101 58 111 119 110 101 114 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.35))
+    (= #t %t.38 (call %persistentHash.8 %t.37))
+    (= #t %t.39 (== %t.36 %t.38))
+    (= #t %t.40 (select #t %t.39 #t))
+    (assert %t.40 "not the owner") (= #t %t.41 (tuple))
+    (= #t %t.42 (public-ledger %counter.1 (4) increment 1))
+    (= #t %t.43 (tuple)) %t.43))
+tell-constructor:
+(constructor
+      ((%initialFee.15 (tunsigned 65535))
+        (%adminSecret.16 (tbytes 32)))
+      (seq (seq (let* ([(%tmp.20 (tbytes 32)) (let* ([(%sk.28
+                                                        (tbytes 32)) (call
+                                                                       %secretKey.10)])
+                                                (call
+                                                  %persistentHash.8
+                                                  (tuple
+                                                    #vu8(99 97 115 101 58
+                                                         111 119 110 101
+                                                         114 0 0 0 0 0 0 0
+                                                         0 0 0 0 0 0 0 0 0
+                                                         0 0 0 0 0 0)
+                                                    %sk.28)))])
+                  (public-ledger %owner.5 (0) write %tmp.20))
+                (public-ledger %fee.2 (5) write %initialFee.15)
+                (let* ([(%l.17 (tunsigned 255)) (call %level.11)])
+                  (seq (if (< 3 %l.17)
+                           (let* ([(%tmp.21 (tunsigned 255)) 1])
+                             (public-ledger %mode.3 (1) write %tmp.21))
+                           (public-ledger
+                             %tags.6
+                             (2)
+                             insert
+                             %adminSecret.16))
+                       (let* ([(%t.26 (ttuple)) (tuple)]
+                              [(%t.27 (ttuple (tunsigned 0) (tunsigned 1))) (tuple
+                                                                              0
+                                                                              1)])
+                         (let* ([(%t.29 (ttuple)) (let* ([(%t.30 (ttuple)) %t.26]
+                                                         [(%i.31
+                                                            (tunsigned 1)) (tuple-ref
+                                                                             %t.27
+                                                                             0)])
+                                                    (seq (seq (let* ([(%tmp.32
+                                                                        (tunsigned
+                                                                          65535)) 1])
+                                                                (public-ledger
+                                                                  %counter.1
+                                                                  (4)
+                                                                  increment
+                                                                  %tmp.32))
+                                                              (tuple))
+                                                         %t.30))]
+                                [(%i.33 (tunsigned 1)) (tuple-ref
+                                                         %t.27
+                                                         1)])
+                           (seq (seq (let* ([(%tmp.34 (tunsigned 65535)) 1])
+                                       (public-ledger
+                                         %counter.1
+                                         (4)
+                                         increment
+                                         %tmp.34))
+                                     (tuple))
+                                %t.29)))
+                       (let* ([(%tmp.23 (tbytes 32)) (call %seed.12)])
+                         (public-ledger %nonce.4 (3) write %tmp.23)))))
+           (tuple)))

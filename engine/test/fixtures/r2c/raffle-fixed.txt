@@ -1,0 +1,48 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%sealedDraw.4 (0) (__compact_Cell (tbytes 32)))
+      (%drawn.0 (1) (__compact_Cell (tunsigned 65535)))
+      (%open.1 (2) (__compact_Cell (tboolean)))))
+  (native
+    %persistentCommit.6
+    ((%value.7 (tunsigned 65535)) (%rand.8 (tbytes 32)))
+    (tbytes 32))
+  (witness %winningNumber.9 () (tunsigned 65535))
+  (witness %sealSalt.10 () (tbytes 32))
+  (circuit %reveal.2
+   ((%n.14 (tunsigned 65535)) (%salt.15 (tbytes 32))) (ttuple)
+   (= #t %t.21 (public-ledger %open.1 (2) read))
+   (= #t %t.22 (select %t.21 #t #f))
+   (= #t %t.23 (select %t.21 #f #t))
+   (= #t %t.24 (select %t.21 #f #t))
+   (= #t %t.25 (select #t %t.24 #t))
+   (assert %t.25 "already drawn") (= #t %t.26 (tuple))
+   (= #t %t.27 (call %persistentCommit.6 %n.14 %salt.15))
+   (= #t %t.28 (public-ledger %sealedDraw.4 (0) read))
+   (= #t %t.29 (== %t.27 %t.28))
+   (= #t %t.30 (select #t %t.29 #t))
+   (assert %t.30 "that is not the sealed number")
+   (= #t %t.31 (tuple))
+   (= #t %t.32 (public-ledger %drawn.0 (1) write %n.14))
+   (= #t %t.33 (public-ledger %open.1 (2) write #t))
+   (= #t %t.34 (tuple)) %t.34))
+tell-constructor:
+(constructor
+      ()
+      (seq (let* ([(%n.13 (tunsigned 65535)) (call
+                                               %winningNumber.9)])
+             (seq (assert (< %n.13 10000) "tickets run from 0 to 9999")
+                  (let* ([(%tmp.16 (tbytes 32)) (let* ([(%n.17
+                                                          (tunsigned
+                                                            65535)) %n.13]
+                                                       [(%salt.18
+                                                          (tbytes 32)) (call
+                                                                         %sealSalt.10)])
+                                                  (call
+                                                    %persistentCommit.6
+                                                    %n.17
+                                                    %salt.18))])
+                    (public-ledger %sealedDraw.4 (0) write %tmp.16))
+                  (public-ledger %open.1 (2) write #f)))
+           (tuple)))

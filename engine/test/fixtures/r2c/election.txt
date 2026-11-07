@@ -260,3 +260,24 @@ reduce-to-circuit:
    (= #t %t.194 (select %t.192 #f %t.188))
    (= %t.193 %t.195 (public-ledger %winner.16 (10) write 2))
    (= %t.194 %t.196 (tuple)) (= #t %t.197 (tuple)) %t.197))
+tell-constructor:
+(constructor
+      ((%candidateA.22 (topaque "string"))
+        (%candidateB.23 (topaque "string")))
+      (seq (let* ([(%_sk.24 (tbytes 32)) (call %localSk.21)])
+             (let* ([(%pubKey.25 (tbytes 32)) (let* ([(%_sk.52
+                                                        (tbytes 32)) %_sk.24])
+                                                (call
+                                                  %persistentHash.18
+                                                  (tuple
+                                                    #vu8(101 108 101 99 116
+                                                         105 111 110 58 112
+                                                         107 58 0 0 0 0 0 0
+                                                         0 0 0 0 0 0 0 0 0
+                                                         0 0 0 0 0)
+                                                    %_sk.52)))])
+               (seq (public-ledger %organizer.9 (0) write %pubKey.25)
+                    (public-ledger %candidate0.0 (1) write %candidateA.22)
+                    (public-ledger %candidate1.2 (2) write %candidateB.23)
+                    (public-ledger %votingState.15 (3) write 0))))
+           (tuple)))

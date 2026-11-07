@@ -1,0 +1,54 @@
+// Review case: a hash whose other inputs are public is only as strong as its private part.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+struct Slip { employee: Uint<32>; pay: Uint<32>; }
+
+export ledger voters: Set<Bytes<32>>;
+export ledger ballots: Map<Bytes<32>, Bytes<32>>;
+export ledger late: Map<Bytes<32>, Bytes<32>>;
+export ledger slips: Map<Uint<32>, Bytes<32>>;
+export ledger notes: Map<Bytes<32>, Bytes<32>>;
+
+witness voterKey(): Bytes<32>;
+witness choice(): Uint<8>;
+witness salary(): Uint<32>;
+witness noteSecret(): Bytes<32>;
+
+circuit voterTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "case:voter"), sk]);
+}
+
+export circuit register(): [] {
+  voters.insert(disclose(voterTag(voterKey())));
+}
+
+// The tag is the map key of this very insert: hash(tag, c) is a hash of c. Critical.
+export circuit vote(): [] {
+  const tag = disclose(voterTag(voterKey()));
+  assert(voters.member(tag), "not registered");
+  const c = choice();
+  assert(c < 4, "four options");
+  ballots.insert(tag, disclose(persistentHash<Vector<2, Bytes<32>>>([tag, (c as Field) as Bytes<32>])));
+}
+
+// The tag is not written here, but `register` put every tag on the ledger. Still a hash of c.
+export circuit voteLate(slot: Bytes<32>): [] {
+  const tag = voterTag(voterKey());
+  const c = choice();
+  assert(c < 4, "four options");
+  late.insert(disclose(slot), disclose(persistentHash<Vector<2, Bytes<32>>>([tag, (c as Field) as Bytes<32>])));
+}
+
+// A struct with a public field and a small private one: the salary falls to brute force. Critical.
+export circuit file(employee: Uint<32>): [] {
+  const s = Slip { employee: employee, pay: salary() };
+  slips.insert(disclose(employee), disclose(persistentHash<Slip>(s)));
+}
+
+// A public tag next to 32 private bytes: still out of reach. Not reported.
+export circuit note(): [] {
+  const tag = disclose(voterTag(voterKey()));
+  notes.insert(tag, disclose(persistentHash<Vector<2, Bytes<32>>>([tag, noteSecret()])));
+}

@@ -7,7 +7,7 @@
 // of the chain learn about the caller's private data, and how cheaply?
 
 import { type SExpr, isList, isSym, head, symName, baseName, show } from './sexpr.js';
-import { type Program, type Circuit, type Type, type Callable, typeBits, hasBytes, isVar, parseType, typeText } from './ir.js';
+import { type Program, type Circuit, type Type, type Callable, typeBits, hasBytes, isVar, isTypeForm, parseType, typeText } from './ir.js';
 
 export type SourceKind = 'witness' | 'argument';
 export type Source = { key: string; kind: SourceKind; name: string; type: Type; bits: number };
@@ -27,7 +27,9 @@ export type Label = Map<string, Fact>;
 
 // `varying`: derived from public state that changes between calls (a counter, a sequence).
 // lits: literal constants inside the value (domain separators), used to fingerprint tags.
-type Val = { label: Label; parts?: Val[]; fields?: Map<string, Val>; varying?: boolean; lits?: string[] };
+// coin: set on a CoinPreimage (and the hash of one, a coin commitment): its nonce, value and recipient.
+type Coin = { nonce: Val; value: Val; recipient: Val };
+type Val = { label: Label; parts?: Val[]; fields?: Map<string, Val>; varying?: boolean; lits?: string[]; coin?: Coin };
 
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type FindingKind =
@@ -37,7 +39,8 @@ export type FindingKind =
   | 'branch'
   | 'predicate'
   | 'linkable'
-  | 'attributable';
+  | 'attributable'
+  | 'shielded-coin';
 
 export type Finding = {
   circuit: string;
@@ -145,6 +148,15 @@ const isFresh = (n: string) => words(n).some((x) => ['nonce', 'salt', 'rand', 'r
 // Every other kernel operation (unshielded spends, mints, balance and time checks) is public.
 // A mint's amount is an operand like any other, so mintShielded is analysed; only its coin is private.
 const SHIELDED_KERNEL_OPS = new Set(['claimZswapCoinReceive', 'claimZswapCoinSpend', 'claimZswapNullifier', 'self']);
+// The standard event types `emit` accepts, by the tag the compiler prints (compiler/midnight-events.ss).
+const EVENT_TYPES = ['ShieldedSpend', 'ShieldedReceive', 'ShieldedMint', 'ShieldedBurn', 'UnshieldedSpend', 'UnshieldedReceive', 'UnshieldedMint', 'UnshieldedBurn', 'Paused', 'Unpaused', 'Misc'];
+// Kernel operations that move or mint tokens in the clear: their amounts are public by design.
+const PUBLIC_AMOUNT_OPS = new Set(['mintUnshielded', 'mintShielded', 'claimUnshieldedCoinSpend', 'incUnshieldedOutputs', 'incUnshieldedInputs']);
+// Standard events that carry a token amount.
+const AMOUNT_EVENTS = new Set(['ShieldedMint', 'ShieldedBurn', 'UnshieldedSpend', 'UnshieldedReceive', 'UnshieldedMint', 'UnshieldedBurn']);
+// A wallet's public key: a ZswapCoinPublicKey or UserAddress, or an Either/Maybe holding one.
+const walletType = (t: Type): boolean =>
+  t.k === 'struct' && (['ZswapCoinPublicKey', 'UserAddress'].includes(t.name) || (['Either', 'Maybe'].includes(t.name) && t.fields.some((f) => walletType(f.type))));
 const READ_OPS = new Set(['read', 'member', 'lookup', 'size', 'isEmpty', 'checkRoot', 'checkRootHistoric', 'isFull', 'head', 'length', 'balance', 'balanceLessThan', 'balanceGreaterThan']);
 // A preimage needs this many unknown bits before brute force is hopeless.
 const SAFE_BITS = 112;
@@ -187,7 +199,8 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
   const circuits: CircuitReport[] = [];
   // Fields some circuit writes: reading them gives a value that can change between calls.
   const mutated = new Set<string>();
-  for (const c of p.circuits)
+  // The constructor runs once, before any call: a field only it writes is constant afterwards.
+  for (const c of p.circuits.filter((c) => !c.isConstructor))
     for (const st of c.steps)
       if (st.k === 'bind' && head(st.b.expr) === 'public-ledger') {
         const l = st.b.expr as SExpr[];
@@ -198,10 +211,13 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
   // does not count them as secret when judging a hash's strength), and the private values the
   // contract uses as key material in an identity hash anywhere.
   const keyed = new Set<string>();
-  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set()));
+  // Hashes and commitments some circuit publishes (by fingerprint): their values are on the chain,
+  // so inside a bigger hash they hide nothing. hash(tag, vote) with tag public is a hash of the vote.
+  const publishedTags = new Set<string>();
+  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set(), publishedTags, new Set()));
   p.circuits.forEach((c, i) => {
     const known = new Set(firsts[i].findings.filter((f) => f.kind === 'published' || f.kind === 'secret-published').flatMap((f) => f.sources.map((s) => s.name)));
-    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed));
+    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed, new Set(), publishedTags));
   });
   const findings = circuits.flatMap((c) => c.findings);
   if (opts.sourceText) {
@@ -220,6 +236,8 @@ function analyzeCircuit(
   mutated: Set<string>,
   keyed: Set<string>,
   hiddenElsewhere: Set<string>,
+  publishing: Set<string>,
+  publicTags: Set<string>,
 ): CircuitReport {
   const env = new Map<string, Val>();
   const sources = new Map<string, Source>();
@@ -227,6 +245,9 @@ function analyzeCircuit(
   const proves: Proof[] = [];
   const touches = new Set<string>();
   const ops: TranscriptOp[] = [];
+  // `handle.circuit` labels of cross-contract calls made here.
+  const calls = new Set<string>();
+  const isPublicTag = (f: Fact) => f.flow === 'hidden' && !!f.fp && publicTags.has(f.fp);
   // field|op -> each guarded run of it: the private sources guarding it, and its public operands
   // (private operands count as '*': a hidden commitment looks the same on either path).
   const guarded = new Map<string, { keys: Set<string>; sig: string }[]>();
@@ -249,7 +270,7 @@ function analyzeCircuit(
 
   const val = (x: SExpr): Val => {
     if (isVar(x)) return env.get(x.v) ?? empty();
-    if (isList(x)) return evalExpr(x);
+    if (isList(x)) return isTypeForm(x) ? empty() : evalExpr(x);
     return empty();
   };
 
@@ -259,7 +280,7 @@ function analyzeCircuit(
     let strong = false;
     for (const [k, f] of l) {
       const s = sources.get(k)!;
-      if (known.has(s.name)) continue;
+      if (known.has(s.name) || isPublicTag(f)) continue;
       if (f.flow === 'hidden') {
         bits += 256;
         strong = true;
@@ -291,7 +312,7 @@ function analyzeCircuit(
     // differs from room to room, so it is not one identity across actions.
     if ([...all].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument')) varying = true;
     for (const [k, f] of all) {
-      if (known.has(sources.get(k)!.name)) continue; // already public in this call
+      if (known.has(sources.get(k)!.name) || isPublicTag(f)) continue; // already public
       if (f.flow === 'hidden') out.set(k, { ...f, idTag: f.idTag && idTag, fp: f.fp ?? fp });
       else if (secure) {
         out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp });
@@ -335,6 +356,8 @@ function analyzeCircuit(
     return { label: out };
   };
 
+  const member = (v: Val, f: string): Val => v.fields?.get(f) ?? (v.fields ? empty() : project(v, f));
+
   const evalExpr = (x: SExpr[]): Val => {
     const h = head(x);
     switch (h) {
@@ -355,7 +378,8 @@ function analyzeCircuit(
         }
         if (CASTS.has(name)) return { label: union(...args), parts: args.length === 1 ? args[0].parts : undefined, varying: anyVarying(args) };
         const lits = [...args.flatMap((a) => a.lits ?? []), ...x.slice(2).filter((a) => !isList(a) && !isVar(a)).map(litKey)];
-        if (HASHES.has(name)) return oneWay(name, union(...args), undefined, anyVarying(args), lits);
+        // A coin commitment keeps track of what went into it, so the claim can be checked below.
+        if (HASHES.has(name)) return { ...oneWay(name, union(...args), undefined, anyVarying(args), lits), coin: args[0]?.coin };
         if (COMMITS.has(name)) return oneWay(name, union(args[0] ?? empty()), union(args[1] ?? empty()), anyVarying(args), lits);
         if (ONE_WAY_EC.has(name)) return oneWay(name, union(...args), undefined, anyVarying(args), lits);
         if (!n) unknown.add(`call:${name}`);
@@ -365,6 +389,9 @@ function analyzeCircuit(
         // handled as a sink by the step loop; reads return public data
         return empty();
       }
+      case 'spread':
+        return val(x[2]);
+      case 'vector':
       case 'tuple': {
         const parts = x.slice(1).map(val);
         const lits = [...x.slice(1).filter((a) => !isList(a) && !isVar(a)).map(litKey), ...parts.flatMap((v) => v.lits ?? [])];
@@ -373,14 +400,19 @@ function analyzeCircuit(
       case 'new': {
         const t = parseType(x[1]);
         const args = x.slice(2).map(val);
-        if (t.k === 'struct') return { label: new Map(), fields: new Map(t.fields.map((f, i) => [f.name, args[i] ?? empty()])) };
+        if (t.k === 'struct') {
+          const fields = new Map(t.fields.map((f, i) => [f.name, args[i] ?? empty()]));
+          // The preimage of a Zswap coin commitment: { domain_sep, info: { nonce, color, value }, dataType, data: recipient }.
+          if (t.name === 'CoinPreimage') {
+            const info = fields.get('info') ?? empty();
+            return { label: new Map(), fields, coin: { nonce: member(info, 'nonce'), value: member(info, 'value'), recipient: fields.get('data') ?? empty() } };
+          }
+          return { label: new Map(), fields };
+        }
         return { label: union(...args) };
       }
-      case 'elt-ref': {
-        const v = val(x[1]);
-        const f = isSym(x[2]) ? x[2].v : '';
-        return v.fields?.get(f) ?? (v.fields ? empty() : project(v, f));
-      }
+      case 'elt-ref':
+        return member(val(x[1]), isSym(x[2]) ? x[2].v : '');
       case 'bytes-ref': {
         const i = !Array.isArray(x[2]) && x[2].t === 'num' ? Number(x[2].v) : -1;
         return i >= 0 ? project(val(x[1]), i) : { label: union(val(x[1]), val(x[2])) };
@@ -433,6 +465,12 @@ function analyzeCircuit(
     }
   };
 
+  // A wallet key, or a part of one (`publicKey.bytes`): ownPublicKey() or a value of a wallet-key type.
+  const isWalletKey = (key: string) => {
+    const root = sources.get(key.split('.')[0]);
+    return !!root && (rootName(root.name) === 'ownPublicKey' || walletType(root.type));
+  };
+
   const describe = (key: string) => {
     const s = sources.get(key)!;
     return { name: s.name, kind: s.kind, type: typeText(s.type), bits: s.bits };
@@ -458,6 +496,7 @@ function analyzeCircuit(
   // role 'value': the operand is stored as data (a map value, a cell); 'key': looked up or registered.
   const sink = (field: string, op: string, operand: Val, guard: Label, role: 'key' | 'value' = 'key', perAction = false) => {
     const l = flat(operand);
+    for (const [, f] of l) if (f.flow === 'hidden' && f.fp) publishing.add(f.fp);
     for (const [k, f] of l) {
       const s = sources.get(k)!;
       const src = [describe(k)];
@@ -517,6 +556,38 @@ function analyzeCircuit(
             title: `the caller's wallet key is published`,
             detail: `\`${field}\` ${op} receives ownPublicKey(), the caller's Zswap coin public key. Every call that does this ties the contract activity to the same wallet. ownPublicKey() is also supplied by the prover, so it does not authenticate the caller by itself.`,
             fix: `Identify users by persistentHash([domain, secret]) from private state; never authorise on ownPublicKey() alone.`,
+          });
+        else if (s.kind === 'witness' && isWalletKey(k))
+          // A wallet key the prover supplies from private state (a payee, a counterparty): publishing it
+          // names that wallet, which is what a shielded payment is meant to keep quiet.
+          report({
+            circuit: c.name,
+            kind: 'published',
+            severity: isRoleField(field) || isSetup(c.name) ? 'low' : 'medium',
+            field,
+            op,
+            sources: src,
+            bits: s.bits,
+            title: `a wallet key from private state is published`,
+            detail: `\`${field}\` ${op} receives ${who} (${typeText(s.type)}), a wallet's public key taken from private state. Once written, everyone can see which wallet this transaction concerns, and tie it to every other transaction that names it.`,
+            fix: `Keep the key in private state. If the contract must recognise the wallet later, store persistentCommit(key, salt) or a hash with a secret, not the key.`,
+          });
+        else if (s.kind === 'witness' && ((field === 'kernel' && PUBLIC_AMOUNT_OPS.has(op)) || (field === 'event' && AMOUNT_EVENTS.has(op))) && !looksSecret && !hiddenElsewhere.has(s.name))
+          // Unshielded transfers and mints carry their amounts in the clear: a private number used as one is public.
+          report({
+            circuit: c.name,
+            kind: 'published',
+            severity: 'medium',
+            field,
+            op,
+            sources: src,
+            bits: Math.min(s.bits, PERSONAL_BITS),
+            title: `${who}, a private value, becomes a public token amount`,
+            detail:
+              field === 'event'
+                ? `The ${op} event carries ${who} (${typeText(s.type)}) from private state. Events are part of the public transaction, so the value is on chain once this runs.`
+                : `\`kernel.${op}\` moves or mints tokens in the clear, and ${who} (${typeText(s.type)}) from private state is part of it. Unshielded amounts${op === 'mintShielded' ? ' and minted amounts' : ''} are public, so the value is on chain once this runs.`,
+            fix: `Use a public amount (a fixed bond, a price the contract sets), or move the value as a shielded coin with a nonce from private state.`,
           });
         else if (looksSecret || hiddenElsewhere.has(s.name))
           report({
@@ -639,6 +710,71 @@ function analyzeCircuit(
     }
   };
 
+  // One public operation: a ledger operation, an event, or a call into another contract.
+  const transcriptOp = (field: string, op: string, exprs: SExpr[], g: Label, call = false) => {
+    touches.add(field);
+    if (call) calls.add(`${field}.${op}`);
+    const operands = exprs.map(val);
+    recordGuard(field, op, g, operands, exprs);
+    const note = (v: Val): OperandNote[] =>
+      [...flat(v)].map(([k, f]) => {
+        const s = sources.get(k)!;
+        return { source: s.name, kind: s.kind, flow: f.flow, via: f.via, bits: f.flow === 'reveal' ? s.bits : f.flow === 'guessable' ? (f.preimageBits ?? s.bits) : f.flow === 'predicate' ? 1 : 0, tag: f.tag };
+      });
+    const guardedBy = [...g].filter(([, f]) => !(f.flow === 'hidden' && !f.tag)).map(([k]) => sources.get(k)!.name);
+    if (ops.length < 400) ops.push({ field, op, operands: operands.map(note), guardedBy: [...new Set(guardedBy)] });
+    // A branch on a value this same operation publishes in the clear tells nothing new.
+    const shown = new Set([...union(...operands)].filter(([, f]) => f.flow === 'reveal').map(([k]) => k));
+    const gs: Label = shown.size ? new Map([...g].filter(([k]) => !shown.has(k))) : g;
+    if (!call && field !== 'event' && operands.length === 2 && /^(insert|write)/.test(op)) {
+      sink(field, op, operands[0], gs, 'key');
+      // Per action: the key changes between calls (a counter) or the caller picks it (a post id).
+      const perAction = anyVarying([operands[0]]) || [...flat(operands[0])].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument');
+      sink(field, op, operands[1], new Map(), 'value', perAction);
+    } else sink(field, op, { label: union(...operands) }, gs, op === 'write' || field === 'event' || call ? 'value' : 'key');
+  };
+
+  // A Zswap coin commitment is persistentHash(nonce, color, value, recipient). Color is public and a
+  // mint's value is public, so the nonce is what hides the rest. A nonce computed from public data
+  // (a ledger field, a counter, a constant) lets anyone recompute the commitment for a guessed value
+  // or a candidate recipient key and check it against the one in the transaction.
+  const coinCheck = (coin: Coin, op: string) => {
+    const nonce = flat(coin.nonce);
+    const entropy = [...nonce].some(([k, f]) => {
+      const s = sources.get(k)!;
+      if (known.has(s.name) || isWalletKey(k)) return false;
+      return f.flow === 'hidden' || (f.flow === 'reveal' && hasBytes(s.type) && s.bits >= SAFE_BITS);
+    });
+    if (entropy) return;
+    const exposed = (v: Val) => [...flat(v)].filter(([k, f]) => (f.flow === 'reveal' || f.flow === 'guessable') && !known.has(sources.get(k)!.name)).map(([k]) => k);
+    const to = exposed(coin.recipient);
+    const amount = exposed(coin.value);
+    if (!to.length && !amount.length) return;
+    const keys = [...new Set([...to, ...amount])];
+    const who = (ks: string[]) => [...new Set(ks.map((k) => whoOf(sources.get(k)!)))].join(' + ');
+    const valueBits = amount.reduce((a, k) => a + Math.min(sources.get(k)!.bits, PERSONAL_BITS), 0);
+    const nonceFrom = nonce.size ? `${who([...nonce.keys()])}, which is not secret` : 'public data only (ledger state, a counter or a constant)';
+    report({
+      circuit: c.name,
+      kind: 'shielded-coin',
+      // A wallet key or an amount from private state is what shielding is for; the caller's own arguments rank lower.
+      severity: keys.some((k) => sources.get(k)!.kind === 'witness') ? 'medium' : 'low',
+      field: 'kernel',
+      op,
+      sources: keys.map(describe),
+      bits: valueBits,
+      title: to.length ? `who receives this shielded coin can be confirmed: its nonce is public` : `the value of this shielded coin can be recovered: its nonce is public`,
+      detail:
+        `The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from ${nonceFrom}, so anyone can recompute it. ` +
+        (to.length ? `Then ${who(to)}, the recipient, can be tested against known wallet keys, one hash per candidate. ` : '') +
+        (amount.length ? `The value, ${who(amount)}, falls to a search of about ${valueBits} bits. ` : '') +
+        `The shielded output hides less than it appears to.`,
+      fix:
+        `For a mint, derive the nonce from a private seed: evolveNonce(index, seed()) with a 32-byte random seed kept in private state, as Midnight's shielded token tutorial does. ` +
+        `For a coin paid out of contract state, sendShielded derives the new nonce from the stored coin's nonce, which is public; do not count on such a payment to hide its recipient.`,
+    });
+  };
+
   // The expression each temporary was bound to, so asserts can be read for range bounds.
   const exprOf = new Map<string, SExpr>();
   const resolve = (x: SExpr, depth = 0): SExpr => (isVar(x) && depth < 8 && exprOf.has(x.v) ? resolve(exprOf.get(x.v)!, depth + 1) : x);
@@ -647,9 +783,10 @@ function analyzeCircuit(
     const e = resolve(x);
     if (!isList(e) || depth > 6) return;
     const h = head(e);
-    if ((h === '<' || h === '<=') && e.length === 4) {
-      const lim = e[3];
-      const v = val(e[2]);
+    // reduce-to-circuit prints (< width x N); the constructor's earlier pass prints (< x N).
+    if ((h === '<' || h === '<=') && (e.length === 4 || e.length === 3)) {
+      const lim = e[e.length - 1];
+      const v = val(e[e.length - 2]);
       const l = flat(v);
       if (!Array.isArray(lim) && lim.t === 'num' && l.size === 1) {
         const [[k, f]] = [...l];
@@ -686,29 +823,37 @@ function analyzeCircuit(
         if (op !== 'self') {
           recordGuard(field, op, g, [], []);
           sink(field, op, empty(), g);
+          // The commitment is public; what it hides depends on the coin's nonce.
+          if (op === 'claimZswapCoinReceive' || op === 'claimZswapCoinSpend') {
+            const cm = l[4] === undefined ? empty() : val(l[4]);
+            if (cm.coin) coinCheck(cm.coin, op);
+          }
         }
         continue;
       }
-      touches.add(field);
       // A Merkle root that must match the public root reveals nothing new.
-      const operands = /^checkRoot/.test(op) ? [] : l.slice(4).map(val);
-      recordGuard(field, op, g, operands, l.slice(4));
-      const note = (v: Val): OperandNote[] =>
-        [...flat(v)].map(([k, f]) => {
-          const s = sources.get(k)!;
-          return { source: s.name, kind: s.kind, flow: f.flow, via: f.via, bits: f.flow === 'reveal' ? s.bits : f.flow === 'guessable' ? (f.preimageBits ?? s.bits) : f.flow === 'predicate' ? 1 : 0, tag: f.tag };
-        });
-      const guardedBy = [...g].filter(([, f]) => !(f.flow === 'hidden' && !f.tag)).map(([k]) => sources.get(k)!.name);
-      if (ops.length < 400) ops.push({ field, op, operands: (/^checkRoot/.test(op) ? [] : l.slice(4)).map((x) => note(val(x))), guardedBy: [...new Set(guardedBy)] });
-      // A branch on a value this same operation publishes in the clear tells nothing new.
-      const shown = new Set([...union(...operands)].filter(([, f]) => f.flow === 'reveal').map(([k]) => k));
-      const gs: Label = shown.size ? new Map([...g].filter(([k]) => !shown.has(k))) : g;
-      if (operands.length === 2 && /^(insert|write)/.test(op)) {
-        sink(field, op, operands[0], gs, 'key');
-        // Per action: the key changes between calls (a counter) or the caller picks it (a post id).
-        const perAction = anyVarying([operands[0]]) || [...flat(operands[0])].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument');
-        sink(field, op, operands[1], new Map(), 'value', perAction);
-      } else sink(field, op, { label: union(...operands) }, gs, op === 'write' ? 'value' : 'key');
+      transcriptOp(field, op, /^checkRoot/.test(op) ? [] : l.slice(4), g);
+      continue;
+    }
+    // Ledger 9 (compiler 0.33 and later): events and cross-contract calls are public too.
+    //   (emit version tag size data)                  an event in the transaction's public log
+    //   (contract-call circuit (address type) args…)  arguments the callee receives, disclosed
+    if (head(expr) === 'emit') {
+      const l = expr as SExpr[];
+      const tag = !Array.isArray(l[2]) && l[2].t === 'num' ? Number(l[2].v) : -1;
+      env.set(target, empty());
+      transcriptOp('event', EVENT_TYPES[tag] ?? `event${tag}`, l.slice(4), g);
+      continue;
+    }
+    if (head(expr) === 'contract-call') {
+      const l = expr as SExpr[];
+      const circuit = isSym(l[1]) ? l[1].v : 'circuit';
+      const addr = isList(l[2]) ? l[2][0] : l[2];
+      const from = resolve(addr);
+      // The callee is usually a contract handle kept in a ledger field: name the call after it.
+      const handle = head(from) === 'public-ledger' ? (p.ledger.get(symName((from as SExpr[])[1]))?.name ?? 'contract') : 'contract';
+      env.set(target, { label: new Map(), varying: true });
+      transcriptOp(handle, circuit, [addr, ...l.slice(3)], g, true);
       continue;
     }
     const v = val(expr);
@@ -720,7 +865,7 @@ function analyzeCircuit(
   }
 
   // An exported circuit's result is part of the public transaction, like a ledger write.
-  if (c.ret) {
+  if (c.ret && !c.isConstructor) {
     const r = val(c.ret);
     if (flat(r).size) {
       ops.push({ field: 'return', op: 'value', operands: [[...flat(r)].map(([k, f]) => ({ source: sources.get(k)!.name, kind: sources.get(k)!.kind, flow: f.flow, via: f.via, bits: f.flow === 'reveal' ? sources.get(k)!.bits : f.flow === 'guessable' ? (f.preimageBits ?? sources.get(k)!.bits) : f.flow === 'predicate' ? 1 : 0, tag: f.tag }))], guardedBy: [] });
@@ -736,6 +881,9 @@ function analyzeCircuit(
   };
   for (const [id, f] of findings) if (f.kind === 'branch' && balanced(f)) findings.delete(id);
   const list = [...findings.values()];
+  for (const f of list)
+    if (f.kind !== 'branch' && (f.fields ?? []).some((x) => calls.has(x)))
+      f.detail += ` This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.`;
   // Nothing in this circuit ties the transaction to its caller (no reusable tag, no wallet key):
   // a branch then publishes an anonymous choice, like a public tally.
   const opsOn = (field: string) => new Set(ops.filter((o) => o.field === field).map((o) => o.op));
@@ -744,7 +892,8 @@ function analyzeCircuit(
     (f) =>
       ((f.kind === 'linkable' || f.kind === 'attributable') && !oneTime(f.field)) ||
       // the wallet key, or a private identifier (16+ bytes) written in the clear
-      (f.kind === 'published' && f.sources.some((x) => rootName(x.name) === 'ownPublicKey' || (x.kind === 'witness' && /^Bytes<(1[6-9]|[2-9]\d|\d{3,})>$/.test(x.type)))),
+      (f.kind === 'published' && f.sources.some((x) => rootName(x.name) === 'ownPublicKey' || (x.kind === 'witness' && (/^Bytes<(1[6-9]|[2-9]\d|\d{3,})>$/.test(x.type) || x.type === 'ZswapCoinPublicKey' || x.type === 'UserAddress')))) ||
+      (f.kind === 'shielded-coin' && f.title.startsWith('who receives')),
   );
   // ...unless the guarded operation itself writes an identity tag (a bidder filed under one set).
   const tagged = (field: string) => ops.some((o) => o.field === field && o.guardedBy.length && o.operands.some((xs) => xs.some((x) => x.tag)));
@@ -843,14 +992,23 @@ export function declaredPublic(findings: Finding[], src: string) {
 // Point each finding at the most likely source line.
 function locate(findings: Finding[], src: string) {
   const lines = src.split('\n');
-  const circuitStart = (name: string) => lines.findIndex((l) => new RegExp(`circuit\\s+${name}\\b`).test(l));
+  const circuitStart = (name: string) =>
+    lines.findIndex((l) => (name === 'constructor' ? /^\s*constructor\s*\(/ : new RegExp(`circuit\\s+${name}\\b`)).test(l));
   for (const f of findings) {
     const start = circuitStart(f.circuit);
-    const fieldRe = new RegExp(`\\b${f.field}\\b\\s*(\\.|=|\\+=|-=)`);
+    // Events are written `emit(…)`; token kernel operations are standard-library calls.
+    const fieldRe =
+      f.field === 'event'
+        ? /\bemit\s*\(/
+        : f.field === 'kernel' && f.kind === 'shielded-coin'
+          ? /\b(mintShieldedToken|sendShielded|sendImmediateShielded|createZswapOutput|receiveShielded)\s*\(/
+          : f.field === 'kernel' && /Unshielded|mintShielded/.test(f.op)
+            ? /\b(sendUnshielded|receiveUnshielded|mintUnshieldedToken|mintShieldedToken)\s*\(/
+            : new RegExp(`\\b${f.field}\\b\\s*(\\.|=|\\+=|-=)`);
     let hit = -1;
     if (start >= 0) {
       for (let i = start; i < lines.length; i++) {
-        if (i > start && /^\s*(export\s+)?(pure\s+)?circuit\s/.test(lines[i])) break;
+        if (i > start && /^\s*(export\s+)?(pure\s+)?(circuit\s|constructor\s*\()/.test(lines[i])) break;
         if (fieldRe.test(lines[i])) {
           hit = i;
           if (f.sources.some((s) => lines[i].includes(s.name))) break;

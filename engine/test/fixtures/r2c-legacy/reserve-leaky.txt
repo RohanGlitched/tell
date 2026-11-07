@@ -49,3 +49,7 @@ reduce-to-circuit:
    (= %t.38
       (public-ledger %t.36 %belowReserve.0 (3) insert %tag.17))
    (= %t.39 (tuple)) %t.39))
+tell-constructor:
+(constructor
+      ((%r.14 (tunsigned 18446744073709551615)))
+      (seq (public-ledger %reserve.4 (0) write %r.14) (tuple)))

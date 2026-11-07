@@ -1,0 +1,28 @@
+// Tell leak zoo: a shielded mint with a public nonce.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// A faucet mints a shielded coin to whoever calls `claim`. To keep nonces
+// unique it evolves one nonce kept in the ledger, the derived-nonce pattern.
+// A coin commitment is a hash of (nonce, color, value, recipient); the nonce
+// is public, the color and the amount are public, so the only unknown left
+// is the recipient. Anyone with a list of wallet keys can check, one hash per
+// key, which wallet received each coin.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger nonce: Bytes<32>;
+export ledger claims: Counter;
+
+constructor() {
+  nonce = pad(32, "faucet:nonce:0");
+}
+
+export circuit claim(): [] {
+  const n = evolveNonce(claims.read() as Uint<128>, nonce);
+  nonce = n;
+  claims.increment(1);
+  mintShieldedToken(pad(32, "faucet:token"), 100, n, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+}

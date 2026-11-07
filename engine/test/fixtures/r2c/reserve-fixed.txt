@@ -45,3 +45,7 @@ reduce-to-circuit:
       %t.34
       (public-ledger %bids.1 (1) insert %tag.15 %tmp.17))
    (= #t %t.35 (tuple)) %t.35))
+tell-constructor:
+(constructor
+      ((%r.12 (tunsigned 18446744073709551615)))
+      (seq (public-ledger %reserve.2 (0) write %r.12) (tuple)))

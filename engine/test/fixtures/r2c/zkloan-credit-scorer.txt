@@ -950,3 +950,18 @@ reduce-to-circuit:
      (public-ledger %loans.6 (1) remove %oldUserPk.114))
   (= %t.549 %t.551 (tuple)) (= %t.534 %t.552 (tuple))
   (= #t %t.553 (tuple)) %t.553))
+tell-constructor:
+(constructor
+     ()
+     (seq (let* ([(%tmp.139 (tbytes 32)) (let* ([(%sk.145
+                                                   (tbytes 32)) (call
+                                                                  %getUserSecret.63)])
+                                           (call
+                                             %persistentHash.25
+                                             (tuple
+                                               #vu8(122 107 108 111 97 110
+                                                    58 97 100 109 105 110
+                                                    58 112 107 58 118 49)
+                                               %sk.145)))])
+            (public-ledger %contractAdmin.3 (3) write %tmp.139))
+          (tuple)))

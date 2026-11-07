@@ -417,3 +417,98 @@ reduce-to-circuit:
       %t.327
       (public-ledger %winState.19 (11) write %tmp.69))
    (= #t %t.328 (tuple)) %t.328))
+tell-constructor:
+(constructor
+      ((%_x1.29 (tunsigned 255)) (%_x2.30 (tunsigned 255)))
+      (seq (seq (assert
+                  (if (== %_x1.29 %_x2.30) #f #t)
+                  "Cannot use the same number twice")
+                (assert
+                  (if (< 0 %_x1.29) (< 0 %_x2.30) #f)
+                  "No zero index, board starts at 1")
+                (assert
+                  (if (if (< 20 %_x1.29) #f #t)
+                      (if (< 20 %_x2.30) #f #t)
+                      #f)
+                  "Out of bounds, please keep ships on the board")
+                (let* ([(%_sk.31 (tbytes 32)) (call %localSk.28)])
+                  (let* ([(%pubKey.32 (tbytes 32)) (let* ([(%_sk.70
+                                                             (tbytes 32)) %_sk.31])
+                                                     (call
+                                                       %persistentHash.21
+                                                       (tuple
+                                                         #vu8(98 97 116 116
+                                                              108 101 115
+                                                              104 105 112
+                                                              58 112 107 58
+                                                              0 0 0 0 0 0 0
+                                                              0 0 0 0 0 0 0
+                                                              0 0 0 0)
+                                                         %_sk.70)))])
+                    (seq (public-ledger %player1.12 (0) write %pubKey.32)
+                         (let* ([(%hash1.33 (tbytes 32)) (let* ([(%_x.71
+                                                                   (tbytes
+                                                                     32)) (field->bytes
+                                                                            32
+                                                                            %_x1.29)]
+                                                                [(%_sk.72
+                                                                   (tbytes
+                                                                     32)) %_sk.31])
+                                                           (let* ([(%hash.73
+                                                                     (tbytes
+                                                                       32)) (call
+                                                                              %persistentHash.21
+                                                                              (tuple
+                                                                                %_x.71
+                                                                                %_sk.72))])
+                                                             %hash.73))])
+                           (seq (public-ledger
+                                  %board1.1
+                                  (3)
+                                  insert
+                                  %hash1.33)
+                                (let* ([(%hash2.35 (tbytes 32)) (let* ([(%_x.74
+                                                                          (tbytes
+                                                                            32)) (field->bytes
+                                                                                   32
+                                                                                   %_x2.30)]
+                                                                       [(%_sk.75
+                                                                          (tbytes
+                                                                            32)) %_sk.31])
+                                                                  (let* ([(%hash.76
+                                                                            (tbytes
+                                                                              32)) (call
+                                                                                     %persistentHash.21
+                                                                                     (tuple
+                                                                                       %_x.74
+                                                                                       %_sk.75))])
+                                                                    %hash.76))])
+                                  (seq (public-ledger
+                                         %board1.1
+                                         (3)
+                                         insert
+                                         %hash2.35)
+                                       (let* ([(%localBoardState.36
+                                                 (tunsigned 1)) (call
+                                                                  %localSetBoard.23
+                                                                  %_x1.29
+                                                                  %_x2.30)])
+                                         (seq (assert
+                                                (== %localBoardState.36 1)
+                                                "Please update the state of board1 to SET")
+                                              (public-ledger
+                                                %board1State.4
+                                                (5)
+                                                write
+                                                %localBoardState.36)
+                                              (public-ledger
+                                                %board2State.8
+                                                (6)
+                                                write
+                                                0)
+                                              (public-ledger
+                                                %winState.19
+                                                (11)
+                                                write
+                                                0)))))))))))
+           (tuple)))

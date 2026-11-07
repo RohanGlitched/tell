@@ -1,0 +1,68 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.4 () (Kernel)))
+  (public-ledger-declaration
+    ((%bids.2 (0) (Map (tbytes 32) (tbytes 32)))
+      (%ceiling.3
+        (1)
+        (__compact_Cell (tunsigned 18446744073709551615)))))
+  (native
+    %persistentHash.11
+    ((%value.12 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.13
+    ((%value.14 (tunsigned 18446744073709551615))
+      (%rand.15 (tbytes 32)))
+    (tbytes 32))
+  (witness %bidderKey.16 () (tbytes 32))
+  (witness %bidAmount.17 () (tunsigned 18446744073709551615))
+  (witness %bidSalt.18 () (tbytes 32))
+  (circuit %bid.0 () (ttuple)
+   (= %sk.25 (call #t %bidderKey.16))
+   (= %t.30
+      (tuple
+        #vu8(100 101 112 111 115 105 116 58 98 105 100 100 101 114 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.25))
+   (= %tag.21 (call #t %persistentHash.11 %t.30))
+   (= %t.31 (public-ledger #t %bids.2 (0) member %tag.21))
+   (= %t.32 (select %t.31 #t #f))
+   (= %t.33 (select %t.31 #f #t))
+   (= %t.34 (select %t.31 #f #t))
+   (= %t.35 (select #t %t.34 #t))
+   (assert %t.35 "one bid per bidder") (= %t.36 (tuple))
+   (= %amount.22 (call #t %bidAmount.17))
+   (= %t.37 (public-ledger #t %ceiling.3 (1) read))
+   (= %t.38 (< 64 %t.37 %amount.22))
+   (= %t.39 (select %t.38 #t #f))
+   (= %t.40 (select %t.38 #f #t))
+   (= %t.41 (select %t.38 #f #t))
+   (= %t.42 (select #t %t.41 #t))
+   (assert %t.42 "bid above the ceiling") (= %t.43 (tuple))
+   (= %t.44 (call #t %bidSalt.18))
+   (= %tmp.24 (call #t %persistentCommit.13 %amount.22 %t.44))
+   (= %t.45
+      (public-ledger #t %bids.2 (0) insert %tag.21 %tmp.24))
+   (= %color.26
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= %amount.27 (public-ledger #t %ceiling.3 (1) read))
+   (= %t.46 (default (tbytes 32)))
+   (= %tmp.28
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.26
+           %t.46))
+   (= %t.47
+      (public-ledger #t %kernel.4 () incUnshieldedInputs %tmp.28
+        %amount.27))
+   (= %t.48 (tuple)) %t.48))
+tell-constructor:
+(constructor
+      ((%maxBid.19 (tunsigned 18446744073709551615)))
+      (seq (public-ledger %ceiling.3 (1) write %maxBid.19)
+           (tuple)))
