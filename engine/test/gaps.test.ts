@@ -166,6 +166,17 @@ describe('declared intent (tell.json)', () => {
   });
 });
 
+describe('names that say "secret" but describe a derived value (from Nightshade\'s corpus)', () => {
+  it('a secretCommitment or a secretHash written to the ledger is not a secret key in the clear', () => {
+    const r = load('case-secret-names').findings;
+    expect(serious(by(r, 'constructor'))).toEqual([]);
+    expect(serious(by(r, 'setTag'))).toEqual([]);
+  });
+  it('a secretKey still is', () => {
+    expect(by(load('case-secret-names').findings, 'leak')).toMatchObject([{ kind: 'secret-published', severity: 'critical' }]);
+  });
+});
+
 describe('policy files', () => {
   it('rejects what it does not understand, with the place', () => {
     expect(() => parsePolicy('{"witnesess": {}}', 'tell.json')).toThrow(/unknown key "witnesess"/);
@@ -187,7 +198,7 @@ describe('policy files', () => {
   });
   it('a circuit called constructor does not find Object.prototype', () => {
     expect(callerOf({}, 'constructor')).toBe('anonymous');
-    expect(callerOf({ circuits: { constructor: { caller: 'identified' } } }, 'constructor')).toBe('identified');
+    expect(callerOf({ circuits: { constructor: { caller: 'identified' as const } } }, 'constructor')).toBe('identified');
   });
   it('the nearest tell.json or .tellrc.json applies, up to the repository root', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-policy-'));

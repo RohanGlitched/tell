@@ -647,7 +647,8 @@ function analyzeCircuit(
           fix: `Keep it in private state and publish a commitment (persistentCommit(value, salt) with a fresh random salt) or a hash with a secret, or remove it from the policy's secrets if it is meant to be public.`,
         });
       } else if (f.flow === 'reveal') {
-        const looksSecret = isSecretish(s.name) && hasBytes(s.type);
+        // `secretCommitment`, `secretHash`: the name also says the value is derived, not the secret.
+        const looksSecret = isSecretish(s.name) && hasBytes(s.type) && !words(s.name).some((x) => ['commitment', 'commit', 'hash', 'digest', 'tag', 'pub', 'public', 'pk'].includes(x));
         // 128+ bits of private bytes written as-is: a key, a seed or a credential, whatever it is called.
         const keyMaterial = s.kind === 'witness' && s.type.k === 'bytes' && s.bits >= 128 && isKeyish(s.name) && !isFresh(s.name);
         if (rootName(s.name) === 'ownPublicKey')

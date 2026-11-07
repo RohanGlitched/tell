@@ -114,7 +114,17 @@ Run time, one file at a time on a shared WSL machine: Tell 675 s for the 79 file
 
 ## Tell on Nightshade's published corpus
 
-CORPUS_SECTION
+The benchmark above was written by Tell's author. To counter that, Tell was run on contracts its author did not write: Nightshade's published regression corpus (`tests/corpus` at `9ef4aea`, drafts excluded). Nightshade's 300-root evaluation set would be the better test, but its documentation says it is "private and unavailable for reproduction". Every finding at medium or above is labelled by hand in [labels/nightshade-corpus.md](labels/nightshade-corpus.md).
+
+| | |
+|---|---|
+| Contract files | 465 (443 analysed; 22 rejected by the compiler, all for a missing OpenZeppelin library import; 0 crashes) |
+| Findings | 847 (11 critical, 6 high, 13 medium, 90 low, 727 info) |
+| Medium or above | 30 in 21 files: 23 real privacy issues, 4 intended disclosures, 3 false alarms |
+| Nightshade's privacy positives (14) | 9 found at medium or above; the other 5 are all returned values, which Tell rates low on purpose (a result is not on chain) |
+| Nightshade's privacy negatives (27) | quiet on 24; on the other 3 Tell reports a secret key or credential written to the ledger, which each of them does (Nightshade labels a file negative for one detector only) |
+
+The three false alarms are one name rule (a constructor argument called `secretCommitment` read as a secret key), fixed after the run. Of the 23 real findings, 9 are the caller's wallet key written to the ledger in Nightshade's authorization test cases, which Nightshade reports as an authorization issue and Tell as a privacy one; 3 are Nightshade's own positives for the class `derivable-secret` was added for.
 
 ## Where Tell does better
 

@@ -26,6 +26,7 @@ Privacy issues that another tool reported and Tell missed or underrated in the f
 - **Look-alikes that stay quiet** (tested): the secret itself as the scalar while only its hash is published; differently tagged hashes for the id and the scalar (S13); a verification step `ecMul(pk, c)` with a public challenge; a public key returned rather than published.
 - **A precision fix it needed:** fingerprints of nested one-way functions were inherited, so publishing `ecMulGenerator(hash(s))` counted as publishing `hash(s)`. A one-way function of a hidden value now has its own fingerprint.
 - **Scope, honestly:** only `ecMulGenerator` (key generation). `ecMul(P, s)` with a public `s` is normal in signature verification and is not reported. A published hash reused as the preimage of an authorisation hash elsewhere would need to know that two witnesses return the same value, which static analysis cannot see.
+- **On someone else's cases:** run on Nightshade's published corpus, the rule fires on all three of Nightshade's positives for this class (`library-public-encryption-secret-positive`, `privacy16/account-key-domain/positive`, `privacy16/public-scalar-seed21/positive`) and reports nothing at medium or above on their six corrected and look-alike programs ([labels/nightshade-corpus.md](labels/nightshade-corpus.md)).
 - **Zoo:** `keyring-leaky` / `keyring-fixed`, with `zoo/test/linking.test.ts` recovering every user's private key from the public account id (and none from the fixed contract).
 
 ## 3. Branches in circuits that name no caller

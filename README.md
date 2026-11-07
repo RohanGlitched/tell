@@ -59,7 +59,7 @@ Compared with the Wave 2 submission (tag [`v1`](https://github.com/RohanGlitched
 7. **Radar**: a source-free privacy scan of 329 Preprod contracts from chain data alone ([`radar/`](radar)).
 8. **MCP server** for coding agents and a **VS Code extension** ([`mcp/`](mcp), [`vscode/`](vscode)).
 9. **Leak zoo: 5 pairs to 9** (raffle with a constructor leak, faucet with a public coin nonce, deposit paid in the clear, a Ledger 9 poll that emits its vote hash), with 18 attack tests, up from 10.
-10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 69 files ([`bench/`](bench)).
+10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 79 files, and Tell on Nightshade's own published corpus ([`bench/`](bench)).
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
 12. **Outreach**: 11 teams sent an issue naming the file and the kind of finding, with the details offered privately; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot requests to two audit firms.
 
@@ -265,31 +265,34 @@ Read honestly: the brute force found nothing outside Tell's own leaky contract, 
 
 ## How Tell compares
 
-[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 69 Compact files: Tell's leak zoo (10), 30 cases written for the benchmark (21 planted leaks, 18 safe files, 1 non-privacy bug) and 29 contracts from Midnight's official examples. Numbers from [`bench/RESULTS.md`](bench/RESULTS.md) as of November 7, 2026, measured on the **Wave 2 engine** (`d3a9104`); a re-run with the Wave 3 engine is in progress and will update that file.
+[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 79 Compact files: Tell's leak zoo (20), 30 cases written for the benchmark and 29 contracts from Midnight's official examples. Numbers from [`bench/RESULTS.md`](bench/RESULTS.md), November 7, 2026, with the Wave 3 engine (`d62e618`); the first run (Wave 2 engine, `d3a9104`) is kept there under History.
 
-**Bias, stated first:** Tell's author wrote the benchmark, the zoo is Tell's own development set, and the cases were written knowing what Tell looks for. Read the labelled-set numbers as "does each tool handle these patterns", not as accuracy. The examples set has no planted leaks and is the less biased half.
+**Bias, stated first:** Tell's author wrote the benchmark, the zoo is Tell's own development set, and the cases were written knowing what Tell looks for; three of Tell's gains (L11, L12, L16) come from rules added after the first run showed those misses. Read the labelled-set numbers as "does each tool handle these patterns", not as accuracy. The less biased parts are Midnight's examples and Nightshade's own corpus, below.
 
-| Labelled set, medium and above | Leaks found (of 21) | False alarms | Leak quantified |
+| Labelled set, medium and above | Leaks found (of 25) | False alarms | Leak quantified |
 |---|---|---|---|
-| Tell | 16 | 1 | 14 of 16, in bits |
+| Tell | 23 | 1 | 16 of 23, in bits |
+| Tell with a one-line `tell.json` | 23 | 0 | 16 of 23 |
 | Nightshade, default rules | 3 | 0 | 1 of 3 |
-| Nightshade, generic secrets policy | 13 | 9 | 1 of 13 |
-| compact-guard | 4 | 1 | 4 of 4, domain size |
+| Nightshade, generic secrets policy | 14 | 12 | 1 of 14 |
+| compact-guard | 5 | 1 | 5 of 5, domain size |
 | compact-lint | 0 | 0 | not a privacy tool |
 | OpenZeppelin detectors | 0 | 0 | not a privacy tool |
 
-On Midnight's 29 examples, one real privacy leak was found at medium or above, by two tools: the election example ties each revealed vote to the voter's registration key. Tell and Nightshade with a secrets policy both report it (we filed it as [midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90)). Tell gave 2 findings at medium or above on the examples; Nightshade with a generic policy gave 59, 51 of them intended disclosures.
+On the 20 leaks both runs share, Tell went from 15 to 18 found at medium or above. One case was relabelled against Tell: L09 (a secret *returned* from a circuit) assumed results are public; a contract call carries only a randomized commitment to its inputs and outputs, so it is not a public leak, and Tell now rates returns low.
 
-Where Tell does better: hashes that are small because of an `assert` bound or because the other inputs are public in the same call (only Tell finds these); the same tag on every action; a commitment whose nonce is a public counter; a number for each leak; attack tests that read the secret back.
+On Midnight's 29 examples Tell gives 4 findings at medium or above, 3 real: the election example ties each revealed vote to the voter's registration key (also found by Nightshade with a secrets policy; filed as [midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90)), and two shielded sweeps to `ownPublicKey()` (private-tip-jar, roulette) whose recipient can be confirmed. Nightshade with a generic policy gives 59, 51 of them intended disclosures.
+
+**On someone else's corpus.** Nightshade's 300-root evaluation set is private, so Tell was run on Nightshade's published regression corpus (465 contracts, written by Nightshade's author): 443 analysed, 0 crashes, 30 findings at medium or above (23 real, 4 intended, 3 false alarms from one name rule, since fixed). Of Nightshade's 14 privacy positives Tell finds 9; the other 5 are returned values, which Tell rates low on purpose. Details: [`bench/labels/nightshade-corpus.md`](bench/labels/nightshade-corpus.md).
+
+Where Tell does better: hashes that are small because of an `assert` bound or because the other inputs are public in the same call (only Tell finds these); the same tag on every action and membership shown by a lookup; constructors, token amounts and coin nonces; a number for each leak; attack tests that read the secret back (10 zoo leaks).
 
 Where the others do better:
 
-- **Constructors** (case L12): in this run only Nightshade with a secrets policy found it. The Wave 3 engine analyses constructors and the zoo's raffle tests it; the benchmark re-run will show whether L12 is now caught.
-- **A published hash reused as a private key** (L16): Nightshade has a rule for it, compact-guard flags the missing domain separation; Tell reports nothing.
-- **Branches when nothing identifies the caller** (L06, L10): Tell rates these low on purpose; if the transaction does identify the caller, that is too low.
-- **Precision of defaults:** Nightshade's default rules raised no false alarm on any of the 69 files; Tell raised one at medium (a per-device key tag read as "the same tag on every action").
+- **Branches when nothing identifies the caller** (L06, L10): Tell rates these low on purpose, because a Midnight transaction does not name its sender by itself (fees are shielded DUST), and says so in the finding; `"caller": "identified"` in `tell.json` rates them medium. Nightshade's policy run reports them high.
+- **Precision of defaults:** Nightshade's default rules raised no false alarm on any file; Tell's default run raised one at medium (S07, a per-device key tag), which a one-line `tell.json` removes.
 - **Non-privacy bugs:** spoofable authorization, unbound Merkle paths, unbounded mints. Tell is silent on these by design; Nightshade covers 96 rules, most of them not about privacy.
-- **Speed and no compiler:** the others work from source text in about a second per file or less; Tell compiled every file (594 s for all 69) and cannot analyse code the compiler rejects (3 experimental examples).
+- **Speed and no compiler:** the others work from source text in about a second per file or less; Tell compiles every file (675 s for all 79) and cannot analyse code the compiler rejects (3 experimental examples).
 
 Midnight's own `midnight-expert` `/audit-compact` command (an LLM reviewer) was not run: it needs a paid model.
 
@@ -404,13 +407,13 @@ Counts from a run on November 7, 2026 (Node 24, WSL), one suite at a time with `
 
 | Workspace | Test files | Tests | Result |
 |---|---|---|---|
-| `engine` | 3 | 199 | all pass |
-| `zoo` | 4 | 24 | all pass |
+| `engine` | 4 | 257 | all pass |
+| `zoo` | 5 | 28 | all pass |
 | `desk` | 1 | 33 | all pass |
-| `mcp` | 1 | 39 | all pass |
-| `vscode` | 2 | 24 | all pass |
-| `radar` | 3 | 18 | all pass |
-| **Total** | 14 | **337** | |
+| `mcp` | 1 | 40 | all pass |
+| `vscode` | 2 | 24 | 23 pass, 1 skipped (the bundle test needs `npm run build -w vscode` first) |
+| `radar` | 3 | 18 | all pass (earlier run; unchanged here) |
+| **Total** | 16 | **400** | |
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. The website has Playwright tests (`npm run e2e -w web`).
 
@@ -423,7 +426,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites
 - It does not look for non-privacy bugs (authorization, Merkle binding, mint caps); use Nightshade or compact-lint for those.
 - **A circuit's result is not public.** A contract call in a transaction carries its address, entry point, public transcripts, proof and a *communication commitment*, a randomized commitment to the call's inputs and outputs (ledger `ContractCall`; `communicationCommitment(input, output, rand)` in the runtime). Midnight's guide says the same: a return value "is not written to the ledger or readable in the transaction". A value returned from an exported circuit goes to the DApp, or to the calling contract in a cross-contract call, which may publish it; Tell reports it at low, as a value leaving the proof. (Some tutorials list returns among public outputs; Tell follows the ledger structure.)
 - **A transaction does not name its sender by itself.** Fees are paid in DUST, a shielded resource spent by nullifier (a `DustSpend` holds the fee, a nullifier, a new commitment and a proof), and a contract call carries no wallet key unless the circuit or the wallet adds one. So a branch on a private value in a circuit that publishes nothing identifying rates low: each call still leaks its outcome, not whose it is. Timing, network metadata, an unshielded payment in the same transaction or an app that submits for its users can identify callers; declare `"caller": "identified"` in `tell.json` and those branches rate medium.
-- Verified fixes cover guessable hashes, secrets in the clear, same-tag-on-every-action, branches (outside loops) and personal values; wallet keys, returned secrets and token operations are manual. A branch fix changes behaviour (the other path is rejected), and the comment says so.
+- Verified fixes cover guessable hashes, secrets in the clear, same-tag-on-every-action, branches (outside loops, including those rated low because no caller is identified) and personal values; wallet keys, returned secrets and token operations are manual, and so is a branch Tell cannot rewrite (in a loop, an `else if` chain or a `c ? a : b` expression), with the reason in the fix text. A commitment with a constant or public salt gets its salt replaced, reusing a salt witness the contract already declares (so a one-line pull request gets a one-click suggestion). A branch fix changes behaviour (the other path is rejected), and the comment says so.
 - Tell Desk: maintainer credentials cannot be revoked yet; nothing limits spam seals; the Preprod demo runs every role from one house wallet.
 - Radar only breaks small domains, only searches a few hash shapes, decodes each contract's last 100 calls, and covers the last 14 days plus contracts named in buildathon repositories, not Preprod's whole history.
 - See also [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).
