@@ -43,6 +43,17 @@ Severity rules for the new cases:
 
 Replace "It does not yet analyse constructors" with: "It treats cross-contract call arguments as public, as the compiler does; whether a particular callee actually publishes them depends on the callee's code, which Tell analyses separately."
 
+## Ledger 9 constructs and compiler choice
+
+Compiled only by 0.33 and later (language 0.25+), so 0.31.1 rejects them: `emit` and the standard event types, `contract` declarations and cross-contract calls, `kernel.caller()` (0.35), `serialize`/`deserialize`, `sha512`, the secp256r1 and Curve25519 types, `secp256r1EcdsaVerify` and `ed25519Verify` (0.35, flag-free in 0.36). Midnight's own Ledger 9 examples declare `pragma language_version >= 0.25.0`, which skips 0.31.1. A contract with a looser pragma that uses them fails on 0.31.1 and Tell falls back to the next installed compiler that builds it (tested).
+
+## Numbers (from runs on this branch)
+
+- Engine precision tests: 87 before, 152 now (`npm test -w engine`).
+- Zoo attack tests: 10 before, 18 now (`npm test -w zoo`): 16 on Ledger 8 contracts (runtime 0.16), 2 on the Ledger 9 poll (Compact 0.36, runtime 0.21).
+- `scripts/zoo-check.ts --compiler 0.36.0`: all 18 zoo contracts pass (every leaky one has a medium-or-worse finding, every fix none).
+- Survey sample (48 contracts from 36 repositories, chosen for constructors and token operations, compiled once and analysed by the old and new engine): no crashes; 2 new findings at medium or worse, both read by hand and both real (a shielded mint whose nonce is `evolveNonce(counter, contract address)`, and an invoice amount the contract hides in a commitment but settles as an unshielded deposit); 5 new low shielded-coin findings (contract-held coins paid to an argument recipient); constructors add 84 info and 4 low findings (an officer's `ownPublicKey()` stored at deploy) and 9 linkable tags.
+
 ## Roadmap row
 
 `Wave 3 | … constructor analysis; shielded token and DUST patterns in the zoo` is done except DUST: no DUST-specific leak was found that the IR exposes (DUST is spent by the wallet for fees, outside contract code).
