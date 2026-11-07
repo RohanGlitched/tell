@@ -16,7 +16,7 @@ import { describe, type Family, familyName, familySize } from './families.js';
 import { type Atom, decodeCalls, decodeState, type DecodedState, isOpaque32 } from './state.js';
 import { loadTable } from './table.js';
 import { numericTables } from './tables.js';
-import { pairPrefixes, singlePrefixes, vocabulary } from './words.js';
+import { COMMON_WORDS, ownWords, pairPrefixes, singlePrefixes, vocabulary } from './words.js';
 
 export type Options = {
   /** Values per prefixed family (16 by default; 256 with --deep). */
@@ -69,25 +69,36 @@ export function digest(r: ContractRecord): Digested {
   return { address: r.address, state, calls };
 }
 
-function familiesFor(entryPoints: Set<string>, o: Options): { tables: Family[]; streamed: Family[] } {
-  const words = vocabulary(entryPoints);
+/**
+ * The families to hash. Single words come from the common list and every contract's
+ * entry-point names. Two-word prefixes are the common list squared, plus, for each
+ * contract, the pairs that use one of its own words (not every contract's words with
+ * every other's, which would grow as the square of the whole chain's vocabulary).
+ */
+function familiesFor(records: Digested[], o: Options): { tables: Family[]; streamed: Family[] } {
+  const all = new Set<string>();
+  for (const r of records) for (const e of r.state?.entryPoints ?? []) all.add(e);
+  const words = vocabulary(all);
   const singles = singlePrefixes(words);
-  const pairs = pairPrefixes(words);
+  const pairs = new Set(pairPrefixes(COMMON_WORDS));
+  const groups = new Set(records.map((r) => ownWords(r.state?.entryPoints ?? []).join(' ')).filter(Boolean));
+  for (const g of groups) for (const p of pairPrefixes(COMMON_WORDS, g.split(' '))) pairs.add(p);
+  const pairList = [...pairs];
   const count = o.taggedCount ?? (o.deep ? 256 : 16);
   const uintMax = o.uintMax ?? (o.tableDir ? 1 << 24 : 1 << 16);
   const tables: Family[] = [];
   const streamed: Family[] = [
     { kind: 'uint', width: 1, count: 256 },
     { kind: 'uint', width: 2, count: Math.min(uintMax, 1 << 16) },
-    { kind: 'word', words: [...new Set([...words, ...singles, ...pairs])] },
+    { kind: 'word', words: [...new Set([...words, ...singles, ...pairList])] },
     { kind: 'tagged', prefixes: singles, width: 32, count: 1024 },
     { kind: 'tagged', prefixes: singles, width: 1, count: 256 },
     { kind: 'tagged', prefixes: singles, width: 8, count: 1024 },
-    { kind: 'tagged', prefixes: pairs, width: 32, count },
-    { kind: 'tagged', prefixes: pairs, width: 1, count },
+    { kind: 'tagged', prefixes: pairList, width: 32, count },
+    { kind: 'tagged', prefixes: pairList, width: 1, count },
     { kind: 'taggedWord', prefixes: singles, words },
   ];
-  if (o.deep) streamed.push({ kind: 'taggedWord', prefixes: pairs, words });
+  if (o.deep) streamed.push({ kind: 'taggedWord', prefixes: pairPrefixes(COMMON_WORDS), words: COMMON_WORDS });
   for (const f of numericTables(uintMax)) (o.tableDir ? tables : streamed).push(f);
   return { tables, streamed };
 }
@@ -95,7 +106,6 @@ function familiesFor(entryPoints: Set<string>, o: Options): { tables: Family[]; 
 export async function analyze(records: Digested[], o: Options = {}): Promise<Analysis> {
   const log = o.log ?? (() => {});
   const seen = new Map<string, Digested>();
-  const entryPoints = new Set<string>();
   const targets = new Targets();
   const where = new Map<string, Location[]>(); // digest -> locations
 
@@ -109,14 +119,13 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
   for (const r of records) {
     const { state, calls } = r;
     seen.set(r.address, r);
-    for (const e of state?.entryPoints ?? []) entryPoints.add(e);
     for (const c of state?.cells ?? []) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'state', path: c.path, role: c.role });
     for (const c of calls) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'call', txHash: c.txHash, entryPoint: c.entryPoint });
   }
   log(`${records.length} contracts, ${targets.size} distinct 32-byte values to match`);
 
   // 1. Guessable hashes.
-  const { tables, streamed } = familiesFor(entryPoints, o);
+  const { tables, streamed } = familiesFor(records, o);
   const hits: Hit[] = [];
   const families: FamilyRun[] = [];
   for (const f of streamed) {

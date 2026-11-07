@@ -57,11 +57,27 @@ export function singlePrefixes(words: string[]): string[] {
   return [...out];
 }
 
-/** Two-word separators: "a:b", "a_b", "a-b", "a/b", "a.b", "ab" and "a:b:". */
-export function pairPrefixes(words: string[]): string[] {
+/** A contract's own words: the parts of its entry-point names that the common list lacks. */
+export function ownWords(entryPoints: Iterable<string>): string[] {
+  const common = new Set(COMMON_WORDS);
   const out = new Set<string>();
-  for (const a of words) for (const b of words) {
+  for (const e of entryPoints) for (const p of nameParts(e)) if (!common.has(p)) out.add(p);
+  return [...out].sort();
+}
+
+/**
+ * Two-word separators: "a:b", "a_b", "a-b", "a/b", "a.b", "ab" and "a:b:", for every a and b
+ * in `words`; with `extra`, only the pairs that use at least one extra word (a or b from extra,
+ * the other from words or extra).
+ */
+export function pairPrefixes(words: string[], extra?: string[]): string[] {
+  const out = new Set<string>();
+  const firsts = extra ? [...extra, ...words] : words;
+  const extraSet = new Set(extra ?? []);
+  const seconds = extra ? [...words, ...extra] : words;
+  for (const a of firsts) for (const b of seconds) {
     if (a === b) continue;
+    if (extra && !extraSet.has(a) && !extraSet.has(b)) continue;
     for (const s of SEPARATORS) {
       const p = `${a}${s}${b}`;
       if (Buffer.byteLength(p) <= 32) out.add(p);
