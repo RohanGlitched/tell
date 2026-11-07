@@ -1,12 +1,30 @@
 {
   "status": "in progress",
-  "note": "The same survey, re-run over the same repositories after the outreach notes went out. 'before' is the published survey of October 11; 'after' is filled in when the re-run is done (engine/scripts/survey.ts).",
+  "note": "The same survey re-run over the same 111 repositories. 'before' is the published survey of October 11 (Wave 2 engine). 'after' is November 7, on each repository's latest commit, with the Wave 3 engine: its new rules (constructors, tokens, anonymous claims, derivable secrets) and Compact 0.36 explain most of the change, so the two runs are not a like-for-like measure of fixes. Of the 11 projects notified on November 7, none had changed the flagged code yet; this re-run is repeated before the Wave 3 deadline.",
   "before": {
     "date": "2026-10-11",
     "projectsAnalyzed": 96,
     "contractsAnalyzed": 248,
-    "grades": { "A": 47, "B": 34, "C": 14, "D": 0, "F": 1 },
+    "grades": {
+      "A": 47,
+      "B": 34,
+      "C": 14,
+      "D": 0,
+      "F": 1
+    },
     "mediumOrWorse": 15
   },
-  "after": null
+  "after": {
+    "date": "2026-11-07",
+    "projectsAnalyzed": 96,
+    "contractsAnalyzed": 271,
+    "grades": {
+      "A": 43,
+      "B": 35,
+      "C": 17,
+      "D": 0,
+      "F": 1
+    },
+    "mediumOrWorse": 18
+  }
 }
