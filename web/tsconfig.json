@@ -40,6 +40,8 @@
   "exclude": [
     "node_modules",
     "bin",
-    "scripts"
+    "scripts",
+    "e2e",
+    "playwright.config.ts"
   ]
 }

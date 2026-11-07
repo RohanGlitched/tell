@@ -1,0 +1,34 @@
+{
+  "_readme": "Tell Desk, as the site shows it. LEAD: set address and deployTx after deploying desk/ to Preprod; set fieldsConfirmed to true once publicLedger, privateState and circuits match desk/contract; implement readDesk() in web/lib/desk.ts.",
+  "status": "in progress",
+  "network": "preprod",
+  "address": null,
+  "deployTx": null,
+  "contractPath": "desk/contract",
+  "fieldsConfirmed": false,
+  "publicLedger": [
+    { "name": "grades", "type": "Map<Bytes<32>, Uint<8>>", "holds": "The privacy grade (A to F) filed for each scanned contract, keyed by its address", "who": "Anyone: wallets, dApp stores, users" },
+    { "name": "reports", "type": "Map<Bytes<32>, Bytes<32>>", "holds": "A salted commitment to the full sealed report. It proves which report the grade came from without revealing it", "who": "Anyone; meaningless without the salt" },
+    { "name": "scanner", "type": "Bytes<32>", "holds": "A hash of the Tell engine version and rules used, so anyone can reproduce a grade", "who": "Anyone" },
+    { "name": "filers", "type": "Set<Bytes<32>>", "holds": "A one-way tag of each filer's key: who may update a grade, without naming them", "who": "Anyone; not linkable to a wallet" },
+    { "name": "round", "type": "Counter", "holds": "How many grades have been filed, so a reader can tell whether the registry is up to date", "who": "Anyone" }
+  ],
+  "privateState": [
+    { "name": "report", "type": "Tell report (JSON)", "holds": "Every finding, line and fix: what the grade is based on", "who": "The team, and whoever they share it with" },
+    { "name": "salt", "type": "Bytes<32>", "holds": "The random salt behind the report commitment. Sharing it lets an auditor open the seal", "who": "The team" },
+    { "name": "filerKey", "type": "Bytes<32>", "holds": "The secret key behind the filer tag. It proves the right to update a grade", "who": "The team" },
+    { "name": "source", "type": "Compact source", "holds": "The contract that was scanned, if it is not public", "who": "The team" }
+  ],
+  "circuits": [
+    { "name": "file", "does": "Files a grade and a sealed report commitment for a contract address", "discloses": "The grade, the commitment and the filer tag; never the report" },
+    { "name": "open", "does": "Proves a shared report matches the commitment on chain, for an auditor", "discloses": "Nothing new: the check runs inside the proof" },
+    { "name": "regrade", "does": "Replaces a grade after a fix, filed by the same filer", "discloses": "The new grade and commitment" }
+  ],
+  "flow": [
+    { "step": "Scan", "text": "Tell scans the contract and produces the report and a grade." },
+    { "step": "Seal", "text": "Your wallet commits to the report with a fresh salt. The report and the salt stay in your private state." },
+    { "step": "File", "text": "One transaction puts the grade and the commitment on the public ledger, keyed by the contract's address." },
+    { "step": "Read", "text": "Before you sign, a wallet or dApp store looks up the grade by address." },
+    { "step": "Open, if asked", "text": "Share the report and the salt with an auditor. They check it against the commitment, and no one else learns anything." }
+  ]
+}

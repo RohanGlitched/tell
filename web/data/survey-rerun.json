@@ -1,0 +1,12 @@
+{
+  "status": "in progress",
+  "note": "The same survey, re-run over the same repositories after the outreach notes went out. 'before' is the published survey of October 11; 'after' is filled in when the re-run is done (engine/scripts/survey.ts).",
+  "before": {
+    "date": "2026-10-11",
+    "projectsAnalyzed": 96,
+    "contractsAnalyzed": 248,
+    "grades": { "A": 47, "B": 34, "C": 14, "D": 0, "F": 1 },
+    "mediumOrWorse": 15
+  },
+  "after": null
+}

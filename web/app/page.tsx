@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Lamp, { type HeroRow } from '@/components/Lamp';
 import Scanner from '@/components/Scanner';
 import Census, { type CensusProject } from '@/components/Census';
+import Wave3Band from '@/components/Wave3Band';
 import hero from '@/data/hero.json';
 import samples from '@/data/samples.json';
 import survey from '@/data/survey.json';
@@ -46,6 +47,8 @@ export default function Home() {
           <Link href="/live">Watch it read the votes of a ballot deployed on Midnight Preprod</Link>
         </p>
       </Lamp>
+
+      <Wave3Band />
 
       <section className="mx-auto max-w-[1180px] px-4 py-16 sm:px-6">
         <div className="grid gap-10 md:grid-cols-[1fr_1.2fr] md:items-end">
@@ -224,7 +227,7 @@ seeds.insert(slot, s); // tell:allow published`}</pre>
           <ol className="grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2">
             {[
               ['Now', 'Scanner, CLI, GitHub Action with SARIF, leak zoo with attack tests, survey of every buildathon app.'],
-              ['Wave 3', 'Pull request comments with the fix inline. Constructor analysis. Shielded token and DUST patterns in the zoo.'],
+              ['Wave 3', 'Verified fixes, pull-request review, Tell Desk on chain, constructor and token rules, an MCP server for AI agents.'],
               ['Next', 'A VS Code extension that marks leaking lines as you type. A Tell check in Midnight’s project templates.'],
               ['Later', 'Hosted checks with history per contract, team dashboards, and a privacy report auditors can attach.'],
             ].map(([w, d]) => (

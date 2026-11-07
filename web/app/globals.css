@@ -1,51 +1,73 @@
 @import 'tailwindcss';
 
-/* Tell: under the lamp. A forensic case file on cool examination stock; an
-   ultraviolet lamp makes hidden ink fluoresce. UV colours appear only where the
-   lamp shines. */
+/* Tell: Redacted. A privacy leak is a redaction that doesn't hold. The brand device is the
+   redaction bar: solid indigo when a secret is safe, the value glowing through in marker pink
+   when it is not, inside an editorial, annotated-document layout.
+   Tokens first (design/dir-3/README.md); the older names below are aliases so every page
+   shares one palette. */
 :root {
-  --paper: #eceef2;
-  --sheet: #f8f9fb;
-  --ink: #0d1220;
-  --graphite: #4c5568;
-  --faint: #8790a1;
-  --rule: #cdd2db;
-  --rule-strong: #aab2bf;
-  --red: #d3263a;
-  --red-soft: #f8dde1;
-  --amber: #b06a00;
-  --amber-soft: #fbecd2;
-  --uv: #1a1040;
-  --uv-2: #2a1a63;
-  --glow: #ff4fd8;
-  --glow-2: #5cf2ff;
-  --hi: #ffe14a;
-  --hi-soft: #fff4b5;
-  --sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --display: var(--font-schibsted), var(--font-plex-sans), sans-serif;
-  --mono: var(--font-jetbrains), ui-monospace, 'SFMono-Regular', monospace;
-  --hand: var(--font-newsreader), Georgia, serif;
-  color-scheme: light;
-}
+  --indigo: #1a1446;
+  --indigo-2: #251d5e;
+  --indigo-3: #3a3180;
+  --violet: #5b3df5;
+  --violet-soft: #ece8ff;
+  --white: #ffffff;
+  --mist: #f3f2f8;
+  --desk: #e9e7f2;
+  --ink-2: #4d4870;
+  --ink-3: #837fa3;
+  --rule: #dedbec;
+  --marker: #ff3ea5;
+  --marker-hover: #f02a93;
+  --marker-soft: #ffe3f1;
+  --marker-ink: #a3105e;
+  --sealed: #178a5e;
+  --sealed-soft: #e4f5ec;
+  --sealed-ink: #0d5a3c;
+  --del-soft: #ffe9ef;
+  --del-ink: #8e1846;
+  --on-indigo: #c6c1ea;
+  --on-indigo-2: #9c96cc;
+  --on-indigo-3: #d5d1f2;
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --paper: #0c1019;
-    --sheet: #121826;
-    --ink: #e8ebf2;
-    --graphite: #a2abbd;
-    --faint: #6f788b;
-    --rule: #252d3f;
-    --rule-strong: #3a445c;
-    --red: #ff5468;
-    --red-soft: #3b1720;
-    --amber: #f0a43a;
-    --amber-soft: #3a2a12;
-    --hi: #ffe14a;
-    --hi-soft: #3b3518;
-    /* native controls (checkboxes, scrollbars) follow the dark sheet */
-    color-scheme: dark;
-  }
+  /* aliases used across the site */
+  --paper: var(--white);
+  --sheet: var(--mist);
+  --ink: var(--indigo);
+  --graphite: var(--ink-2);
+  --faint: var(--ink-3);
+  --rule-strong: #c4c0db;
+  --red: var(--marker);
+  --red-soft: var(--marker-soft);
+  --amber: #8a5a00;
+  --amber-soft: #fff1d6;
+  --uv: var(--indigo);
+  --uv-2: var(--indigo-2);
+  --glow: var(--marker);
+  --glow-2: var(--violet-soft);
+  --hi: var(--violet);
+  --hi-soft: var(--violet-soft);
+
+  /* severity */
+  --sev-critical-bg: var(--marker);
+  --sev-critical-fg: #fff;
+  --sev-high-bg: var(--marker-soft);
+  --sev-high-fg: var(--marker-ink);
+  --sev-medium-bg: var(--violet);
+  --sev-medium-fg: #fff;
+  --sev-low-bg: var(--violet-soft);
+  --sev-low-fg: var(--violet);
+  --sev-info-bg: var(--mist);
+  --sev-info-fg: var(--ink-2);
+
+  --serif: var(--font-source-serif), Georgia, serif;
+  --sans: var(--font-schibsted), system-ui, sans-serif;
+  --mono: var(--font-dm-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --display: var(--serif);
+  --hand: var(--serif);
+  --wrap: 1160px;
+  --margin-col: 220px;
+  color-scheme: light;
 }
 
 @layer base {
@@ -54,40 +76,43 @@
     color: var(--ink);
     font-family: var(--sans);
     -webkit-text-size-adjust: 100%;
-    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   body {
     background: var(--paper);
     min-height: 100vh;
     font-size: 16px;
-    line-height: 1.55;
+    line-height: 1.6;
   }
   ::selection {
-    background: var(--glow);
+    background: var(--marker);
     color: #fff;
   }
   a {
     color: inherit;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
   }
   a:hover {
-    text-decoration-color: var(--red);
+    text-decoration-color: var(--marker);
   }
   :focus-visible {
-    outline: 2px solid var(--red);
+    outline: 2px solid var(--marker);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: 3px;
   }
-  /* grid and flex children may shrink below their content (code blocks scroll inside) */
   .grid > * {
     min-width: 0;
   }
   h1,
-  h2,
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
   h3 {
-    font-family: var(--display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.005em;
   }
 }
 
@@ -95,84 +120,336 @@ code,
 pre,
 .mono {
   font-family: var(--mono);
-  font-feature-settings: 'zero' 1, 'calt' 0;
+}
+code {
+  font-size: 0.9em;
 }
 .num {
   font-variant-numeric: tabular-nums;
 }
+.serif,
+.display,
 .hand {
-  font-family: var(--hand);
-  font-style: italic;
+  font-family: var(--serif);
 }
-.display {
-  font-family: var(--display);
+.hand {
+  font-style: normal;
 }
 
-/* Highlighter stroke for inline emphasis. */
-.hl {
-  background: linear-gradient(100deg, transparent 0 2%, var(--hi) 2% 97%, transparent 97%) 0 62% / 100% 72% no-repeat;
-  color: #0d1220;
-  padding: 0 0.12em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+/* ---- layout ------------------------------------------------------------------------------ */
+.wrap {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 0 32px;
 }
-/* Red ink circle around a figure that matters. */
-.circled {
-  position: relative;
+@media (max-width: 720px) {
+  .wrap {
+    padding: 0 16px;
+  }
+}
+/* the marginalia grid: a note column beside the main column, like an annotated audit */
+.marg {
+  display: grid;
+  grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  gap: 48px;
+}
+@media (max-width: 1040px) {
+  .marg {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+.margin-note {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  padding-top: 6px;
+}
+.margin-note b {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.on-indigo .margin-note,
+.on-indigo .margin-note b {
+  color: var(--on-indigo-2);
+}
+.on-violet .margin-note,
+.on-violet .margin-note b {
+  color: #e1dbff;
+}
+.on-indigo {
+  background: var(--indigo);
+  color: #fff;
+}
+.on-violet {
+  background: var(--violet);
+  color: #fff;
+}
+
+/* ---- the brand device: the redaction bar -------------------------------------------------- */
+.bar {
   display: inline-block;
+  height: 0.95em;
+  vertical-align: -0.12em;
+  border-radius: 2px;
+  background: var(--indigo);
 }
-.circled::after {
-  content: '';
-  position: absolute;
-  inset: -0.22em -0.42em;
-  border: 2.5px solid var(--red);
-  border-radius: 48% 52% 45% 55% / 55% 45% 58% 42%;
-  transform: rotate(-3deg);
-  pointer-events: none;
+.bar.see {
+  color: var(--marker);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 12px;
+  text-align: center;
+  padding: 0 6px;
+  text-shadow: 0 0 8px rgba(255, 62, 165, 0.55);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.on-indigo .bar:not(.see) {
+  background: var(--indigo-3);
 }
 
-/* Case-file sheet: a card with a punched margin. */
+/* ---- buttons ----------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-pri {
+  background: var(--marker);
+  color: #fff;
+}
+.btn-pri:hover:not(:disabled) {
+  background: var(--marker-hover);
+}
+.btn-ink {
+  background: var(--indigo);
+  color: #fff;
+}
+.btn-line {
+  border-color: currentColor;
+}
+.btn-quiet {
+  background: #fff;
+  border-color: var(--rule);
+  color: var(--ink);
+}
+.btn-quiet:hover:not(:disabled) {
+  border-color: var(--ink-3);
+}
+.btn-sm {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 44px;
+  }
+}
+
+/* ---- severity pills, grade seal, stamps -------------------------------------------------- */
+.sev {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.sev[data-sev='critical'] {
+  background: var(--sev-critical-bg);
+  color: var(--sev-critical-fg);
+}
+.sev[data-sev='high'] {
+  background: var(--sev-high-bg);
+  color: var(--sev-high-fg);
+  box-shadow: inset 0 0 0 1px var(--marker);
+}
+.sev[data-sev='medium'] {
+  background: var(--sev-medium-bg);
+  color: var(--sev-medium-fg);
+}
+.sev[data-sev='low'] {
+  background: var(--sev-low-bg);
+  color: var(--sev-low-fg);
+}
+.sev[data-sev='info'] {
+  background: var(--sev-info-bg);
+  color: var(--sev-info-fg);
+}
+.seal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid var(--marker);
+  color: var(--marker);
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+}
+.seal[data-grade='A'],
+.seal[data-grade='B'] {
+  border-color: var(--sealed);
+  color: var(--sealed);
+}
+.seal[data-grade='C'] {
+  border-color: var(--violet);
+  color: var(--violet);
+}
+.stamp {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--sealed);
+  border: 1.5px solid var(--sealed);
+  border-radius: 4px;
+  padding: 2px 9px;
+  transform: rotate(-1.2deg);
+}
+.stamp:nth-child(2n) {
+  transform: rotate(0.9deg);
+}
+.stamp.solid {
+  background: var(--sealed);
+  color: #fff;
+}
+
+/* ---- legacy helpers, restyled ------------------------------------------------------------ */
 .sheet {
-  background: var(--sheet);
+  background: var(--mist);
   border: 1px solid var(--rule);
 }
 .tape {
-  background:
-    radial-gradient(circle at 9px 50%, var(--paper) 3px, transparent 3.5px) 0 0 / 100% 20px repeat-y,
-    radial-gradient(circle at calc(100% - 9px) 50%, var(--paper) 3px, transparent 3.5px) 0 0 / 100% 20px repeat-y,
-    var(--sheet);
-  border-left: 1px dashed var(--rule-strong);
-  border-right: 1px dashed var(--rule-strong);
+  background: #fff;
+  border: 1px solid var(--rule);
 }
-
-/* Evidence label: a typed tab used on case sections. */
 .label {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.hl {
+  background: var(--marker-soft);
+  color: var(--marker-ink);
+  padding: 0 0.15em;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.circled {
+  color: var(--marker);
+}
+
+/* ---- code wells and diffs ---------------------------------------------------------------- */
+.well {
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  color: var(--graphite);
-}
-
-/* Rubber stamp. */
-.stamp {
-  font-family: var(--display);
-  border: 3px solid currentColor;
+  font-size: 12.5px;
+  line-height: 1.8;
+  background: var(--mist);
   border-radius: 6px;
-  padding: 0.1em 0.45em;
-  transform: rotate(-7deg);
-  display: inline-block;
-  mix-blend-mode: multiply;
-  letter-spacing: 0.02em;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.diff {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.75;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.diff .fh {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 7px 14px;
+  background: var(--mist);
+  border-bottom: 1px solid var(--rule);
+}
+.diff .l {
+  padding: 2px 14px 2px 28px;
+  text-indent: -14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.diff .del {
+  background: var(--del-soft);
+  color: var(--del-ink);
+}
+.diff .add {
+  background: var(--sealed-soft);
+  color: var(--sealed-ink);
+}
+.diff .ctx {
+  color: var(--ink-3);
 }
 
-@keyframes lamp-hint {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(6px, -3px);
-  }
+/* Status labels for work and offers. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.status[data-status='done'],
+.status[data-status='live'] {
+  background: var(--sealed-soft);
+  color: var(--sealed-ink);
+  box-shadow: inset 0 0 0 1px var(--sealed);
+}
+.status[data-status='in progress'] {
+  background: var(--marker-soft);
+  color: var(--marker-ink);
+}
+.status[data-status='planned'] {
+  background: transparent;
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--rule-strong);
+}
+.status[data-status='pilot'] {
+  background: var(--violet-soft);
+  color: var(--violet);
+}
+:root {
+  --ledger-public-bg: var(--indigo);
+  --ledger-public-fg: #fff;
+  --ledger-public-accent: var(--marker);
+  --ledger-private-bg: #fff;
+  --ledger-private-fg: var(--ink);
+  --ledger-private-accent: var(--sealed);
+}
+/* A slot the lead fills later: visible, honest, clearly not a feature. */
+.slot {
+  border: 1.5px dashed var(--rule-strong);
+  border-radius: 6px;
+  background: var(--mist);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -191,4 +468,37 @@ pre,
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ---- print: a scan report as an audit appendix -------------------------------------------- */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .no-print,
+  header.site-header,
+  footer.site-footer,
+  .report-toc,
+  .report-rail {
+    display: none !important;
+  }
+  .report-layout {
+    display: block !important;
+    padding: 0 !important;
+  }
+  .report-page {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    break-after: page;
+  }
+  .report-page section {
+    break-inside: avoid-page;
+  }
+  a {
+    text-decoration: none;
+  }
 }

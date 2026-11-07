@@ -13,11 +13,33 @@ export type Finding = {
   via?: string;
   title: string;
   detail: string;
-  fix: string;
+  // Today a sentence. When the engine's auto-fix ships it may be a verified patch instead
+  // (or alongside, as `patch`); `fixOf()` reads either shape.
+  fix: string | VerifiedFix;
+  patch?: VerifiedFix;
   line?: number;
   fields?: string[];
   suppressed?: boolean;
 };
+
+export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
+
+// A patch the engine proposes for a finding. `verified`: the engine re-compiled and re-scanned
+// the patched contract and the finding is gone; `gradeAfter` is the grade it measured.
+export type VerifiedFix = {
+  diff: string; // unified diff against the scanned file
+  verified: boolean;
+  gradeAfter?: Grade;
+  text?: string; // the fix in words, when the patch carries it
+};
+
+// The fix in words and the patch, whichever shape the API sent.
+export function fixOf(f: Finding): { text: string; patch: VerifiedFix | null } {
+  const obj = typeof f.fix === 'object' && f.fix ? f.fix : null;
+  const patch = f.patch ?? (obj && typeof obj.diff === 'string' && obj.diff.trim() ? obj : null);
+  const text = typeof f.fix === 'string' ? f.fix : (obj?.text ?? patch?.text ?? '');
+  return { text, patch: patch && typeof patch.diff === 'string' && patch.diff.trim() ? patch : null };
+}
 
 export type CircuitReport = {
   name: string;
@@ -34,7 +56,7 @@ export type ContractResult = {
   language: string | null;
   ok: boolean;
   error?: string;
-  grade?: 'A' | 'B' | 'C' | 'D' | 'F';
+  grade?: Grade;
   report?: { circuits: CircuitReport[]; findings: Finding[]; unknownForms: string[] };
   counts?: Record<Severity, number>;
 };

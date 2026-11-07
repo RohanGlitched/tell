@@ -5,7 +5,11 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import Transcript from './Transcript';
 import { plain, Ticks } from './Ticks';
-import { GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type ContractResult, type Finding, type ScanResponse, type Severity } from '@/lib/types';
+import { fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type ContractResult, type Finding, type Grade, type ScanResponse, type Severity, type VerifiedFix } from '@/lib/types';
+import { readShare, shareHash, type Shared } from '@/lib/share';
+import { applyDiff } from '@/lib/patch';
+import { downloadText, reportName, toJson, toMarkdown, toSarif } from '@/lib/report';
+import { badgeMarkdown, badgeSvg } from '@/lib/badge';
 
 type Sample = { id: string; label: string; note: string; source: string };
 
@@ -43,6 +47,8 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResponse | null>(null);
   const [scanned, setScanned] = useState<string>('');
+  // set after "Re-scan with fix": the grade before the patch, and the source it was applied to
+  const [compare, setCompare] = useState<{ before: Grade; after: Grade | null; original: string } | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const autoran = useRef(false);
@@ -55,8 +61,9 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
     });
   }
 
-  async function run(body: { source?: string; repo?: string; name?: string }, text = '') {
+  async function run(body: { source?: string; repo?: string; name?: string }, text = '', fixed?: { before: Grade; original: string }) {
     setError(null);
+    setCompare(null);
     if (body.source && body.source.length > MAX_SOURCE) {
       setResult(null);
       setError(`That contract is ${Math.round(body.source.length / 1000)} kB; the limit is 200 kB.`);
@@ -72,6 +79,8 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
       })) as ScanResponse;
       setResult(json);
       setScanned(text);
+      if (fixed) setCompare({ ...fixed, after: json.contracts[0]?.grade ?? null });
+      remember(body.repo ? { kind: 'repo', repo: json.repo ?? body.repo } : { kind: 'source', source: text });
       requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: behavior(), block: 'start' }));
     } catch (e) {
       setResult(null);
@@ -81,11 +90,51 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
     }
   }
 
-  // A deep link with ?sample= scans that sample straight away (its result is precomputed).
+  // On the scan page the address bar keeps the share link for what was scanned, so a reload
+  // or a copied URL restores it. The contract rides in the fragment, which is never sent to a server.
+  function remember(s: Shared) {
+    if (window.location.pathname !== '/scan') return;
+    const hash = s.kind === 'source' && !s.source ? '' : shareHash(s);
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+  }
+
+  // Apply the engine's patch to the scanned source and scan the result, keeping the grade before.
+  function rescanWithFix(fix: VerifiedFix, before: Grade) {
+    const applied = applyDiff(scanned, fix.diff);
+    if (!applied.ok) {
+      setError(applied.error);
+      return;
+    }
+    setMode('source');
+    setSource(applied.text);
+    void run({ source: applied.text, name: result?.contracts[0]?.file }, applied.text, { before, original: scanned });
+  }
+
+  function restore(original: string) {
+    setSource(original);
+    void run({ source: original, name: result?.contracts[0]?.file }, original);
+  }
+
+  // A deep link with ?sample= scans that sample straight away (its result is precomputed);
+  // a share link (#c=… or #r=…) restores the contract or repository and scans it.
   useEffect(() => {
-    if (!linked || autoran.current) return;
+    if (autoran.current) return;
     autoran.current = true;
-    void run({ source: linked.source, name: `${linked.id}.compact` }, linked.source);
+    if (linked) {
+      void run({ source: linked.source, name: `${linked.id}.compact` }, linked.source);
+      return;
+    }
+    const shared = readShare(window.location.hash);
+    if (shared?.kind === 'source') {
+      setSource(shared.source);
+      void run({ source: shared.source }, shared.source);
+    } else if (shared?.kind === 'repo') {
+      setMode('repo');
+      setRepo(shared.repo);
+      void run({ repo: shared.repo });
+    } else if (/[#&](c|r)=/.test(window.location.hash)) {
+      setError('That share link is damaged or incomplete, so there is nothing to restore. Paste the contract instead.');
+    }
   }, []);
 
   // Arrow keys, Home and End move between the two tabs (WAI-ARIA tabs pattern).
@@ -224,7 +273,8 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
           </div>
         )}
         {busy && <Skeleton />}
-        {!busy && result && <Results result={result} source={scanned} />}
+        {!busy && compare && <Compare compare={compare} onRestore={() => restore(compare.original)} />}
+        {!busy && result && <Results result={result} source={scanned} onFix={result.kind === 'source' && scanned ? rescanWithFix : undefined} />}
       </div>
     </div>
   );
@@ -240,24 +290,103 @@ function Skeleton() {
   );
 }
 
-// The whole scan result as a file, to keep or attach to a review.
-function download(result: ScanResponse) {
-  const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `tell-${result.repo ? result.repo.replace(/\//g, '-') : (result.contracts[0]?.file ?? 'contract').replace(/\.compact$/, '')}.json`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-}
+// The whole scan result as a file, to keep, attach to a review, or upload to code scanning.
+const FORMATS = [
+  ['JSON', 'json', 'application/json', toJson],
+  ['SARIF', 'sarif', 'application/sarif+json', toSarif],
+  ['Markdown', 'md', 'text/markdown', (r: ScanResponse) => toMarkdown(r)],
+] as const;
 
 // The compiler prefixes its messages with the exception class; the message is enough.
 const compileError = (e?: string) => (e ?? '').replace(/^Exception:\s*/gm, '');
 
-function Results({ result, source }: { result: ScanResponse; source: string }) {
+const SITE = 'https://tell-midnight.vercel.app';
+
+async function copy(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// A button that copies text and says so for two seconds; on failure it shows the text to copy by hand.
+function CopyButton({ text, label, testId }: { text: () => string; label: string; testId?: string }) {
+  const [state, setState] = useState<'idle' | 'done' | 'failed'>('idle');
+  const [manual, setManual] = useState('');
+  return (
+    <span className="inline-flex flex-col">
+      <button
+        type="button"
+        data-testid={testId}
+        onClick={async () => {
+          const t = text();
+          const ok = await copy(t);
+          setState(ok ? 'done' : 'failed');
+          setManual(ok ? '' : t);
+          if (ok) setTimeout(() => setState('idle'), 2000);
+        }}
+        className="inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 text-[14px] hover:border-[var(--ink)] sm:min-h-[36px]"
+      >
+        <span aria-live="polite">{state === 'done' ? 'Copied' : label}</span>
+      </button>
+      {state === 'failed' && (
+        <input readOnly value={manual} aria-label="Copy this text" onFocus={(e) => e.currentTarget.select()} className="mono mt-1 w-full max-w-[22rem] rounded border border-[var(--rule)] bg-[var(--paper)] px-2 py-1 text-[12px]" />
+      )}
+    </span>
+  );
+}
+
+function Compare({ compare, onRestore }: { compare: { before: Grade; after: Grade | null }; onRestore: () => void }) {
+  const better = compare.after && 'ABCDF'.indexOf(compare.after) < 'ABCDF'.indexOf(compare.before);
+  return (
+    <div data-testid="fix-compare" className="mt-8 flex flex-wrap items-center gap-4 rounded-sm border-2 border-[var(--ink)] bg-[var(--sheet)] px-5 py-4">
+      <p className="display flex items-center gap-3 text-[26px] font-extrabold">
+        <span className="text-[var(--red)]">{compare.before}</span>
+        <span aria-hidden="true" className="text-[var(--faint)]">→</span>
+        <span>{compare.after ?? '?'}</span>
+        <span className="sr-only">
+          Grade {compare.before} before the fix, {compare.after ?? 'unknown'} after
+        </span>
+      </p>
+      <p className="max-w-[56ch] flex-1 text-[15px] text-[var(--graphite)]">
+        {better
+          ? 'The patch was applied to your contract and scanned again with the same compiler. The editor above now holds the patched source.'
+          : 'The patch was applied and scanned again, but the grade did not improve. Read the findings below before using it.'}
+      </p>
+      <button type="button" onClick={onRestore} className="min-h-[44px] rounded border border-[var(--ink)] px-4 text-[14px] font-medium">
+        Undo the fix
+      </button>
+    </div>
+  );
+}
+
+function Results({ result, source, onFix }: { result: ScanResponse; source: string; onFix?: (fix: VerifiedFix, before: Grade) => void }) {
   const contracts = result.contracts;
   const counts = contracts.filter((c) => c.ok).length;
+  const share = (): string => `${window.location.origin}/scan${result.kind === 'repo' && result.repo ? shareHash({ kind: 'repo', repo: result.repo }) : shareHash({ kind: 'source', source })}`;
+  const canShare = result.kind === 'repo' ? !!result.repo : !!source;
   return (
     <div className="mt-8">
+      <div className="flex flex-wrap items-center justify-end gap-2 pb-3">
+        {canShare && <CopyButton text={share} label="Copy share link" testId="copy-share" />}
+        <span className="ml-1 text-[13px] text-[var(--graphite)]">Download</span>
+        {FORMATS.map(([label, ext, type, make]) => (
+          <button
+            key={ext}
+            type="button"
+            data-testid={`download-${ext}`}
+            onClick={() => downloadText(`${reportName(result)}.${ext}`, make(result), type)}
+            className="inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 text-[14px] hover:border-[var(--ink)] sm:min-h-[36px]"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {canShare && result.kind === 'source' && (
+        <p className="pb-2 text-right text-[12.5px] text-[var(--graphite)]">The share link carries the contract inside the link itself, after the #. Nothing is stored on a server.</p>
+      )}
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-[var(--rule)] pb-3">
         <h2 className="text-[20px] font-semibold">
           {result.kind === 'repo' ? (
@@ -273,27 +402,65 @@ function Results({ result, source }: { result: ScanResponse; source: string }) {
           {counts} of {contracts.length} contract{contracts.length === 1 ? '' : 's'} analyzed in {(result.ms / 1000).toFixed(1)} s{result.precomputed ? ' (sample, scanned ahead of time; edit any line to scan it live)' : ''}
           {result.skipped ? `, ${result.skipped} more not scanned` : ''}
         </span>
-        <button
-          type="button"
-          onClick={() => download(result)}
-          className="ml-auto inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 text-[14px] hover:border-[var(--ink)] sm:min-h-[36px]"
-        >
-          Download JSON
-        </button>
       </div>
       {contracts.length === 0 && (
         <p className="mt-4 text-[var(--graphite)]">No Compact contracts in this repository. Tell looks for .compact files with a pragma and an exported circuit.</p>
       )}
       <div className="space-y-10">
         {contracts.map((c) => (
-          <ContractView key={c.file} c={c} source={result.kind === 'source' ? source : undefined} repo={result.repo} commit={result.commit ?? undefined} />
+          <ContractView
+            key={c.file}
+            c={c}
+            source={result.kind === 'source' ? source : undefined}
+            repo={result.repo}
+            commit={result.commit ?? undefined}
+            onFix={onFix && c.grade ? (fix) => onFix(fix, c.grade!) : undefined}
+          />
         ))}
       </div>
+      <BadgePanel result={result} />
     </div>
   );
 }
 
-function ContractView({ c, source, repo, commit }: { c: ContractResult; source?: string; repo?: string; commit?: string }) {
+// The grade a repository gets: its worst compiled contract.
+function repoGrade(result: ScanResponse): Grade | null {
+  const grades = result.contracts.filter((c) => c.ok && c.grade).map((c) => c.grade!);
+  return grades.length ? grades.reduce((w, g) => ('ABCDF'.indexOf(g) > 'ABCDF'.indexOf(w) ? g : w)) : null;
+}
+
+function BadgePanel({ result }: { result: ScanResponse }) {
+  const grade = repoGrade(result);
+  if (result.kind !== 'repo' || !result.repo) {
+    return (
+      <aside className="mt-10 border-t border-[var(--rule)] pt-5 text-[14px] text-[var(--graphite)]">
+        <span className="font-semibold text-[var(--ink)]">README badge.</span> Scan your public GitHub repository (the second tab above) to get a badge that shows its
+        grade and stays current.
+      </aside>
+    );
+  }
+  const md = badgeMarkdown(SITE, result.repo);
+  return (
+    <aside data-testid="badge-panel" className="sheet mt-10 rounded-sm p-5">
+      <div className="flex flex-wrap items-center gap-4">
+        <h3 className="text-[17px] font-bold">Put the grade in your README</h3>
+        {grade && (
+          // the same SVG the badge route serves, drawn here from this scan so no second scan runs
+          <img alt={`Tell privacy grade ${grade}`} src={`data:image/svg+xml;utf8,${encodeURIComponent(badgeSvg(grade))}`} height={20} className="h-5 w-auto" />
+        )}
+      </div>
+      <p className="mt-2 max-w-[70ch] text-[14px] text-[var(--graphite)]">
+        The badge scans the default branch and refreshes about once a day. It links back to this report.
+      </p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start">
+        <pre className="mono flex-1 overflow-x-auto whitespace-pre rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.6] text-[#e9e6ff]">{md}</pre>
+        <CopyButton text={() => md} label="Copy badge" testId="copy-badge" />
+      </div>
+    </aside>
+  );
+}
+
+function ContractView({ c, source, repo, commit, onFix }: { c: ContractResult; source?: string; repo?: string; commit?: string; onFix?: (fix: VerifiedFix) => void }) {
   const [showInfo, setShowInfo] = useState(false);
   const [focus, setFocus] = useState<{ circuit: string; field: string } | null>(null);
   if (!c.ok)
@@ -358,7 +525,7 @@ function ContractView({ c, source, repo, commit }: { c: ContractResult; source?:
       ) : (
         <ol className="mt-3 space-y-3">
           {shown.map((f, i) => (
-            <FindingCard key={i} f={f} lines={lines} href={lineHref(f.line)} />
+            <FindingCard key={i} f={f} lines={lines} href={lineHref(f.line)} onFix={onFix} />
           ))}
         </ol>
       )}
@@ -472,7 +639,8 @@ function Legend() {
   );
 }
 
-function FindingCard({ f, lines, href }: { f: Finding; lines?: string[]; href?: string }) {
+function FindingCard({ f, lines, href, onFix }: { f: Finding; lines?: string[]; href?: string; onFix?: (fix: VerifiedFix) => void }) {
+  const { text: fixText, patch } = fixOf(f);
   const excerpt = f.line && lines ? lines.slice(Math.max(0, f.line - 2), f.line + 1).map((t, i) => ({ n: Math.max(1, f.line! - 1) + i, t })) : null;
   return (
     <li className="sheet rounded-sm p-4">
@@ -508,10 +676,72 @@ function FindingCard({ f, lines, href }: { f: Finding; lines?: string[]; href?: 
       {f.fields && f.fields.length > 1 && (
         <p className="mono mt-2 text-[12.5px] text-[var(--graphite)]">touches {f.fields.join(', ')}</p>
       )}
-      <p className="mt-2 text-[14px]">
-        <span className="font-semibold">Fix: </span>
-        <Ticks text={f.fix} />
-      </p>
+      <FixView text={fixText} patch={patch} onFix={onFix} />
     </li>
+  );
+}
+
+// The fix in words; when the engine sends a patch, the diff itself, whether a re-scan verified it,
+// and a button that applies it to the pasted contract and scans again.
+function FixView({ text, patch, onFix }: { text: string; patch: VerifiedFix | null; onFix?: (fix: VerifiedFix) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div data-testid="fix-view" className="mt-3 border-t border-dashed border-[var(--rule-strong)] pt-3">
+      <p className="text-[14px]">
+        <span className="font-semibold">Fix: </span>
+        <Ticks text={text} />
+      </p>
+      {patch && (
+        <div className="mt-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpen(!open)}
+              className="inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 text-[13.5px] hover:border-[var(--ink)] sm:min-h-[34px]"
+            >
+              {open ? 'Hide the patch' : 'Show the patch'}
+            </button>
+            {patch.verified ? (
+              <span className="rounded-sm bg-[var(--uv)] px-2 py-0.5 text-[12px] font-medium text-[#e9e6ff]">
+                verified by re-scan{patch.gradeAfter ? `: grade ${patch.gradeAfter} after` : ''}
+              </span>
+            ) : (
+              <span className="rounded-sm px-2 py-0.5 text-[12px] text-[var(--graphite)] ring-1 ring-[var(--rule)]">not verified: review before use</span>
+            )}
+            {onFix && (
+              <button
+                type="button"
+                data-testid="rescan-with-fix"
+                onClick={() => onFix(patch)}
+                className="inline-flex min-h-[44px] items-center rounded bg-[var(--ink)] px-3 text-[13.5px] font-medium text-[var(--paper)] sm:min-h-[34px]"
+              >
+                Re-scan with fix
+              </button>
+            )}
+          </div>
+          {open && <DiffView diff={patch.diff} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DiffView({ diff }: { diff: string }) {
+  const rows = diff.replace(/\r\n/g, '\n').replace(/\n$/, '').split('\n');
+  return (
+    <pre className="mono mt-2 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--paper)] py-2 text-[12.5px] leading-[1.6]" aria-label="Proposed patch, unified diff">
+      {rows.map((l, i) => {
+        const head = l.startsWith('@@') || l.startsWith('---') || l.startsWith('+++') || l.startsWith('diff ');
+        const add = !head && l.startsWith('+');
+        const del = !head && l.startsWith('-');
+        return (
+          <div key={i} className={`px-3 ${add ? 'bg-[color-mix(in_srgb,var(--glow-2)_22%,transparent)]' : del ? 'bg-[var(--red-soft)] text-[var(--red)]' : head ? 'text-[var(--graphite)]' : ''}`}>
+            <span className="sr-only">{add ? 'added: ' : del ? 'removed: ' : ''}</span>
+            {l || ' '}
+          </div>
+        );
+      })}
+    </pre>
   );
 }
