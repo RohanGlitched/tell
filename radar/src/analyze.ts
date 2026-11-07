@@ -75,32 +75,53 @@ export function digest(r: ContractRecord): Digested {
  * contract, the pairs that use one of its own words (not every contract's words with
  * every other's, which would grow as the square of the whole chain's vocabulary).
  */
-function familiesFor(records: Digested[], o: Options): { tables: Family[]; streamed: Family[] } {
+function familiesFor(records: Digested[], o: Options): { tables: Family[]; streamed: Family[]; pairChunks: () => Generator<string[]>; count: number } {
   const all = new Set<string>();
   for (const r of records) for (const e of r.state?.entryPoints ?? []) all.add(e);
   const words = vocabulary(all);
   const singles = singlePrefixes(words);
-  const pairs = new Set(pairPrefixes(COMMON_WORDS));
-  const groups = new Set(records.map((r) => ownWords(r.state?.entryPoints ?? []).join(' ')).filter(Boolean));
-  for (const g of groups) for (const p of pairPrefixes(COMMON_WORDS, g.split(' '))) pairs.add(p);
-  const pairList = [...pairs];
   const count = o.taggedCount ?? (o.deep ? 256 : 16);
   const uintMax = o.uintMax ?? (o.tableDir ? 1 << 24 : 1 << 16);
   const tables: Family[] = [];
   const streamed: Family[] = [
     { kind: 'uint', width: 1, count: 256 },
     { kind: 'uint', width: 2, count: Math.min(uintMax, 1 << 16) },
-    { kind: 'word', words: [...new Set([...words, ...singles, ...pairList])] },
+    { kind: 'word', words: [...new Set([...words, ...singles])] },
     { kind: 'tagged', prefixes: singles, width: 32, count: 1024 },
     { kind: 'tagged', prefixes: singles, width: 1, count: 256 },
     { kind: 'tagged', prefixes: singles, width: 8, count: 1024 },
-    { kind: 'tagged', prefixes: pairList, width: 32, count },
-    { kind: 'tagged', prefixes: pairList, width: 1, count },
     { kind: 'taggedWord', prefixes: singles, words },
   ];
   if (o.deep) streamed.push({ kind: 'taggedWord', prefixes: pairPrefixes(COMMON_WORDS), words: COMMON_WORDS });
   for (const f of numericTables(uintMax)) (o.tableDir ? tables : streamed).push(f);
-  return { tables, streamed };
+  // Two-word prefixes are produced in bounded chunks so memory stays flat however many
+  // contracts there are. Contracts with the same own words share one group.
+  const groups = [...new Set(records.map((r) => ownWords(r.state?.entryPoints ?? []).join(' ')).filter(Boolean))];
+  function* pairChunks(): Generator<string[]> {
+    const size = 200_000;
+    let chunk: string[] = [];
+    const sources = [() => pairPrefixes(COMMON_WORDS), ...groups.map((g) => () => pairPrefixes(COMMON_WORDS, g.split(' ')))];
+    for (const src of sources) {
+      for (const p of src()) {
+        chunk.push(p);
+        if (chunk.length >= size) { yield chunk; chunk = []; }
+      }
+    }
+    if (chunk.length) yield chunk;
+  }
+  return { tables, streamed, pairChunks, count };
+}
+
+/** A hit's family narrowed to the one prefix it used, so a chunk is not kept alive by it. */
+function narrow(h: Hit): Hit {
+  const f = h.family;
+  if (f.kind === 'tagged') return { ...h, family: { ...f, prefixes: [f.prefixes[Math.floor(h.index / f.count)]] }, index: h.index % f.count };
+  if (f.kind === 'word') return { ...h, family: { kind: 'word', words: [f.words[h.index]] }, index: 0 };
+  if (f.kind === 'taggedWord') {
+    const n = f.words.length;
+    return { ...h, family: { ...f, prefixes: [f.prefixes[Math.floor(h.index / n)]], words: [f.words[h.index % n]] }, index: 0 };
+  }
+  return h;
 }
 
 export async function analyze(records: Digested[], o: Options = {}): Promise<Analysis> {
@@ -125,14 +146,37 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
   log(`${records.length} contracts, ${targets.size} distinct 32-byte values to match`);
 
   // 1. Guessable hashes.
-  const { tables, streamed } = familiesFor(records, o);
+  const { tables, streamed, pairChunks, count } = familiesFor(records, o);
   const hits: Hit[] = [];
   const families: FamilyRun[] = [];
   for (const f of streamed) {
     const r = await bruteForce(f, targets, { threads: o.threads });
-    hits.push(...r.hits);
+    hits.push(...r.hits.map(narrow));
     families.push({ family: familyName(f), size: r.hashed, ms: r.ms, hits: r.hits.length });
     log(`  ${familyName(f)}: ${r.hashed} hashed in ${(r.ms / 1000).toFixed(1)} s, ${r.hits.length} hits`);
+  }
+  const pairRuns: Record<string, FamilyRun> = {};
+  let prefixes = 0;
+  for (const chunk of pairChunks()) {
+    prefixes += chunk.length;
+    const fams: [string, Family][] = [
+      [`pairWord`, { kind: 'word', words: chunk }],
+      [`pairTagged256x${count}`, { kind: 'tagged', prefixes: chunk, width: 32, count }],
+      [`pairTagged8x${count}`, { kind: 'tagged', prefixes: chunk, width: 1, count }],
+    ];
+    for (const [name, f] of fams) {
+      const r = await bruteForce(f, targets, { threads: o.threads });
+      hits.push(...r.hits.map(narrow));
+      const run = (pairRuns[name] ??= { family: name, size: 0, ms: 0, hits: 0 });
+      run.size += r.hashed;
+      run.ms += r.ms;
+      run.hits += r.hits.length;
+    }
+    log(`  two-word prefixes: ${prefixes} so far`);
+  }
+  for (const run of Object.values(pairRuns)) {
+    families.push({ ...run, family: `${run.family}(${prefixes} prefixes)` });
+    log(`  ${run.family}: ${run.size} hashed in ${(run.ms / 1000).toFixed(1)} s, ${run.hits} hits`);
   }
   for (const f of tables) {
     const t0 = Date.now();
