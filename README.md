@@ -63,7 +63,7 @@ Compared with the Wave 2 submission (tag [`v1`](https://github.com/RohanGlitched
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
 12. **Outreach**: 11 teams sent an issue naming the file and the kind of finding, with the details offered privately; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot requests to two audit firms.
 
-Tests went from 97 in two workspaces (87 engine, 10 zoo) to 337 in six ([Setup and tests](#setup-and-tests)).
+Tests went from 97 in two workspaces (87 engine, 10 zoo) to 344 in six ([Setup and tests](#setup-and-tests)).
 
 ## Try it
 
@@ -174,9 +174,9 @@ Tell starts where `disclose()` stops. It works on the compiler's own output, so 
 Finding a leak is half the job; telling the team without telling everyone else is the other half. [**Tell Desk**](desk) is a Compact contract for private, provable responsible disclosure, and the on-chain registry of Tell's grades.
 
 - **Seal.** A researcher seals a finding. The public ledger keeps `persistentCommit({digest, project}, nonce)` as the report id, a researcher tag that differs on every report, and the time. Not the content, not the project, not the researcher.
-- **Acknowledge and fix.** The maintainer proves in zero knowledge that they hold a credential registered for the project the sealed report is about (a Merkle membership proof) and that they hold this report's opening. The chain shows that some registered maintainer answered; not which one, not which project.
+- **Acknowledge and fix.** The maintainer proves in zero knowledge that they hold a credential registered for the project the sealed report is about (a Merkle membership proof) and that they hold this report's opening. The chain shows that one of the registered maintainers answered (the version 2 demo registers five credentials, so an answer hides among five; with one it would say who); not which one, not which project. Tell registers a credential from the maintainer's key (a hash of their secret) and the project it checked off chain; the circuit builds the leaf, so a credential checked for one project works for no other.
 - **Reveal.** After the fix, or after a 90-day embargo, either side opens the seal. Anyone with the published text can check it against the digest: the finding existed, in this form, when it was sealed.
-- **Grades.** Tell's attester key records `code hash → grade, rules version, scan`; a wallet computes the code hash from any contract's state and reads the grade. Maintainers can publish their own, stored apart and flagged as self-reported.
+- **Grades.** Tell's attester key records `code hash → grade, rules version, scan`; a wallet computes the code hash from any contract's state and reads the grade. Maintainers can publish their own, stored apart, flagged as self-reported, and keyed by code hash and project, so no project can take another's slot.
 
 ### Public ledger and private state
 
@@ -190,7 +190,8 @@ Midnight gives every contract two ledgers: the public one everyone replicates, a
 | Researcher secret | researcher's private state | authorship |
 | Researcher tag = `persistentHash("tell-desk:researcher", secret, id)` | public | lets the researcher retract without a stable identifier: every report's tag differs |
 | Maintainer secret | maintainer's private state | the credential |
-| Credential leaf = `persistentHash("tell-desk:maintainer", secret, project)` | public, as a Merkle tree leaf | hides the secret and the project |
+| Maintainer key = `persistentHash("tell-desk:maintainer-key", secret)` | the maintainer and Tell, off chain | what Tell checks against the repository and registers |
+| Credential leaf = `persistentHash("tell-desk:maintainer", key, project)` | public, as a Merkle tree leaf | built by the circuit; hides the key and the project |
 | Merkle path | maintainer's device | a witness; only the root it leads to is disclosed |
 | Status, seal time, last change | public | the point of the desk: anyone can see a report was answered and fixed |
 | Grades | public | a registry wallets read |
@@ -206,11 +207,11 @@ Midnight gives every contract two ledgers: the public one everyone replicates, a
 | `seal` | the researcher tag | keyed by a 256-bit secret and different per report: unlinkable |
 | `acknowledge`, `markFixed`, `retract` | `id` | an argument that is public already |
 | `reveal` | `id`, opening | the reveal step of a commit-reveal |
-| `registerMaintainer` | credential leaf | a hash of a 256-bit secret and the project |
+| `registerMaintainer` | credential leaf | a hash of the maintainer key and the project; both stay private inputs |
 | `attest`, `selfGrade` | code hash, grade, rules, scan | a public registry; a self-report names its project |
-| `handOver` | new attester hash | configuration |
+| `handOver` | proposed attester hash | configuration; it takes effect when the proposed key accepts |
 
-No branch depends on a secret. Tell scans Desk at grade **A** (10 circuits, 27 findings, all info: arguments written on purpose), and CI fails if anything at low or above appears. The attacker tests in [`desk/test`](desk/test) read only public data (ledger state and every transaction's public transcript) and show that two reports by one researcher share no public value, that the digest and the project id appear nowhere before the reveal, and that two acknowledgements by one maintainer share only the tree root every maintainer uses. Threat model and what Desk does not hide (timing, the submitting wallet): [`desk/README.md`](desk/README.md).
+No branch depends on a secret. Tell scans Desk at grade **A** (11 circuits, 26 findings, all info: arguments written on purpose), and CI fails if anything at low or above appears. The attacker tests in [`desk/test`](desk/test) read only public data (ledger state and every transaction's public transcript) and show that two reports by one researcher share no public value, that the digest and the project id appear nowhere before the reveal, and that two acknowledgements by one maintainer share only the tree root every maintainer uses. Threat model and what Desk does not hide (timing, the submitting wallet): [`desk/README.md`](desk/README.md).
 
 ### Desk on Preprod
 
@@ -277,7 +278,7 @@ Midnight's own `midnight-expert` `/audit-compact` command (an LLM reviewer) was 
 - **Leak zoo** ([`zoo/`](zoo)): nine leaky contracts and their fixes, eight on Ledger 8 and one on Ledger 9 (Compact 0.36). Each leak is carried out by an attack test that reads only public data (initial state, ledger state, transaction effects, events) and recovers the secret; each fix stops it. 24 tests: 18 attack tests (16 on Ledger 8, 2 on the Ledger 9 poll) and 6 that apply Tell's verified fixes to the original five leaky contracts and run the attacks again. CI also runs the Action on the zoo (every leaky contract must fail at medium, every fixed one pass) and checks the zoo contract by contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36.
 - **Precision tests** ([`engine/test`](engine/test)): 199 tests (152 for the analyzer, 23 for the fixer, 24 for the pull-request review). Every zoo leak reported once, nothing above low on the fixes, regression cases from review, Ledger 9 and constructor cases, the fixer and the pull-request review.
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json), run October 11 with the Wave 2 engine): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed. 15 projects had a finding at medium or worse; 44 had linkable tags. Every medium-or-worse finding was read by hand. Results are in aggregate; no team is named. A re-run after the outreach is pending ([`web/data/survey-rerun.json`](web/data/survey-rerun.json)).
-- **Tell Desk tests** ([`desk/test`](desk/test)): 33 tests in a simulator that runs the compiled contract: lifecycle, rejections (forged proofs, wrong openings, out-of-order steps) and an attacker who reads only public data.
+- **Tell Desk tests** ([`desk/test`](desk/test)): 40 tests in a simulator that runs the compiled contract: lifecycle, rejections (forged proofs, wrong openings, out-of-order steps) and an attacker who reads only public data.
 - **Radar** ([`radar/test`](radar/test)): 18 tests, including the hash encoding checked against `@midnight-ntwrk/compact-runtime` and the 6-of-6 recovery from a cached Preprod snapshot.
 - **Integrations**: 39 MCP server tests (an MCP client calls every tool against the zoo) and 24 VS Code extension tests (including the packaged bundle and the real compiler).
 
@@ -385,11 +386,11 @@ Counts from a run on November 7, 2026 (Node 24, WSL), one suite at a time with `
 |---|---|---|---|
 | `engine` | 3 | 199 | all pass |
 | `zoo` | 4 | 24 | all pass |
-| `desk` | 1 | 33 | all pass |
+| `desk` | 1 | 40 | all pass |
 | `mcp` | 1 | 39 | all pass |
 | `vscode` | 2 | 24 | all pass |
 | `radar` | 3 | 18 | all pass |
-| **Total** | 14 | **337** | |
+| **Total** | 14 | **344** | |
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. It also compiles and tests Desk under 0.35 and 0.36 ([`desk/compat`](desk/compat)), builds Desk's proving keys and runs its offline dry run, and builds the website and runs its Playwright suite (`npm run e2e -w web`, browser and API tests) against `next start`. Compiler installs are retried, then fetched from the release page ([`install-compact.sh`](.github/scripts/install-compact.sh)); one job forces that fallback. A daily workflow ([`smoke.yml`](.github/workflows/smoke.yml)) reads the live site's Preprod APIs: 6 of 6 votes recovered from the leaky ballot, 0 of 6 from the fixed one, and Tell Desk's state decoding.
 

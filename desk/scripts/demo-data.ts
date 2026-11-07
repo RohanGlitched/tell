@@ -7,6 +7,20 @@
 
 export const DEMO_REPO = 'https://github.com/RohanGlitched/tell';
 
+/**
+ * The maintainer credentials the demo registers: five public repositories with one owner,
+ * Tell's author, so the off-chain check (does the key's holder control the repository?) is
+ * that owner's own. Five leaves make the anonymity set of an acknowledgement five, not one.
+ * The first is Tell itself, the project the demo's findings are about.
+ */
+export const DEMO_MAINTAINERS = [
+  { key: 'tell', repo: DEMO_REPO },
+  { key: 'petri', repo: 'https://github.com/RohanGlitched/petri' },
+  { key: 'sheaf', repo: 'https://github.com/RohanGlitched/sheaf' },
+  { key: 'avow', repo: 'https://github.com/RohanGlitched/avow' },
+  { key: 'segundo', repo: 'https://github.com/RohanGlitched/segundo' },
+] as const;
+
 export const DEMO_FINDINGS = [
   {
     key: 'ballot',

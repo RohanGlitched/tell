@@ -3,7 +3,7 @@
 //
 // Compiles Tell Desk into managed/desk (circuits only, for the simulator and tests).
 //   --keys          also build proving keys, into keys/desk (what a deploy needs)
-//   --compiler X    use compiler X instead of 0.31.1 (the ledger live today)
+//   --compiler X    use compiler X instead of 0.31.1 (0.31.1 targets Ledger 8, on Preprod; 0.36.0 targets Ledger 9)
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 

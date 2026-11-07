@@ -144,7 +144,7 @@
       "judged": "Contract compiles, private-state management, understanding of the dual-ledger model, repository and README",
       "changes": [
         { "text": "Demo ballots deployed on Preprod; addresses and transactions in the README", "status": "done", "href": "https://github.com/RohanGlitched/tell#deployed-contracts-midnight-preprod" },
-        { "text": "Tell Desk: a new Compact contract for sealed disclosure and an on-chain grade registry (33 tests; deployed on Preprod, demo lifecycle partly run)", "status": "in progress", "href": "/desk" },
+        { "text": "Tell Desk: a new Compact contract for sealed disclosure and an on-chain grade registry (40 tests; version 1 deployed on Preprod, version 2 deploy pending)", "status": "in progress", "href": "/desk" },
         { "text": "Engine: constructor analysis, shielded and unshielded token rules, Compact 0.36 and Ledger 9 events", "status": "done", "href": "/zoo" },
         { "text": "Auto-fix: the engine proposes a patch, compiles it and scans it again; only verified patches are offered", "status": "done", "href": "/scan?sample=ballot-leaky" },
         { "text": "Radar: a privacy scan of 329 deployed Preprod contracts from public chain data alone, without the source", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/radar" }

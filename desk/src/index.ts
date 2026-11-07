@@ -9,4 +9,4 @@ export * from './contract.js';
 export * from './witnesses.js';
 export * from './view.js';
 export * from './client.js';
-export { DeskSimulator, type PublicView } from './simulator.js';
+export { DeskSimulator, type PublicView, type ProverView } from './simulator.js';

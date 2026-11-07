@@ -21,8 +21,14 @@ export type DeskProviders = MidnightProviders<any, string, DeskPrivateState>;
 export const compiledDesk = (assetsDir: string) =>
   CompiledContract.make('tell-desk', Contract).pipe(CompiledContract.withWitnesses(witnesses as never), CompiledContract.withCompiledFileAssets(assetsDir));
 
-/** The credential leaf a maintainer hands to Tell to be registered: hides both the secret and the project. */
-export const credentialLeaf = async (maintainerSecret: Uint8Array, repoUrl: string) => pureCircuits.maintainerLeaf(maintainerSecret, await projectId(repoUrl));
+/**
+ * What a maintainer hands Tell to be registered: a domain-separated hash of their secret. Tell
+ * checks off chain that its holder controls the repository, then registers it with the project.
+ */
+export const maintainerPublicKey = (maintainerSecret: Uint8Array) => pureCircuits.maintainerKey(maintainerSecret);
+
+/** The credential leaf the contract builds from a maintainer key and a repository: hides both. */
+export const credentialLeaf = async (maintainerPk: Uint8Array, repoUrl: string) => pureCircuits.maintainerLeaf(maintainerPk, await projectId(repoUrl));
 
 export const attesterHash = (attesterSecret: Uint8Array) => pureCircuits.attesterKey(attesterSecret);
 
@@ -130,14 +136,19 @@ export class DeskClient {
 
   // ------------------------------------------------------------ attester
 
-  registerMaintainer(as: string, leaf: Uint8Array): Promise<Tx> {
-    return this.call(as, 'registerMaintainer', [leaf]);
+  /** Registers maintainer key `pk` for `repoUrl`, after Tell has checked off chain that its holder controls the repository. */
+  async registerMaintainer(as: string, pk: Uint8Array, repoUrl: string): Promise<Tx> {
+    return this.call(as, 'registerMaintainer', [pk, await projectId(repoUrl)]);
   }
   attest(as: string, codeHash: Uint8Array, grade: GradeLetter, rules: bigint, scan: bigint): Promise<Tx> {
     return this.call(as, 'attest', [codeHash, gradeToNumber(grade), rules, scan]);
   }
+  /** Proposes the next attester key; the role moves when its holder calls `acceptHandOver`. */
   handOver(as: string, newAttesterHash: Uint8Array): Promise<Tx> {
     return this.call(as, 'handOver', [newAttesterHash]);
+  }
+  acceptHandOver(as: string): Promise<Tx> {
+    return this.call(as, 'acceptHandOver', []);
   }
 
   // ------------------------------------------------------------ public

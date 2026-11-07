@@ -13,7 +13,17 @@
 //
 // Tell, as attester, registers maintainer credentials and records privacy grades
 // for contract code hashes. Maintainers can publish a grade for their own project,
-// kept apart and flagged as self-reported.
+// kept apart, keyed by project and flagged as self-reported.
+//
+// Version 2. Changes from version 1:
+//   - The attester registers a maintainer's public key and project, and the circuit
+//     builds the credential leaf from them. In version 1 the attester inserted a leaf it
+//     could not inspect, so a maintainer verified for one project could hand in a leaf
+//     for another.
+//   - Self-reported grades are keyed by (code hash, project), so no project can claim
+//     another project's slot first.
+//   - A credential cannot be registered twice; a status change cannot be dated before
+//     the report's last change; the attester role moves only when the new key accepts.
 //
 // Every disclose() below says what it publishes and why that is safe.
 
@@ -45,21 +55,27 @@ export struct Report {
 }
 
 export struct Grade {
+  codeHash: Bytes<32>;   // the contract code graded
+  project: Bytes<32>;    // the project that published a self-reported grade; zero for Tell's own
   grade: Uint<8>;        // 0 = A, 1 = B, 2 = C, 3 = D, 4 = F (Tell has no E)
   rules: Uint<32>;       // Tell rules version the scan ran with
   scan: Uint<64>;        // scan sequence number; a grade is only replaced by a later scan
-  project: Bytes<32>;    // the project that published a self-reported grade; zero for Tell's own
   selfReported: Boolean;
 }
 
 // The officer key: a hash of Tell's attester secret, set at deploy.
 export ledger attester: Bytes<32>;
+// A hand-over in progress: the proposed next officer key, until its holder accepts. Zero when none.
+export ledger nextAttester: Bytes<32>;
 // How long a finding stays sealed when the maintainer never fixes it (seconds).
 export ledger embargo: Uint<64>;
 
-// Anonymous maintainer credentials: leaf = hash(maintainer secret, project).
+// Anonymous maintainer credentials: leaf = hash(maintainer key, project), where the
+// maintainer key is itself a hash of the maintainer's secret.
 // A historic tree, so a proof made against an earlier root stays valid.
 export ledger maintainers: HistoricMerkleTree<10, Bytes<32>>;
+// Every leaf in the tree, so none is registered twice and the tree's size counts distinct credentials.
+export ledger registered: Set<Bytes<32>>;
 
 // Report id = the seal itself: persistentCommit(finding, nonce).
 export ledger reports: Map<Bytes<32>, Report>;
@@ -67,8 +83,9 @@ export ledger reports: Map<Bytes<32>, Report>;
 export ledger openings: Map<Bytes<32>, Opening>;
 export ledger sealedCount: Counter;
 
-// Contract code hash -> grade. Tell's attestations and self-reported grades are kept apart.
+// Tell's attestations: code hash -> grade.
 export ledger grades: Map<Bytes<32>, Grade>;
+// Self-reported grades: selfGradeKey(code hash, project) -> grade. One slot per project and code.
 export ledger selfGrades: Map<Bytes<32>, Grade>;
 
 witness researcherSecret(): Bytes<32>;
@@ -94,12 +111,21 @@ export pure circuit researcherTag(sk: Bytes<32>, id: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<3, Bytes<32>>>([pad(32, "tell-desk:researcher"), sk, id]);
 }
 
-export pure circuit maintainerLeaf(sk: Bytes<32>, project: Bytes<32>): Bytes<32> {
-  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "tell-desk:maintainer"), sk, project]);
+// What a maintainer gives Tell to be registered: a hash of their secret, never the secret.
+export pure circuit maintainerKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "tell-desk:maintainer-key"), sk]);
+}
+
+export pure circuit maintainerLeaf(pk: Bytes<32>, project: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "tell-desk:maintainer"), pk, project]);
 }
 
 export pure circuit attesterKey(sk: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<2, Bytes<32>>>([pad(32, "tell-desk:attester"), sk]);
+}
+
+export pure circuit selfGradeKey(codeHash: Bytes<32>, project: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "tell-desk:self-grade"), codeHash, project]);
 }
 
 constructor(attesterHash: Bytes<32>, embargoSeconds: Uint<64>) {
@@ -117,14 +143,22 @@ circuit stamp(now: Uint<64>): Uint<64> {
   return t;
 }
 
+// A status change: stamped, and never dated before the report's last change.
+circuit restamp(r: Report, now: Uint<64>): Uint<64> {
+  const t = stamp(now);
+  assert(t >= r.updatedAt, "time is before the report's last change");
+  return t;
+}
+
 circuit onlyAttester(): [] {
   assert(attester == attesterKey(attesterSecret()), "not the attester");
 }
 
 // Proves the caller holds a registered credential for `project`, revealing neither the
 // credential nor which leaf it is: only a root of the tree, which every maintainer shares.
+// The leaf is rebuilt here from the secret, so it can only be one Tell registered for `project`.
 circuit proveMaintainer(project: Bytes<32>): [] {
-  const leaf = maintainerLeaf(maintainerSecret(), project);
+  const leaf = maintainerLeaf(maintainerKey(maintainerSecret()), project);
   const path = maintainerPath(leaf);
   assert(path.leaf == leaf, "path is for another credential");
   // The root is the same for every member of the tree at that point in its history.
@@ -157,7 +191,7 @@ export circuit acknowledge(id: Bytes<32>, now: Uint<64>): [] {
   const o = openingOf(rid);
   assert(sealOf(o) == rid, "opening does not match the seal");
   proveMaintainer(o.finding.project);
-  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.acknowledged, updatedAt: stamp(now) });
+  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.acknowledged, updatedAt: restamp(r, now) });
 }
 
 export circuit markFixed(id: Bytes<32>, now: Uint<64>): [] {
@@ -168,7 +202,7 @@ export circuit markFixed(id: Bytes<32>, now: Uint<64>): [] {
   const o = openingOf(rid);
   assert(sealOf(o) == rid, "opening does not match the seal");
   proveMaintainer(o.finding.project);
-  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.fixed, updatedAt: stamp(now) });
+  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.fixed, updatedAt: restamp(r, now) });
 }
 
 // The researcher withdraws a report nobody has acknowledged yet, proving it is theirs.
@@ -178,7 +212,7 @@ export circuit retract(id: Bytes<32>, now: Uint<64>): [] {
   const r = reports.lookup(rid);
   assert(r.status == Status.pending, "only a sealed report can be retracted");
   assert(researcherTag(researcherSecret(), rid) == r.tag, "not the researcher");
-  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.retracted, updatedAt: stamp(now) });
+  reports.insert(rid, Report { tag: r.tag, sealedAt: r.sealedAt, status: Status.retracted, updatedAt: restamp(r, now) });
 }
 
 // Anyone holding the opening publishes it once the finding is fixed, or once the embargo
@@ -198,18 +232,26 @@ export circuit reveal(id: Bytes<32>, opening: Opening): [] {
 
 // ---------------------------------------------------------------- attester
 
-// Tell checks off chain that a maintainer controls the project's repository, then
-// registers their credential leaf. The leaf hides both the secret and the project.
-export circuit registerMaintainer(leaf: Bytes<32>): [] {
+// Tell checks off chain that the holder of maintainer key `pk` controls the repository
+// whose project id is `project` (desk/README.md, "Registering a maintainer"), then
+// registers them. The leaf is built here, so it is bound to the project Tell checked.
+// `pk` and `project` are circuit inputs: a transaction carries only a commitment to its
+// inputs, so neither is published; only the leaf is.
+export circuit registerMaintainer(pk: Bytes<32>, project: Bytes<32>): [] {
   onlyAttester();
-  maintainers.insert(disclose(leaf));
+  // A hash of the maintainer key (itself a hash of a 256-bit secret) and the project: without
+  // the key, nobody can test a leaf against a guessed project.
+  const leaf = disclose(maintainerLeaf(pk, project));
+  assert(!registered.member(leaf), "already registered");
+  registered.insert(leaf);
+  maintainers.insert(leaf);
 }
 
 export circuit attest(codeHash: Bytes<32>, grade: Uint<8>, rules: Uint<32>, scan: Uint<64>): [] {
   onlyAttester();
   // A grade registry is public by design: wallets and dApps read it.
   const h = disclose(codeHash);
-  const g = Grade { grade: disclose(grade), rules: disclose(rules), scan: disclose(scan), project: default<Bytes<32>>, selfReported: false };
+  const g = Grade { codeHash: h, project: default<Bytes<32>>, grade: disclose(grade), rules: disclose(rules), scan: disclose(scan), selfReported: false };
   assert(g.grade < 5, "grade is A, B, C, D or F");
   if (grades.member(h)) {
     assert(grades.lookup(h).scan < g.scan, "a later scan is already recorded");
@@ -217,25 +259,35 @@ export circuit attest(codeHash: Bytes<32>, grade: Uint<8>, rules: Uint<32>, scan
   grades.insert(h, g);
 }
 
+// Proposes the next officer key. The role moves only when its holder accepts, so a
+// mistyped key cannot lock the role away. Proposing zero cancels a pending hand-over.
 export circuit handOver(newAttesterHash: Bytes<32>): [] {
   onlyAttester();
-  attester = disclose(newAttesterHash);
+  // The next officer key, public like the current one.
+  nextAttester = disclose(newAttesterHash);
+}
+
+// The holder of the proposed key takes over; the old key stops working.
+export circuit acceptHandOver(): [] {
+  assert(nextAttester != default<Bytes<32>>, "no hand-over pending");
+  assert(attesterKey(attesterSecret()) == nextAttester, "not the proposed attester");
+  attester = nextAttester;
+  nextAttester = default<Bytes<32>>;
 }
 
 // ---------------------------------------------------------------- self-reported grades
 
 // A registered maintainer publishes a grade for a contract of their project. The project is
-// named publicly (a self-report is a public claim); the credential stays hidden. Only a
-// maintainer of the same project can replace it.
+// named publicly (a self-report is a public claim); the credential stays hidden. The slot is
+// keyed by code hash and project, so only a maintainer of that project can write or replace
+// it, and another project's self-report for the same code sits in a slot of its own.
 export circuit selfGrade(codeHash: Bytes<32>, project: Bytes<32>, grade: Uint<8>, rules: Uint<32>, scan: Uint<64>): [] {
-  const h = disclose(codeHash);
-  const g = Grade { grade: disclose(grade), rules: disclose(rules), scan: disclose(scan), project: disclose(project), selfReported: true };
+  const g = Grade { codeHash: disclose(codeHash), project: disclose(project), grade: disclose(grade), rules: disclose(rules), scan: disclose(scan), selfReported: true };
   assert(g.grade < 5, "grade is A, B, C, D or F");
   proveMaintainer(g.project);
-  if (selfGrades.member(h)) {
-    const prev = selfGrades.lookup(h);
-    assert(prev.project == g.project, "graded by another project");
-    assert(prev.scan < g.scan, "a later scan is already recorded");
+  const k = selfGradeKey(g.codeHash, g.project);
+  if (selfGrades.member(k)) {
+    assert(selfGrades.lookup(k).scan < g.scan, "a later scan is already recorded");
   }
-  selfGrades.insert(h, g);
+  selfGrades.insert(k, g);
 }
