@@ -10,6 +10,8 @@ import businessJson from '@/data/business.json';
 import adoptionJson from '@/data/adoption.json';
 import rerunJson from '@/data/survey-rerun.json';
 import deskJson from '@/data/desk.json';
+import zooJson from '@/data/zoo.json';
+import testsJson from '@/data/tests.json';
 
 // Work status. "done": shipped and linked; "in progress": being built now; "planned": not
 // started; "pilot": offered to a first user; "live": an offer anyone can use today.
@@ -44,17 +46,32 @@ export type Substitute = { name: string; what: string; answer: string; status: S
 
 export type Wave3 = {
   updatedAt: string;
-  wave2: { reviewedOn: string; reviewer: string; points: number; prize: string; scores: Record<CriterionId, number> };
+  wave2: { reviewedOn: string; reviewer: string; points: number; prize: string; resultsUrl?: string; scores: Record<CriterionId, number> };
   highlights: { title: string; text: string; href: string; status: Status }[]; // the home-page band
   summary: string;
   feedback: FeedbackRow[];
   criteria: Criterion[];
   substitutes: Substitute[];
-  learned: { title: string; text: string }[];
+  // basis: observed (from our own work), practice (how we work), assumption (not yet tested with users)
+  learned: { title: string; text: string; basis?: 'observed' | 'practice' | 'assumption' }[];
   ask: { title: string; text: string }[];
 };
 
-export const wave3 = wave3Json as Wave3;
+// ---- tests.json ------------------------------------------------------------------------------
+// Test counts from the last full run (the README's table). Copy in the content files refers to
+// them as {tests.total}, {tests.desk}, {tests.zoo.attack}…, filled in here.
+export type Tests = { runAt: string; total: number; workspaces: Record<string, number>; zoo: { attack: number; autofix: number } };
+export const tests = testsJson as Tests;
+export const fillCounts = (text: string) =>
+  text.replace(/\{tests\.([\w.]+)\}/g, (m, key: string) => {
+    const v = key === 'total' ? tests.total : key.startsWith('zoo.') ? tests.zoo[key.slice(4) as 'attack' | 'autofix'] : tests.workspaces[key];
+    return v === undefined ? m : String(v);
+  });
+// every string in a content object, with counts filled in
+const fillDeep = <T,>(v: T): T =>
+  (typeof v === 'string' ? fillCounts(v) : Array.isArray(v) ? v.map(fillDeep) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fillDeep(x)])) : v) as T;
+
+export const wave3 = fillDeep(wave3Json as Wave3);
 
 // ---- business.json -------------------------------------------------------------------------
 export type Segment = { id: string; name: string; who: string; need: string; gets: string; pays: string; status: Status };
@@ -74,6 +91,14 @@ export type Business = {
   offers: Offer[];
   numbers: { label: string; value: string | null; source: string | null }[];
   principles: { title: string; text: string }[];
+  // a bottom-up sum: sourced counts times hypothesis prices (BUSINESS-RESEARCH.md)
+  market: {
+    asOf: string;
+    intro: string;
+    lines: { label: string; count: number; approx?: boolean; unit: string; price: string; low: number; high: number; basis: string; status: string }[];
+    seats: string;
+    path: string;
+  };
   contact: { repo: string; label: string };
 };
 export const business = businessJson as Business;
@@ -98,7 +123,18 @@ export type Adoption = {
   fetchedAt: string | null;
   authenticated: boolean;
   repo: { name: string; stars: number | null; forks: number | null; watchers: number | null; openIssues: number | null };
-  traffic: { views14d: number | null; uniqueVisitors14d: number | null; clones14d: number | null; uniqueCloners14d: number | null } | null;
+  traffic: {
+    views14d: number | null;
+    uniqueVisitors14d: number | null;
+    clones14d: number | null;
+    uniqueCloners14d: number | null;
+    // kept across runs by scripts/adoption.mjs (GitHub itself keeps 14 days)
+    since?: string | null;
+    viewsSince?: number;
+    clonesSince?: number;
+    referrers?: { site: string; views: number; unique: number }[] | null;
+    daily?: { date: string; views: number; uniqueVisitors: number; clones: number; uniqueCloners: number }[];
+  } | null;
   action: { counted: boolean; reason: string | null; repositories: number | null; ownRepositories: number | null; officialRepositories: number | null; otherRepositories: number | null };
   outreach: OutreachRow[]; // Midnight's own repositories only
   teams: { contacted: number; replied: number; fixed: number; open: number }; // totals only, never rows
@@ -123,8 +159,7 @@ export type LedgerField = { name: string; type: string; holds: string; who: stri
 export type Desk = {
   status: Status;
   network: string;
-  address: string | null; // null until deployed (the lead fills it)
-  deployTx: string | null;
+  // the address and transactions live in data/desk-deployment.json only
   contractPath: string;
   fieldsConfirmed: boolean; // false: the fields below are the design, not yet checked against desk/
   publicLedger: LedgerField[];
@@ -133,6 +168,22 @@ export type Desk = {
   flow: { step: string; text: string }[];
 };
 export const desk = deskJson as Desk;
+
+// ---- zoo.json ---------------------------------------------------------------------------------
+// Counts for copy, taken from the zoo itself (scripts/samples.mjs copies every pair), so a new
+// pair updates every page that mentions the zoo.
+const WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
+export const numberWord = (n: number, capital = false) => {
+  const w = WORDS[n] ?? String(n);
+  return capital ? w[0].toUpperCase() + w.slice(1) : w;
+};
+const isLedger9 = (z: { leaky: string }) => /Ledger 9/.test(z.leaky.split('\n')[0] ?? '');
+export const zooCounts = {
+  pairs: zooJson.length,
+  contracts: zooJson.length * 2,
+  ledger9: zooJson.filter(isLedger9).length,
+  ledger8: zooJson.filter((z) => !isLedger9(z)).length,
+};
 
 export const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'not yet';

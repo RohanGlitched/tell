@@ -1,0 +1,7 @@
+{
+  "_readme": "Test counts from the last full run, the same numbers as the README's Setup and tests table. Pages read them from here (lib/content.ts tests), so one edit updates every page.",
+  "runAt": "2026-11-07",
+  "total": 407,
+  "workspaces": { "engine": 257, "zoo": 28, "desk": 40, "mcp": 40, "vscode": 24, "radar": 18 },
+  "zoo": { "attack": 22, "autofix": 6 }
+}

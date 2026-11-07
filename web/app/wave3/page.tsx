@@ -17,6 +17,9 @@ const CRITERION_SHORT: Record<CriterionId, string> = {
   business: 'Business',
 };
 
+// What each "learned" item rests on, so an assumption is never read as a finding.
+const BASIS = { observed: 'Observed in our own work', practice: 'How we work', assumption: 'Design assumption, not yet tested with users' } as const;
+
 export default function Wave3Page() {
   const w = wave3;
   const done = w.feedback.filter((f) => f.status === 'done').length;
@@ -62,7 +65,7 @@ export default function Wave3Page() {
       >
         <p>{w.summary}</p>
         <p>
-          Wave 2: {w.wave2.points} points, tied for the top, {w.wave2.prize}. Reviewed by {w.wave2.reviewer} on {fmtDate(w.wave2.reviewedOn)}.
+          Wave 2: {w.wave2.points} points, tied for the top ({w.wave2.resultsUrl ? <a href={w.wave2.resultsUrl}>results on AKINDO</a> : 'results on AKINDO'}), {w.wave2.prize}. Reviewed by {w.wave2.reviewer} on {fmtDate(w.wave2.reviewedOn)}.
         </p>
       </PageHead>
 
@@ -167,6 +170,7 @@ export default function Wave3Page() {
               {w.learned.map((l) => (
                 <li key={l.title}>
                   <h4 className="font-[family-name:var(--serif)] text-[19px] font-medium">{l.title}</h4>
+                  {'basis' in l && l.basis && <p className="mt-0.5 text-[12.5px] font-semibold text-[var(--marker-ink)]">{BASIS[l.basis]}</p>}
                   <p className="mt-1 text-[15px] text-[var(--graphite)]">{l.text}</p>
                 </li>
               ))}

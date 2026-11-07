@@ -5,7 +5,7 @@ import { MarginSection, StatusPill } from '@/components/ui';
 import { Ticks } from '@/components/Ticks';
 import Wave3Band from '@/components/Wave3Band';
 import { fixedBallot, leakyBallot, short } from '@/lib/ballots';
-import { business, desk } from '@/lib/content';
+import { business, desk, numberWord, tests, zooCounts } from '@/lib/content';
 import deskDeployment from '@/data/desk-deployment.json';
 import { fixOf, KIND_LABEL, SEVERITY_ORDER, type ScanResponse } from '@/lib/types';
 import integrations from '@/data/integrations.json';
@@ -23,7 +23,7 @@ const COMPILER_ROWS = [
 ];
 
 const STEPS = [
-  ['Compile', 'Runs the Compact compiler your `pragma` asks for, preferring 0.31.1, the ledger live today.'],
+  ['Compile', 'Runs the Compact compiler your `pragma` asks for, preferring 0.31.1 for Ledger 8 and 0.36.0 for Ledger 9 (mainnet since November 6).'],
   ['Read the circuits', 'Uses the compiler’s `reduce-to-circuit` form: helpers inlined, loops unrolled, every step a guarded binding.'],
   ['Trace and count', 'Follows each witness and argument through hashes, casts and branches to every public write, counting the bits that survive.'],
   ['Grade and report', 'A to F per contract and a fix per finding, as text, JSON, SARIF or a report you can share.'],
@@ -310,7 +310,9 @@ export default function Home() {
             </div>
             <div className="rounded-lg bg-white p-5 text-[var(--ink)] sm:p-6">
               <h3 className="font-[family-name:var(--serif)] text-[19px] font-semibold">The leak zoo</h3>
-              <p className="mt-1 text-[14px] text-[var(--graphite)]">Nine leaks, nine fixes, 18 attack tests in CI.</p>
+              <p className="mt-1 text-[14px] text-[var(--graphite)]">
+                {numberWord(zooCounts.pairs, true)} leaks, {numberWord(zooCounts.pairs)} fixes ({zooCounts.contracts} contracts), {tests.zoo.attack} attack tests in CI.
+</p>
               <ul className="mt-3">
                 {[
                   ['ballot', 'hash(vote)'],
@@ -321,6 +323,8 @@ export default function Home() {
                   ['raffle', 'hash in the constructor'],
                   ['faucet', 'shielded mint, public nonce'],
                   ['deposit', 'bid paid in the clear'],
+                  ['club', 'own leaf as a lookup key'],
+                  ['keyring', 'account id is the private key'],
                   ['poll', 'hash in a Ledger 9 event'],
                 ].map(([id, what]) => (
                   <li key={id} className="grid grid-cols-[84px_1fr_auto] gap-3 border-b border-dashed border-[var(--rule)] py-2 text-[14px] last:border-b-0">

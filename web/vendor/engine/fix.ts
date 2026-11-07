@@ -374,12 +374,17 @@ function witnessEdit(src: Source, circuit: string, name: string): Edit {
 
 const domain = (src: Source, field: string) => JSON.stringify(`${src.stem}:${field}`.slice(0, 32));
 
-const nonceNote = (w: string) =>
-  `Off-chain: implement the \`${w}\` witness to return 32 fresh random bytes on every call and keep them in private state with the value; they are needed to open or prove the commitment later.`;
+const nonceNote = (w: string, reused = false) =>
+  reused
+    ? `Uses the \`${w}\` witness the contract already declares. Off-chain it must return 32 fresh random bytes on every call, kept in private state with the value; they are needed to open or prove the commitment later.`
+    : `Off-chain: implement the \`${w}\` witness to return 32 fresh random bytes on every call and keep them in private state with the value; they are needed to open or prove the commitment later.`;
 
 const where = (f: Finding) => `\`${f.field}\` ${f.op} in \`${f.circuit}\`${f.line ? ` (line ${f.line})` : ''}`;
 
 const isSerious = (f: Finding) => !f.suppressed && severityRank(f.severity) <= severityRank('medium');
+// What gets a fix: medium or worse, and branches on private state rated low only because nothing
+// identifies the caller (each call still leaks its outcome, so the fix is still worth offering).
+const isFixTarget = (f: Finding) => isSerious(f) || (!f.suppressed && f.kind === 'branch' && f.severity === 'low' && f.sources.every((s) => s.kind === 'witness') && f.detail.includes('anonymous choices'));
 
 // A local check for key material by name (the analyzer has its own; this one only picks a rewrite).
 const KEYISH = /(^|[^a-z])(secret|sk|seed|priv|private|mnemonic|password|passphrase|key)([^a-z]|$)/i;
@@ -392,7 +397,8 @@ const keyish = (n: string) => KEYISH.test(words(rootName(n))) && !/\b(pub|public
 export function propose(srcText: string, f: Finding, report?: Report, file?: string): Proposal {
   const src = new Source(srcText, file);
   const manual = (text: string): Proposal => ({ rule: null, manual: text });
-  if (f.field === 'return') return manual(`Circuit results are public. Return a hash or a commitment of ${f.sources.map((s) => `\`${s.name}\``).join(', ')} from \`${f.circuit}\`, or nothing, and keep the value in private state. ${f.fix}`);
+  if (f.field === 'return') return manual(`A circuit's result is not on chain, but it leaves the proof: your DApp, or a contract that calls \`${f.circuit}\`, receives it and may publish it. If only the DApp needs ${f.sources.map((s) => `\`${s.name}\``).join(', ')}, read it from private state there instead; otherwise return a hash or a commitment, or nothing.`);
+  if (f.kind === 'derivable-secret') return manual(`${where(f)}: ${f.fix}`);
   if (f.field === 'kernel') return manual(`${where(f)} is a token operation whose operands are public by design. ${f.fix}`);
   const src0 = f.sources[0];
   switch (f.kind) {
@@ -412,35 +418,92 @@ export function propose(srcText: string, f: Finding, report?: Report, file?: str
     case 'attributable':
       return oneTimeTag(src, f, report) ?? manual(`${where(f)}: ${f.fix}`);
     case 'branch':
-      return assertBranch(src, f) ?? manual(`${where(f)}: ${f.fix}`);
+    {
+      const r = assertBranch(src, f);
+      return typeof r === 'string' ? manual(r) : r;
+    }
     default:
       return manual(`${where(f)}: ${f.fix}`);
   }
 }
 
 // Wrap the written hash in a commitment with a fresh nonce: hash(vote) -> commit(hash(vote), nonce).
+// A commitment whose randomness is constant or public is fixed where it is wrong: its randomness
+// is replaced, commit(v, pad(32, "salt")) -> commit(v, nonce()), never committed a second time.
 function commitHash(src: Source, f: Finding): Proposal | null {
   const hit = findOp(src, f);
   if (!hit) return null;
   const { site, body } = hit;
   const idx = pickArg(src, site, body, f, (t) => (f.via ? t.includes(f.via) : true));
   if (idx < 0) return null;
+  const arg = site.args[idx];
+  const n = nonceWitness(src, f.field, body);
+  const edits: Edit[] = n.declare ? [witnessEdit(src, f.circuit, n.name)] : [];
+  const notes = [nonceNote(n.name, !n.declare)];
+  const salt = f.via === 'persistentCommit' || f.via === 'transientCommit' ? commitRandomness(src, stripDisclose(src, arg), body) : null;
+  if (salt) {
+    const text = salt.transient ? `degradeToTransient(${n.name}())` : `${n.name}()`;
+    return {
+      rule: 'commit-hash',
+      summary: `give the ${salt.transient ? 'transientCommit' : 'persistentCommit'} fresh randomness: replace \`${src.text(salt.range).replace(/\s+/g, ' ')}\` with \`${text}\``,
+      notes: [...notes, `The committed value is unchanged; only its randomness is. Code that opens these commitments needs the nonce now kept in private state.`],
+      edits: [...edits, { start: salt.range[0], end: salt.range[1], text }],
+      witness: n.name,
+    };
+  }
   const t = positionType(src, src.ledger().get(f.field), f.op, idx);
   if (!t) return null;
-  const arg = site.args[idx];
   const inner = src.text(stripDisclose(src, arg));
-  const w = freshName(src, f.field);
   let text: string;
-  if (isBytes32(t.text)) text = `disclose(persistentCommit<Bytes<32>>(${inner}, ${w}()))`;
-  else if (normType(t.text) === 'Field') text = `disclose(transientCommit<Field>(${inner}, degradeToTransient(${w}())))`;
+  if (isBytes32(t.text)) text = `disclose(persistentCommit<Bytes<32>>(${inner}, ${n.name}()))`;
+  else if (normType(t.text) === 'Field') text = `disclose(transientCommit<Field>(${inner}, degradeToTransient(${n.name}())))`;
   else return null;
   return {
     rule: 'commit-hash',
     summary: `store a commitment with a fresh nonce instead of the guessable ${f.via ?? 'hash'}`,
-    notes: [nonceNote(w), `Anything that recomputed the old value to look this entry up (off-chain code, or a helper such as an exported hash circuit) must use persistentCommit with the stored nonce instead.`],
-    edits: [witnessEdit(src, f.circuit, w), { start: arg[0], end: arg[1], text }],
-    witness: w,
+    notes: [...notes, `Anything that recomputed the old value to look this entry up (off-chain code, or a helper such as an exported hash circuit) must use persistentCommit with the stored nonce instead.`],
+    edits: [...edits, { start: arg[0], end: arg[1], text }],
+    witness: n.name,
   };
+}
+
+// The randomness argument of persistentCommit / transientCommit in `r`, written directly or
+// through a `const` in the same circuit, when it is not already a witness call.
+function commitRandomness(src: Source, r: Range, body: Range, depth = 0): { range: Range; transient: boolean } | null {
+  const t = src.masked(r);
+  const name = t.match(/^\w+$/)?.[0];
+  if (name && depth < 4) {
+    const c = src.consts(body).filter((x) => x.name === name && x.at < r[0]).at(-1);
+    return c ? commitRandomness(src, stripDisclose(src, c.expr), body, depth + 1) : null;
+  }
+  const m = t.match(/^(persistentCommit|transientCommit)\s*/);
+  if (!m) return null;
+  let open = r[0] + m[0].length;
+  if (src.m[open] === '<') {
+    const g = genericEnd(src.m, open);
+    if (g < 0) return null;
+    open = g + 1 + (src.m.slice(g + 1).match(/^\s*/)?.[0].length ?? 0);
+  }
+  if (src.m[open] !== '(' || closeOf(src.m, open) !== r[1] - 1) return null;
+  const parts = splitTop(src.m, open + 1, r[1] - 1);
+  if (parts.length !== 2) return null;
+  return { range: parts[1], transient: m[1] === 'transientCommit' };
+}
+
+// The witness a fix draws its randomness from: a Bytes<32> witness the contract already declares
+// and names as randomness (`ballotSalt`, `bidNonce`) that this circuit does not call yet, so one
+// call never uses the same bytes twice; otherwise a new one named after the field.
+const RANDOM_WORDS = ['salt', 'nonce', 'rand', 'random', 'randomness', 'blind', 'blinding', 'entropy'];
+function nonceWitness(src: Source, field: string, body: Range): { name: string; declare: boolean } {
+  const decls = [...src.m.matchAll(/\bwitness\s+(\w+)\s*\(\s*\)\s*:\s*Bytes\s*<\s*32\s*>/g)].map((x) => x[1]);
+  const named = decls.filter((n) => n.split(/[._]|(?<=[a-z0-9])(?=[A-Z])/).some((w) => RANDOM_WORDS.includes(w.toLowerCase())));
+  // calls, not the declaration `witness n(): Bytes<32>`
+  const callsIn = (n: string, r: Range) => [...src.m.slice(r[0], r[1]).matchAll(new RegExp(`\\b${esc(n)}\\s*\\(\\s*\\)(?!\\s*:)`, 'g'))].length;
+  const free = named.filter((n) => callsIn(n, body) === 0);
+  // prefer one nothing calls (a salt the edit that introduced the leak stopped using)
+  const unused = free.find((n) => callsIn(n, [0, src.m.length]) === 0);
+  const pick = unused ?? free[0];
+  return pick ? { name: pick, declare: false } : { name: freshName(src, field), declare: true };
 }
 
 // Which operand of the operation carries the finding.
@@ -575,20 +638,24 @@ function oneTimeTag(src: Source, f: Finding, report?: Report): Proposal | null {
       edits: [{ start: arg[0], end: arg[1], text: `disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, ${dom}), ${secretCall.replace(/\s+/g, '')}, ${keyBytes}]))` }],
     };
   }
-  const w = freshName(src, f.field);
+  const n = nonceWitness(src, f.field, body);
+  const w = n.name;
   return {
     rule: 'one-time-tag',
     summary: `store a commitment to the tag with a fresh nonce, different on every entry`,
-    notes: [nonceNote(w), ...notes],
-    edits: [witnessEdit(src, f.circuit, w), { start: arg[0], end: arg[1], text: `disclose(persistentCommit<Bytes<32>>(${src.text(stripDisclose(src, arg))}, ${w}()))` }],
+    notes: [nonceNote(w, !n.declare), ...notes],
+    edits: [...(n.declare ? [witnessEdit(src, f.circuit, w)] : []), { start: arg[0], end: arg[1], text: `disclose(persistentCommit<Bytes<32>>(${src.text(stripDisclose(src, arg))}, ${w}()))` }],
     witness: w,
   };
 }
 
 // if (secret) { A } else { B }  ->  assert(secret, …); A
-function assertBranch(src: Source, f: Finding): Proposal | null {
+// When the rewrite does not apply, the reason, as the manual fix text.
+function assertBranch(src: Source, f: Finding): Proposal | string {
+  const who = f.sources.map((s) => `\`${s.name}\``).join(', ');
+  const general = `Either touch \`${f.field}\` the same way on both paths (the same operation with the same shape of data, e.g. a salted commitment to the outcome), or require one outcome with assert() so every accepted call does the same thing.`;
   const c = src.circuit(f.circuit);
-  if (!c || !f.line) return null;
+  if (!c || !f.line) return `${where(f)} depends on ${who}, but Tell could not find the branch in the source (it may be inside an inlined helper). ${general}`;
   const at = src.lineStart(f.line) + (src.src.slice(src.lineStart(f.line)).match(/^\s*/)?.[0].length ?? 0);
   type If = { start: number; cond: Range; then: Range; els: Range | null; end: number };
   const ifs: If[] = [];
@@ -615,13 +682,15 @@ function assertBranch(src: Source, f: Finding): Proposal | null {
   }
   const inside = ifs.filter((i) => i.start < at && at < i.end).sort((a, b) => a.end - a.start - (b.end - b.start));
   const it = inside[0];
-  if (!it) return null;
+  if (!it)
+    return `${where(f)} depends on ${who} through a condition Tell cannot rewrite automatically: it is not a braced \`if { } else { }\` block in \`${f.circuit}\` (an \`else if\` chain, a conditional expression \`c ? a : b\`, or a branch inside a helper circuit or the standard library). ${general}`;
   // a branch inside a loop is a count leak: an assert there would change what the loop means
   const loops = [...src.m.slice(c.open, c.close).matchAll(/\bfor\s*\(/g)].map((x) => c.open + x.index!);
   for (const l of loops) {
     const p = closeOf(src.m, src.m.indexOf('(', l));
     const b = src.m.slice(p + 1).search(/\S/) + p + 1;
-    if (src.m[b] === '{' && b < it.start && it.end <= closeOf(src.m, b)) return null;
+    if (src.m[b] === '{' && b < it.start && it.end <= closeOf(src.m, b))
+      return `${where(f)} runs inside a loop, once per entry, depending on ${who}: the transcript counts how many entries took this path. An assert would change what the loop means, so Tell does not rewrite it. Pad the loop instead: run the same ledger operation for every entry (against a dummy key for the ones that do not qualify), or prove the aggregate with asserts and store one commitment to it.`;
   }
   const blockText = (r: Range) => src.src.slice(r[0] + 1, r[1] - 1);
   const thenEmpty = !/\S/.test(src.masked([it.then[0] + 1, it.then[1] - 1]));
@@ -656,13 +725,14 @@ function commitValue(src: Source, f: Finding): Proposal | null {
   const t = positionType(src, src.ledger().get(f.field), f.op, idx);
   if (!t) return null;
   const arg = site.args[idx];
-  const w = freshName(src, f.field);
-  const edits: Edit[] = [witnessEdit(src, f.circuit, w), { start: arg[0], end: arg[1], text: `disclose(persistentCommit<${t.text}>(${src.text(stripDisclose(src, arg))}, ${w}()))` }];
+  const n = nonceWitness(src, f.field, body);
+  const w = n.name;
+  const edits: Edit[] = [...(n.declare ? [witnessEdit(src, f.circuit, w)] : []), { start: arg[0], end: arg[1], text: `disclose(persistentCommit<${t.text}>(${src.text(stripDisclose(src, arg))}, ${w}()))` }];
   if (!isBytes32(t.text)) edits.push({ start: t.range[0], end: t.range[1], text: 'Bytes<32>' });
   return {
     rule: 'commit-value',
     summary: `store a commitment to the value with a fresh nonce instead of the value`,
-    notes: [nonceNote(w), ...(isBytes32(t.text) ? [] : [`\`${f.field}\` now holds Bytes<32> commitments instead of ${t.text}; code that reads it must open the commitment instead.`])],
+    notes: [nonceNote(w, !n.declare), ...(isBytes32(t.text) ? [] : [`\`${f.field}\` now holds Bytes<32> commitments instead of ${t.text}; code that reads it must open the commitment instead.`])],
     edits,
     witness: w,
   };
@@ -794,7 +864,12 @@ export async function verifyPatch(file: string, patched: string, before: Contrac
   const live = r.report!.findings.filter((f) => !f.suppressed);
   const gone = target ? !live.some((g) => same(g, target) && g.severity !== 'info') : true;
   const old = (before.report?.findings ?? []).filter((f) => !f.suppressed);
-  const newFindings = live.filter((g) => isSerious(g) && !old.some((o) => same(o, g) && severityRank(o.severity) <= severityRank(g.severity) && (!target || !same(o, target))));
+  // A one-time tag per action leaves the same circuit's membership lookup of the old tag in place.
+  // Tell reports that lookup on its own once the tag is no longer stored with every action; it was
+  // there before the patch (the patch's notes name it), so it is not new.
+  const remainingLookup = (g: Finding) =>
+    target?.kind === 'attributable' && g.kind === 'linkable' && g.circuit === target.circuit && g.op === 'member' && g.sources.some((s) => target.sources.some((t) => t.name === s.name));
+  const newFindings = live.filter((g) => isSerious(g) && !remainingLookup(g) && !old.some((o) => same(o, g) && severityRank(o.severity) <= severityRank(g.severity) && (!target || !same(o, target))));
   return { ok: gone && newFindings.length === 0, compiles: true, compiler: r.compiler, gone, newFindings, gradeBefore, gradeAfter: r.grade ?? gradeOf(live), result: r };
 }
 
@@ -815,7 +890,7 @@ export async function planFixes(result: ContractResult, opts: PlanOptions = {}):
   const src = fs.readFileSync(result.file, 'utf8');
   const relTo = opts.root ? path.relative(opts.root, result.file) : path.basename(result.file);
   const rel = (relTo.startsWith('..') ? result.file : relTo).split(path.sep).join('/');
-  const targets = result.report.findings.filter(isSerious).sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
+  const targets = result.report.findings.filter(isFixTarget).sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
   const seen = new Set<string>();
   for (const f of targets) {
     const key = findingKey(f, rel);
@@ -867,7 +942,7 @@ export async function planFixes(result: ContractResult, opts: PlanOptions = {}):
     const applied: string[] = [];
     let last: Verification | null = null;
     for (const s of ok) {
-      const f = curRes.report!.findings.find((g) => isSerious(g) && findingKey(g, rel) === s.key);
+      const f = curRes.report!.findings.find((g) => isFixTarget(g) && findingKey(g, rel) === s.key);
       if (!f) continue;
       const p = propose(cur, f, curRes.report, result.file);
       if (p.rule === null) continue;

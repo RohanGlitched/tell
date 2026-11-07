@@ -94,7 +94,7 @@ const publishedBits = ok.reduce((a, c) => a + (c.report?.findings ?? []).filter(
 
 const out = {
   generatedAt: new Date().toISOString(),
-  method: 'Every public GitHub repository linked from a Midnight Buildathon submission on AKINDO, cloned at its default branch and scanned with Tell. Compiler chosen per contract from its pragma, preferring 0.31.1 (the compiler for the ledger live today).',
+  method: 'Every public GitHub repository linked from a Midnight Buildathon submission on AKINDO, cloned at its default branch and scanned with Tell. Compiler chosen per contract from its pragma, preferring 0.31.1 (the compiler for Ledger 8, the ledger live when the survey ran).',
   repositoriesListed: repos.length,
   repositoriesWithCompact: repos.filter((r) => r.contracts.length).length,
   projectsAnalyzed: analyzed.length,
@@ -107,7 +107,8 @@ const out = {
   kinds,
   linkableProjects,
   publishedValues: publishedBits,
-  cases,
+  // no per-project contract counts: a severity plus a contract count could identify a team
+  cases: cases.map(({ count: _count, ...c }) => c),
   // One entry per analyzed project, anonymized: grade, contracts, and its worst finding.
   projects: order.map((r) => {
     const live = r.contracts.filter((c) => c.ok);

@@ -23,7 +23,7 @@ These are described in words; there are no screenshots in this README yet.
 
 ## Requirements
 
-- The Compact compiler, installed with Midnight's `compact` tool: `compact update 0.31.1` (Tell prefers 0.31.1, the compiler for the ledger live today, and falls back to any installed version the contract's pragma accepts). Tell looks in `~/.compact/versions`, or in `tell.compilerDirs`.
+- The Compact compiler, installed with Midnight's `compact` tool: `compact update 0.31.1` (Tell prefers 0.31.1 for Ledger 8 contracts and uses 0.36.0 for Ledger 9 contracts (mainnet since November 6, 2026; `compact update 0.36.0`), and falls back to any installed version the contract's pragma accepts). Tell looks in `~/.compact/versions`, or in `tell.compilerDirs`.
 - Linux or macOS, or Windows through **WSL**: the compiler runs on Linux, so open the folder in WSL (Remote - WSL) and install the extension there. The extension declares itself a workspace extension, so in a remote window it runs on the remote side, next to the compiler.
 - For syntax highlighting, snippets and compiler errors, install Midnight's own Compact extension (distributed as a `.vsix` from Midnight's release page; see [docs.midnight.network](https://docs.midnight.network/compact/compilation-and-tooling/vscode-plugin)). Tell does not ship a grammar so it does not compete with it; the two work side by side. Tell matches files by their `.compact` extension, whatever language id another extension gives them, and activates in any workspace that contains one.
 

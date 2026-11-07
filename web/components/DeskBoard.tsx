@@ -12,6 +12,7 @@ import { NETWORKS, type NetworkName } from '@/lib/networks';
 import { canonicalRepo, projectId, reportDigest, toHex } from '@/vendor/desk/codec';
 import { GradeSeal } from './brand';
 import { Slot } from './ui';
+import deployments from '@/data/deployments.json';
 
 const short = (h: string, a = 8, b = 6) => (h.length > a + b + 1 ? `${h.slice(0, a)}…${h.slice(-b)}` : h);
 const when = (s: number) => (s ? new Date(s * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC' : '–');
@@ -150,14 +151,23 @@ export default function DeskLive() {
           code hash, so no one can take another team’s.
         </p>
         <GradeTable grades={[...data.grades, ...data.selfGrades]} />
-        <GradeLookup />
+        <GradeLookup empty={data.grades.length + data.selfGrades.length === 0} />
       </div>
     </div>
   );
 }
 
 function GradeTable({ grades }: { grades: DeskGrade[] }) {
-  if (grades.length === 0) return <p className="mt-4 text-[14.5px] text-[var(--faint)]">No grades recorded yet.</p>;
+  if (grades.length === 0)
+    return (
+      <div className="mt-4 rounded-lg border border-dashed border-[var(--rule-strong)] bg-[var(--mist)] px-5 py-4 text-[14.5px] text-[var(--graphite)]" data-testid="desk-grades-empty">
+        <p className="font-semibold text-[var(--ink)]">No grades on chain yet: the registry is ready, the first attestations are next.</p>
+        <p className="mt-1">
+          Tell’s grades for the zoo ballots are being recorded by the second Desk deployment. Until then the lookup below still reads a contract from the
+          indexer and computes its code hash, the key a wallet would use.
+        </p>
+      </div>
+    );
   return (
     <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--rule)]">
       <table className="w-full min-w-[560px] border-collapse text-[13.5px]">
@@ -203,26 +213,36 @@ function GradeTable({ grades }: { grades: DeskGrade[] }) {
   );
 }
 
-function GradeLookup() {
-  const [address, setAddress] = useState('');
+// Real contracts on the same network to try the lookup with: the leak zoo's ballots.
+const EXAMPLES = [
+  { label: 'Leaky ballot', address: deployments.contracts['ballot-leaky'].address },
+  { label: 'Fixed ballot', address: deployments.contracts['ballot-fixed'].address },
+];
+
+function GradeLookup({ empty }: { empty: boolean }) {
+  const [address, setAddress] = useState(EXAMPLES[0].address);
   const [busy, setBusy] = useState(false);
   const [out, setOut] = useState<{ codeHash: string; grade: DeskGrade | null; selfReports?: DeskGrade[] } | { error: string } | null>(null);
+  const look = async (a: string) => {
+    setBusy(true);
+    setOut(null);
+    try {
+      const r = await fetch(`/api/desk?address=${encodeURIComponent(a.trim())}`);
+      const j = await r.json();
+      setOut(r.ok ? j : { error: j.error ?? 'Lookup failed.' });
+    } catch {
+      setOut({ error: 'Could not reach the indexer. Try again.' });
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <form
       className="mt-5 rounded-lg border border-[var(--rule)] bg-white p-5"
-      onSubmit={async (e) => {
+      data-testid="desk-lookup"
+      onSubmit={(e) => {
         e.preventDefault();
-        setBusy(true);
-        setOut(null);
-        try {
-          const r = await fetch(`/api/desk?address=${encodeURIComponent(address.trim())}`);
-          const j = await r.json();
-          setOut(r.ok ? j : { error: j.error ?? 'Lookup failed.' });
-        } catch {
-          setOut({ error: 'Could not reach the indexer. Try again.' });
-        } finally {
-          setBusy(false);
-        }
+        void look(address);
       }}
     >
       <label htmlFor="desk-address" className="block text-[14px] font-semibold">
@@ -241,6 +261,23 @@ function GradeLookup() {
           {busy ? 'Reading…' : 'Read its grade'}
         </button>
       </div>
+      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[13px] text-[var(--graphite)]">
+        <span>Try a real contract on this network:</span>
+        {EXAMPLES.map((x) => (
+          <button
+            key={x.address}
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setAddress(x.address);
+              void look(x.address);
+            }}
+            className="min-h-[40px] rounded-md border border-[var(--rule)] bg-white px-3 hover:border-[var(--ink-3)] sm:min-h-[30px] sm:px-2.5"
+          >
+            Try the {x.label.toLowerCase()}
+          </button>
+        ))}
+      </div>
       {out && 'error' in out && (
         <p role="alert" className="mt-3 text-[14px] text-[var(--marker-ink)]">
           {out.error}
@@ -251,7 +288,11 @@ function GradeLookup() {
           <div className="flex flex-wrap items-center gap-4">
             {out.grade ? <GradeSeal grade={out.grade.grade} size={40} caption={null} /> : null}
             <p>
-              Code hash <code>{short(out.codeHash)}</code>: {out.grade ? `grade ${out.grade.grade}, attested by Tell.` : 'no grade from Tell for this code.'}
+              Code hash <code>{short(out.codeHash)}</code>: {out.grade
+                ? `grade ${out.grade.grade}, attested by Tell.`
+                : empty
+                  ? 'the contract was found and its code hash computed, but the registry holds no grades yet. Grades are being recorded by the second Desk deployment; this lookup will answer once they are.'
+                  : 'no grade from Tell for this code.'}
             </p>
           </div>
           {(out.selfReports ?? []).length > 0 && (

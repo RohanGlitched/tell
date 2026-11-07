@@ -5,7 +5,7 @@
 // same rule ids as the CLI's engine/src/sarif.ts) or Markdown (for a review or an issue).
 // Browser-side, so nothing is sent anywhere to make the file.
 
-import { fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type FindingKind, type ScanResponse, type Severity } from './types';
+import { behaviourOf, fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type FindingKind, type ScanResponse, type Severity } from './types';
 
 const SITE = 'https://tell-midnight.vercel.app';
 
@@ -17,6 +17,8 @@ const RULE_TEXT: Record<FindingKind, { name: string; short: string }> = {
   predicate: { name: 'PublishedPredicate', short: 'A yes/no fact about a private value is written to the public ledger' },
   attributable: { name: 'AttributableActions', short: 'Each action stores the same tag derived from a private key' },
   linkable: { name: 'LinkableTag', short: 'The same hash of a private value is published on every call' },
+  'shielded-coin': { name: 'GuessableCoinCommitment', short: 'A shielded coin is minted or sent with a nonce anyone can compute' },
+  'derivable-secret': { name: 'PublicPrivateKey', short: 'A public key is made from a private scalar the contract also publishes' },
 };
 const LEVEL: Record<Severity, 'error' | 'warning' | 'note'> = { critical: 'error', high: 'error', medium: 'warning', low: 'note', info: 'note' };
 const SCORE: Record<Severity, string> = { critical: '9.5', high: '8.0', medium: '5.5', low: '3.0', info: '1.0' };
@@ -96,6 +98,8 @@ export function toMarkdown(result: ScanResponse, now = new Date()): string {
       out.push(`### ${f.severity.toUpperCase()} · ${KIND_LABEL[f.kind]} · \`${f.circuit}\`${f.bits > 0 ? ` · ${f.bits} bit${f.bits === 1 ? '' : 's'}` : ''}${where ? ` · ${where}` : ''}`, '');
       out.push(f.title, '', f.detail, '', `**Fix:** ${text}`);
       if (patch) out.push('', `Proposed patch${patch.verified ? `, verified by re-scan${patch.gradeAfter ? ` (grade after: ${patch.gradeAfter})` : ''}` : ''}:`, '', '```diff', patch.diff.trim(), '```');
+      const behaviour = patch ? behaviourOf(patch) : null;
+      if (behaviour) out.push('', `**Changes behaviour:** ${behaviour}`);
       out.push('');
     }
   }

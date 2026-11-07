@@ -4,6 +4,7 @@ import Link from 'next/link';
 import './globals.css';
 import { BrandMark } from '@/components/brand';
 import SiteNav from '@/components/SiteNav';
+import SiteAnalytics from '@/components/SiteAnalytics';
 
 // Self-hosted (SIL Open Font License, see app/fonts/README.md): the build no longer depends on
 // reaching Google Fonts.
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Footer />
+        <SiteAnalytics />
       </body>
     </html>
   );

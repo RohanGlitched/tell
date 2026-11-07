@@ -5,15 +5,16 @@
     "reviewer": "jkato",
     "points": 20,
     "prize": "720 USDT",
+    "resultsUrl": "https://app.akindo.io/wave-hacks/jaMZjqPOBsLXvjdG",
     "scores": { "engineering": 8, "product": 8, "qa": 7, "ux": 7, "communication": 7, "business": 6 }
   },
   "highlights": [
     { "title": "On Preprod, addresses in the README", "text": "Both ballots deployed with real votes, as the review asked.", "href": "/live", "status": "done" },
     { "title": "Tell Desk", "text": "A new contract, deployed on Preprod: sealed disclosure with zero-knowledge answers, and a grade registry wallets can read. The demo lifecycle is partly run.", "href": "/desk", "status": "in progress" },
-    { "title": "Fixes, verified", "text": "A patch per finding, compiled and scanned again before it is offered: ballot F to B, vault F to A.", "href": "/scan?sample=ballot-leaky", "status": "done" },
+    { "title": "Fixes, verified", "text": "Verified patches for guessable hashes, secrets in the clear, the same tag on every action, branches and personal values, compiled and scanned again before they are offered: ballot F to B, vault F to A. Other kinds get the fix in words.", "href": "/scan?sample=ballot-leaky", "status": "done" },
     { "title": "Share links and a README badge", "text": "Send a report as a link; show your grade on GitHub.", "href": "/scan", "status": "done" },
-    { "title": "Real outreach, tracked", "text": "Issues to 11 teams and one on Midnight's examples; replies and fixes counted as they come.", "href": "/adoption", "status": "in progress" },
-    { "title": "Who pays", "text": "Free core, paid hosting for private code, honest status labels.", "href": "/teams", "status": "done" }
+    { "title": "Real outreach, tracked", "text": "Public issues to 11 teams naming the file and kind of finding, and one on Midnight's examples; replies and fixes counted as they come.", "href": "/adoption", "status": "in progress" },
+    { "title": "Who pays", "text": "Free core. Audit-firm licenses and an ecosystem grant first, private-repository checks later; prices are hypotheses, counted from the bottom.", "href": "/teams", "status": "done" }
   ],
   "summary": "Wave 2's review gave us a list. Every point on it is below, in the reviewer's own words, with what we did about it and where to check. Items still being built say so.",
   "feedback": [
@@ -25,7 +26,7 @@
       "did": "Both demo ballots are deployed on Midnight Preprod with six real votes each, and the new Tell Desk contract is deployed there too. The README lists every contract address and transaction. The live page reads both ballots from the indexer and recovers 6 of 6 votes from the leaky one, 0 of 6 from the fixed one.",
       "status": "done",
       "evidence": [
-        { "label": "Contract addresses in the README", "href": "https://github.com/RohanGlitched/tell#deployed-contracts-midnight-preprod" },
+        { "label": "Contract addresses in the README", "href": "https://github.com/RohanGlitched/tell#live-contracts-on-midnight-preprod" },
         { "label": "Live attack on Preprod", "href": "/live" }
       ]
     },
@@ -34,7 +35,7 @@
       "criterion": "engineering",
       "source": "Backend engineering review, 29/30",
       "quote": "You implemented genuine private state with implemented witnesses and a commitment/hash, exactly what a Midnight app should do.",
-      "did": "We built a second contract where private state does real work. Tell Desk seals a privacy finding as a commitment with a per-report tag; maintainers answer with a zero-knowledge proof over a Merkle tree of credentials, without revealing who they are or which project; the opening is published only after the fix or the embargo. It also keeps Tell's grades by code hash for wallets to read. 33 contract tests, including an attacker who reads only public data. Deployed on Preprod on November 7: a maintainer is registered and one report is sealed; acknowledge, fix, reveal and the first grades come next.",
+      "did": "We built a second contract where private state does real work. Tell Desk seals a privacy finding as a commitment with a per-report tag; maintainers answer with a zero-knowledge proof over a Merkle tree of credentials, without revealing who they are or which project; the opening is published only after the fix or the embargo. It also keeps Tell's grades by code hash for wallets to read. {tests.desk} contract tests, including an attacker who reads only public data. Deployed on Preprod on November 7: a maintainer is registered and one report is sealed; acknowledge, fix, reveal and the first grades come next.",
       "status": "in progress",
       "evidence": [{ "label": "Tell Desk: public ledger and private state", "href": "/desk" }]
     },
@@ -52,7 +53,7 @@
       "criterion": "product",
       "source": "Product review",
       "quote": "Since the Midnight application requires an implementation that prioritizes privacy, tools like this help enhance the ecosystem's apps.",
-      "did": "We took Tell to the apps themselves. The 11 teams whose contracts showed a clear finding in the survey were each sent a GitHub issue naming the file and the kind of leak and asking where to send the details and the fix, and we filed an issue on Midnight's own examples (midnight-examples#90). Replies and fixes are tracked on the adoption page.",
+      "did": "We took Tell to the apps themselves. The 11 teams whose contracts showed a clear finding in the survey were each sent a public GitHub issue naming the file, the line and the kind of finding, and asking where to send the details. We also filed an issue on Midnight's own examples (midnight-examples#90). Replies and fixes are tracked on the adoption page.",
       "status": "in progress",
       "evidence": [{ "label": "Adoption: outreach, replies and fixes", "href": "/adoption" }]
     },
@@ -70,7 +71,7 @@
       "criterion": "business",
       "source": "Business review",
       "quote": "Your real substitutes are the Compact compiler itself and manual review by security firms such as Trail of Bits or Least Authority",
-      "did": "We answered each substitute in turn: the compiler, audit firms, the free Web2 analyzers and OpenZeppelin's announced Compact scanner. For each one we say what it does, what Tell adds and how they work together.",
+      "did": "We answered each substitute in turn: the compiler, audit firms, the free Web2 analyzers and OpenZeppelin's Compact Security Detectors SDK. For each one we say what it does, what Tell adds and how they work together.",
       "status": "done",
       "evidence": [{ "label": "Substitutes, one by one", "href": "/wave3#substitutes" }]
     },
@@ -79,9 +80,9 @@
       "criterion": "business",
       "source": "Business review",
       "quote": "the closest Web2 analogues (Slither, Semgrep, Snyk) are free or sold per developer seat",
-      "did": "We price the same way they do. The analyzer is free and open source. Money comes from hosted checks on private code and from audit firms, not from per-seat licenses for the scanner.",
+      "did": "Free like them, but not sold per seat: Midnight has about 150 active developers a month, too few for seats to carry a product. The analyzer stays free and open source. Money comes from audit-firm licenses and an ecosystem grant first, and later from hosted checks priced per private repository, not per developer.",
       "status": "done",
-      "evidence": [{ "label": "Offers and status", "href": "/teams#offers" }]
+      "evidence": [{ "label": "Offers and status", "href": "/teams#offers" }, { "label": "The market, counted", "href": "/teams#market" }]
     },
     {
       "id": "buyer-pool",
@@ -109,7 +110,7 @@
       "criterion": "business",
       "source": "Wave 2 recap to all teams",
       "quote": "We're interested in what you've learned from bringing a product to market, what challenges you're working through, and how the Midnight ecosystem might help you take the next step.",
-      "did": "Below we say what we learned from putting Tell in front of teams, what is still hard, and what would help most from the Midnight ecosystem.",
+      "did": "Below: what we observed, how we work with teams, and the design assumptions we have not tested with users yet, each labelled as such; then what would help most from the Midnight ecosystem.",
       "status": "done",
       "evidence": [{ "label": "What we learned", "href": "/wave3#learned" }]
     },
@@ -127,8 +128,8 @@
       "criterion": "ux",
       "source": "Wave 2 score, UX and design 7/10",
       "quote": "frontend intuitive, behaves as expected, connects to the contract end to end",
-      "did": "The scanner now has share links (the contract travels inside the link and is never stored), a fix view with the proposed patch and a re-scan, a README badge, and downloads as JSON, SARIF or Markdown. The Tell Desk page reads the contract from the indexer and looks up a grade by contract address; a Lace wallet flow is not built yet.",
-      "status": "done",
+      "did": "The scanner now has share links (the contract travels inside the link and is never stored), a fix view with the verified patch and a re-scan, a README badge, and downloads as JSON, SARIF or Markdown. On the contract side, the read path is live in the browser: /live reads both ballots from the indexer and runs the attack, and the Tell Desk page reads reports and looks up a grade by contract address. The write path (sealing, acknowledging, revealing) runs from the Desk command-line client; a Lace wallet flow in the browser is not built yet.",
+      "status": "in progress",
       "evidence": [
         { "label": "Scanner", "href": "/scan" },
         { "label": "Tell Desk", "href": "/desk" }
@@ -143,8 +144,8 @@
       "wave2": 8,
       "judged": "Contract compiles, private-state management, understanding of the dual-ledger model, repository and README",
       "changes": [
-        { "text": "Demo ballots deployed on Preprod; addresses and transactions in the README", "status": "done", "href": "https://github.com/RohanGlitched/tell#deployed-contracts-midnight-preprod" },
-        { "text": "Tell Desk: a new Compact contract for sealed disclosure and an on-chain grade registry (40 tests; version 1 deployed on Preprod, version 2 deploy pending)", "status": "in progress", "href": "/desk" },
+        { "text": "Demo ballots deployed on Preprod; addresses and transactions in the README", "status": "done", "href": "https://github.com/RohanGlitched/tell#live-contracts-on-midnight-preprod" },
+        { "text": "Tell Desk: a new Compact contract for sealed disclosure and an on-chain grade registry ({tests.desk} tests; version 1 deployed on Preprod, version 2 deploy pending)", "status": "in progress", "href": "/desk" },
         { "text": "Engine: constructor analysis, shielded and unshielded token rules, Compact 0.36 and Ledger 9 events", "status": "done", "href": "/zoo" },
         { "text": "Auto-fix: the engine proposes a patch, compiles it and scans it again; only verified patches are offered", "status": "done", "href": "/scan?sample=ballot-leaky" },
         { "text": "Radar: a privacy scan of 329 deployed Preprod contracts from public chain data alone, without the source", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/radar" }
@@ -209,7 +210,7 @@
       "changes": [
         { "text": "Who pays, and for what, with honest status labels", "status": "done", "href": "/teams" },
         { "text": "Outreach to 11 teams and to Midnight's example repositories, tracked live", "status": "in progress", "href": "/adoption" },
-        { "text": "Pilot requests sent to two audit firms on November 7; no reply yet", "status": "in progress", "href": "/teams#offers" },
+        { "text": "Pilot talks requested with two audit firms on November 7; no reply yet", "status": "in progress", "href": "/teams#offers" },
         { "text": "Head-to-head benchmark against the other Compact analyzers, with its bias stated", "status": "done", "href": "https://github.com/RohanGlitched/tell/blob/main/bench/RESULTS.md" },
         { "text": "Adoption numbers read from GitHub by a script, with the date", "status": "done", "href": "/adoption" }
       ]
@@ -233,12 +234,12 @@
     {
       "name": "Slither, Semgrep, Snyk",
       "what": "Free or per-seat static analyzers for Solidity and general code. None reads Compact or knows Midnight's dual ledger.",
-      "answer": "We copy their model rather than compete with it. The analyzer is free and open source, like Slither. Paid hosted checks cover private code, like Semgrep's and Snyk's hosted tiers. The difference is the domain: they find bugs, Tell measures privacy leaks in bits.",
+      "answer": "We copy their model rather than compete with it. The analyzer is free and open source, like Slither. Paid hosted checks cover private code, as Semgrep's and Snyk's hosted tiers do, but priced per private repository rather than per seat, because Midnight teams are small. The difference is the domain: they find bugs, Tell measures privacy leaks in bits.",
       "status": "done",
       "href": "/teams#offers"
     },
     {
-      "name": "OpenZeppelin's Compact scanner",
+      "name": "OpenZeppelin's Compact Security Detectors SDK",
       "what": "OpenZeppelin's Compact Security Detectors: two correctness detectors today, loop array bounds and verbose assertion messages. No privacy checks.",
       "answer": "It checks correctness and Tell checks privacy, so they complement each other. Tell's output is SARIF, so both can run in the same GitHub code scanning view, and Tell's rules could feed their detectors. The benchmark runs both, with Nightshade, compact-guard and compact-lint, on the same 69 files.",
       "status": "done",
@@ -246,10 +247,10 @@
     }
   ],
   "learned": [
-    { "title": "Finding the leak is not enough", "text": "When a team sees a finding, the next question is always how to fix it. That is why the fix view and auto-fix exist: a finding without a patch is extra work, and a verified patch is easy to say yes to." },
-    { "title": "Privacy grades need to be seen", "text": "A grade only on the developer's screen changes little. When a wallet or a dApp store can read it from the chain, users can see it too, and teams have a reason to earn a good one. That is the job of Tell Desk's registry." },
-    { "title": "Approach teams privately first", "text": "We never name a team publicly. Findings go to each team privately, with the fix, and the public page shows only anonymised outcomes. A leak in a public contract is the team's to fix, not ours to announce." },
-    { "title": "The compiler moves fast", "text": "Several compiler releases in one buildathon, 0.36.0 and Ledger 9 among them, and the circuit form Tell reads changed shape more than once. Keeping up with each release is the main maintenance cost, and it is exactly what ecosystem support would pay for." }
+    { "title": "Finding the leak is not enough", "basis": "assumption", "text": "We expect a team that sees a finding to ask next how to fix it; no team has replied yet. That is why the fix view and auto-fix exist: a finding without a patch is extra work, and a verified patch is easy to say yes to." },
+    { "title": "Privacy grades need to be seen", "basis": "assumption", "text": "A grade only on the developer's screen changes little. When a wallet or a dApp store can read it from the chain, users can see it too, and teams have a reason to earn a good one. That is the job of Tell Desk's registry." },
+    { "title": "Tell teams before telling anyone else", "basis": "practice", "text": "We never name a team on this site. Each team got a public GitHub issue on its own repository naming the file, the line and the kind of finding, and asking where to send the details; the details themselves are not public. This site shows only totals. A leak in a public contract is the team's to fix, not ours to announce." },
+    { "title": "The compiler moves fast", "basis": "observed", "text": "Several compiler releases in one buildathon, 0.36.0 and Ledger 9 among them, and the circuit form Tell reads changed shape more than once. Keeping up with each release is the main maintenance cost, and it is exactly what ecosystem support would pay for." }
   ],
   "ask": [
     { "title": "A Tell check in Midnight's templates", "text": "If create-mn-app and the example repositories shipped the Tell Action, every new project would be checked from its first commit." },

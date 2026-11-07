@@ -7,7 +7,7 @@
       "who": "Teams writing Compact contracts, from buildathon projects to production apps.",
       "need": "To know what a contract gives away before it is deployed and its history is public for good.",
       "gets": "The scanner, CLI and GitHub Action, free. Findings on the pull request with the fix inline. A README badge.",
-      "pays": "Private repositories: the hosted pull-request bot.",
+      "pays": "Private repositories: the hosted pull-request bot, per repository, later.",
       "status": "live"
     },
     {
@@ -24,8 +24,8 @@
       "name": "Midnight Foundation and templates",
       "who": "The people who maintain Midnight's examples, project templates and developer programs.",
       "need": "New apps that are private by default, not only by intent.",
-      "gets": "A Tell check in the templates and examples, rule research, and support for each new compiler release on the day it ships.",
-      "pays": "Ecosystem sponsorship or a fellowship.",
+      "gets": "A Tell check in the templates and examples, rule research, and support for new compiler releases as they ship.",
+      "pays": "An ecosystem maintenance grant. The Aliit fellowship brings reach and support, but no stipend.",
       "status": "in progress"
     },
     {
@@ -43,7 +43,7 @@
       "who": "Developers who write Compact with an AI assistant.",
       "need": "An agent that checks its own contract before suggesting it.",
       "gets": "An MCP server: scan, explain a finding and propose a fix, as tools an agent can call.",
-      "pays": "Nothing for the public tools. Agents on private code use the hosted service.",
+      "pays": "Nothing: the MCP server runs on the developer's machine, free. A hosted service for private code is planned, not built.",
       "status": "in progress"
     }
   ],
@@ -80,8 +80,8 @@
         "Grade history per contract"
       ],
       "status": "planned",
-      "price": "$20 per contributor a month",
-      "priceNote": "Planned price, to test with the first pilot; public repositories stay free."
+      "price": "$49 per private repository a month",
+      "priceNote": "Planned; a hypothesis to test with the first pilot. Priced per repository, not per seat: Midnight teams are small. Public repositories stay free."
     },
     {
       "id": "audit-license",
@@ -95,9 +95,9 @@
         "Report templates",
         "Rule updates for each compiler release"
       ],
-      "status": "planned",
+      "status": "in progress",
       "price": "$3,000 to $6,000 a year per firm",
-      "priceNote": "Pilot price we are testing; the first engagement is free."
+      "priceNote": "A price we will test, not sold yet. Pilot talks requested with two firms on November 7; the first engagement is free."
     },
     {
       "id": "sponsorship",
@@ -107,13 +107,13 @@
       ],
       "what": "Funds rule research, support for each compiler release and a Tell check in Midnight's templates. Everything it produces stays open source.",
       "includes": [
-        "Compiler release tracking",
+        "Compiler and ledger release tracking",
         "Template integration",
         "Public survey reruns"
       ],
-      "status": "in progress",
+      "status": "planned",
       "price": "By agreement",
-      "priceNote": "A 12-month maintenance grant; everything it pays for stays open source."
+      "priceNote": "$30,000–60,000 for 12 months, to be requested; everything it pays for stays open source."
     },
     {
       "id": "registry",
@@ -122,15 +122,15 @@
         "teams",
         "wallets"
       ],
-      "what": "A team files a sealed report and an on-chain grade for a contract; wallets and stores read it.",
+      "what": "Researchers seal a report on Tell Desk; Tell attests a contract's grade on chain, keyed by its code hash; wallets and stores read it by contract address.",
       "includes": [
-        "Sealed report commitment",
-        "On-chain grade by contract address",
+        "Sealed report commitments",
+        "Grades attested by Tell, by code hash",
         "Free reads"
       ],
-      "status": "planned",
+      "status": "in progress",
       "price": "Free to read",
-      "priceNote": "Writing grades is part of the audit and pull-request offers."
+      "priceNote": "Deployed on Preprod; the first grades are being recorded. Writing grades is part of the audit and pull-request offers."
     }
   ],
   "numbers": [
@@ -171,11 +171,50 @@
     },
     {
       "title": "Honest labels",
-      "text": "Every offer on this page says whether it is live, in a pilot or planned. Prices appear once they are set."
+      "text": "Every offer on this page says whether it is live, in a pilot or planned. A planned price is a hypothesis until someone pays it."
     }
   ],
   "contact": {
     "repo": "RohanGlitched/tell",
     "label": "interest"
+  },
+  "market": {
+    "asOf": "2026-11-07",
+    "intro": "A sum from the bottom up, with every count and price from our research notes. Counts are sourced; prices are hypotheses we are testing, not sales.",
+    "lines": [
+      {
+        "label": "Audit-firm licenses",
+        "count": 5,
+        "unit": "firms",
+        "price": "$3,000–6,000 a year each",
+        "low": 15000,
+        "high": 30000,
+        "basis": "Firms with Compact or Midnight work we can point to (OpenZeppelin, CertiK, Kann Audits) or named in the Wave 2 review (Trail of Bits, Least Authority).",
+        "status": "pilot talks requested with 2 firms; no reply yet"
+      },
+      {
+        "label": "Ecosystem maintenance grant",
+        "count": 1,
+        "unit": "grant",
+        "price": "$30,000–60,000 for 12 months",
+        "low": 30000,
+        "high": 60000,
+        "basis": "Compiler and ledger tracking, all output open source. Precedent: the Midnight Foundation has made milestone grants to tooling teams before.",
+        "status": "planned"
+      },
+      {
+        "label": "Private-repository checks, later",
+        "count": 14,
+        "unit": "production teams",
+        "price": "$49 per repository a month",
+        "low": 8232,
+        "high": 8232,
+        "basis": "About 14 projects went through Midnight's mainnet deploy review in six months (19 review records, some of them Midnight's own); one private repository each.",
+        "status": "planned",
+        "approx": true
+      }
+    ],
+    "seats": "Why not seats: about 150 developers are active on Midnight in a month. At Semgrep's $30 a seat, all of them paying would be $54,000 a year, and most of them work on public code that stays free.",
+    "path": "The realistic funding path is an ecosystem grant plus audit-firm licenses, with the Aliit fellowship for reach (it pays no stipend). Hosted checks on private repositories come later, once production teams have private code to protect. Our year-one target is below the ceiling: $15,000–40,000, mostly grant and services."
   }
 }

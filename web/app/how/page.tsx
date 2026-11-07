@@ -10,27 +10,27 @@ export const metadata: Metadata = {
 const STEPS = [
   {
     t: 'Compile with the real compiler',
-    d: 'Tell reads the contract’s pragma and runs the Compact compiler that accepts it, preferring 0.31.1 (the compiler for the ledger live today) and falling back through every other version the pragma allows. No proving keys are built, so this takes about a second.',
+    d: 'Tell reads the contract’s pragma and runs the Compact compiler that accepts it, preferring 0.31.1 for Ledger 8 contracts and using 0.36.0 for Ledger 9 (mainnet since November 6, 2026: events and cross-contract calls), and falling back through every other version the pragma allows. No proving keys are built, so this takes about a second.',
     code: 'compactc --trace-passes --skip-zk contract.compact',
   },
   {
     t: 'Take the compiler’s own circuit form',
-    d: 'Among the compiler’s passes is reduce-to-circuit: helper circuits inlined, loops unrolled, every step a guarded binding. Tell reads exactly this, so it sees the contract the way the proof does, never a re-implementation of Compact.',
+    d: 'Among the compiler’s passes is reduce-to-circuit: helper circuits inlined, loops unrolled, every step a guarded binding. Tell reads exactly this, so it sees the contract the way the proof does, never a re-implementation of Compact. Constructors are not proved and never reach that pass, so Tell takes them from drop-safe-casts and lowers them to the same form.',
     code: '(= %guard %t.12 (public-ledger %ballots insert %tag %h))',
   },
   {
     t: 'Trace every private input',
     d: 'Witness results and circuit arguments are private by Compact’s rules. Tell follows each one through hashes, commitments, comparisons, struct fields and branches, keeping track of how much of it survives: the value itself, a guessable function of it, a yes/no fact, or nothing.',
-    code: 'choice(): Uint<8> → persistentHash → 8 unknown bits',
+    code: 'c = choice(): Uint<8>; assert(c < 4) → persistentHash → 2 unknown bits',
   },
   {
     t: 'Read the public transcript',
-    d: 'Every ledger operation is public: its operands, and whether it ran at all. Each operand and each branch guard is checked against the traced inputs.',
-    code: 'ballots.insert(tag, hash(choice)) → guessable, 256 tries',
+    d: 'Every ledger operation is public: its operands, and whether it ran at all. So are the initial state a constructor writes, events (emit) and the arguments of cross-contract calls on Ledger 9. Each operand and each branch guard is checked against the traced inputs.',
+    code: 'ballots.insert(tag, hash(choice)) → guessable, 4 guesses',
   },
   {
     t: 'Grade and report',
-    d: 'Findings are grouped per idea, pinned to a source line, graded A to F, and exported as text, JSON or SARIF for GitHub code scanning.',
+    d: 'Findings are grouped per idea, pinned to a source line, graded A to F, and exported as text, JSON or SARIF for GitHub code scanning. For guessable hashes, secrets in the clear, the same tag on every action, branches and personal values, Tell also writes a patch, compiles it and scans it again; it offers the patch only if the finding is gone and nothing new appears at medium or worse.',
     code: 'grade F · 1 critical · ballot-leaky.compact:36',
   },
 ];
@@ -61,6 +61,16 @@ const QUIET = [
 ];
 
 const CHANGELOG = [
+  ['2026-11', 'Benchmark against Nightshade, compact-guard, compact-lint and OpenZeppelin’s Compact detectors on 79 files, with the bias stated first (bench/): run on the Wave 2 engine, then again on the Wave 3 engine. Tell also ran on Nightshade’s published corpus of 465 contracts without a crash.'],
+  ['2026-11', 'tell.json: declare which inputs are secret or public, which circuits run once and which disclosures are intended, in one file the CLI, the Action and the MCP server read.'],
+  ['2026-11', 'Radar: a privacy scan of Preprod contracts from chain data alone, no source needed (radar/).'],
+  ['2026-11', 'MCP server for coding agents (scan, explain a finding, propose a fix) and a VS Code extension that shows findings in the editor.'],
+  ['2026-11', 'Tell Desk: a Compact contract on Preprod for sealed, provable disclosure of a leak and an on-chain registry of grades keyed by code hash.'],
+  ['2026-11', 'Pull-request review in the GitHub Action: a comment on each changed line with the bits revealed and the verified fix as a suggestion, and the grade before and after in the job summary.'],
+  ['2026-11', 'Verified auto-fix: --fix and --fix-dry-run, and Apply fix on this site. A patch is offered only if it compiles with the same compiler, the finding is gone and nothing new appears at medium or worse.'],
+  ['2026-11', 'Token rules: shielded coins minted with a public nonce, private values used as public token amounts, wallet keys taken from private state.'],
+  ['2026-11', 'Constructors analysed: what a constructor writes is the initial public state, taken from the compiler’s drop-safe-casts pass.'],
+  ['2026-11', 'Compact 0.36 and Ledger 9: events and cross-contract call arguments are public sinks; a branch that picks the callee is a secret-dependent branch. The zoo gains a Ledger 9 poll pair, and CI checks the zoo under 0.30, 0.31.1, 0.34, 0.35 and 0.36.'],
   ['2026-10-12', 'Severity follows what is revealed, not names: assert bounds, raw private bytes and personal data, circuit return values, guarded shielded receives, balanced and anonymous branches. Regression tests from three reviews; the zoo is checked under compilers 0.30 to 0.35 in CI; SARIF severity on rules for GitHub.'],
   ['2026-10-12', 'Unshielded transfers, mints and ownPublicKey() analysed; casts are no longer read as hashes; officer keys and access checks reported low.'],
   ['2026-10-12', 'Survey of every public Midnight Buildathon repository; compiler fallback across pragma ranges; count-leak wording; per-use nonce and struct-field rules.'],
@@ -136,9 +146,12 @@ export default function HowPage() {
             <li>Tell sees the contract, not the dApp around it. A frontend that logs a secret, or a server that sees it, is out of scope.</li>
             <li>It cannot read intent. A value published on purpose looks like a leak; that is why published values are info and why suppression exists.</li>
             <li>Entropy comes from types, narrowed by assert(x &lt; N) bounds and by names that mark personal data. A Bytes&lt;32&gt; with an unremarkable name that holds a short string is still treated as 256 bits.</li>
-            <li>Constructors are not analysed yet; circuits and their return values are.</li>
+            <li>Constructors, circuits, return values, events and cross-contract call arguments are analysed. Tell treats call arguments as public, as the compiler does; whether the callee publishes them is a question for the callee’s own scan.</li>
             <li>Names still matter at the edges: officer fields (owner, authority) and personal words (salary, age) adjust severity. Raw private bytes are always listed, but are raised to medium only when the name reads as key material (seed, key, secret); a key under a neutral name shows as a published value.</li>
-            <li>Contracts must compile with a released compiler. Unreleased language versions are reported, not guessed at.</li>
+            <li>Branches where nothing in the circuit identifies the caller are rated low. If the transaction itself identifies the caller, that rating is too low.</li>
+            <li>Verified patches cover guessable hashes, secrets in the clear, the same tag on every action, branches outside loops and personal values. Wallet keys, returned secrets and token operations get a fix in words only. A branch patch changes behaviour (the other path is rejected), and the report says so.</li>
+            <li>Tell looks for privacy leaks only. Authorization, Merkle binding and mint caps are other bug classes; Nightshade and compact-lint cover them.</li>
+            <li>Contracts must compile with a released compiler. Tell cannot analyse code the compiler rejects, and unreleased language versions are reported, not guessed at.</li>
           </ul>
         </div>
       </section>
@@ -182,6 +195,23 @@ jobs:
         <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
           {`// the reveal phase publishes the seed by design
 seeds.insert(slot, s); // tell:allow published`}
+        </pre>
+      </section>
+
+      <section id="policy" className="mt-14 scroll-mt-20">
+        <h2 className="text-[24px] font-semibold">Declaring intent with tell.json</h2>
+        <p className="mt-2 max-w-[66ch] text-[15px]">
+          Tell guesses intent from shape and names. Where you know better, say so once in a <code>tell.json</code> next to your contracts or at the repository
+          root: which witnesses are secret or public, which circuits run once, which disclosures are intended and why. The CLI, the GitHub Action and the MCP
+          server read the nearest one (<code>--policy</code> to choose a file, <code>--no-policy</code> to ignore it). In the benchmark, one line of it removed
+          Tell’s only false alarm. The web scanner does not read a policy yet; it scans with the defaults.
+        </p>
+        <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
+          {`{
+  "witnesses": { "deviceKey": "secret", "now": "public" },
+  "circuits": { "enroll": { "once": true } },
+  "intended": [{ "kind": "published", "field": "winner", "reason": "the draw result is public" }]
+}`}
         </pre>
       </section>
 

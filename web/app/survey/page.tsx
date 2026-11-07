@@ -144,7 +144,6 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
               </span>
               <span className="mono text-[14px] text-[var(--graphite)]">{c.project}</span>
               <span className="text-[15px]">{c.title}</span>
-              {'count' in c && (c as { count: number }).count > 1 && <span className="text-[14px] text-[var(--graphite)]">in {(c as { count: number }).count} contracts</span>}
             </li>
           ))}
         </ol>

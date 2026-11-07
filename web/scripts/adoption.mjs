@@ -72,10 +72,38 @@ const repo = {
 };
 
 // ---- traffic: only with a token that has push access; otherwise left out -----------------------
+// GitHub keeps 14 days of traffic. Each run merges the days it sees into the history already in
+// adoption.json (a day seen again takes the newer count), so totals since the first run survive.
+// Unique visitors cannot be added up across days, so the history keeps them per day only.
+// Referrers are sites (github.com, google.com), never people.
 let traffic = null;
 if (TOKEN) {
-  const [v, c] = await Promise.all([gh(`/repos/${REPO}/traffic/views`), gh(`/repos/${REPO}/traffic/clones`)]);
-  if (v.ok && c.ok) traffic = { views14d: v.json.count, uniqueVisitors14d: v.json.uniques, clones14d: c.json.count, uniqueCloners14d: c.json.uniques };
+  const [v, c, refs] = await Promise.all([gh(`/repos/${REPO}/traffic/views`), gh(`/repos/${REPO}/traffic/clones`), gh(`/repos/${REPO}/traffic/popular/referrers`)]);
+  if (v.ok && c.ok) {
+    const byDay = new Map((readJson('adoption.json', {}).traffic?.daily ?? []).map((d) => [d.date, d]));
+    const merge = (list, count, uniques) => {
+      for (const x of list ?? []) {
+        const date = String(x.timestamp).slice(0, 10);
+        byDay.set(date, { date, views: 0, uniqueVisitors: 0, clones: 0, uniqueCloners: 0, ...byDay.get(date), [count]: x.count, [uniques]: x.uniques });
+      }
+    };
+    merge(v.json.views, 'views', 'uniqueVisitors');
+    merge(c.json.clones, 'clones', 'uniqueCloners');
+    const daily = [...byDay.values()].sort((a, b) => a.date.localeCompare(b.date));
+    traffic = {
+      views14d: v.json.count,
+      uniqueVisitors14d: v.json.uniques,
+      clones14d: c.json.count,
+      uniqueCloners14d: c.json.uniques,
+      since: daily[0]?.date ?? null,
+      viewsSince: daily.reduce((n, d) => n + (d.views ?? 0), 0),
+      clonesSince: daily.reduce((n, d) => n + (d.clones ?? 0), 0),
+      referrers: refs.ok ? refs.json.map((x) => ({ site: x.referrer, views: x.count, unique: x.uniques })) : null,
+      daily,
+    };
+  } else {
+    errors.push(`traffic: GitHub answered ${v.status || c.status || 'nothing'} (traffic needs a token with push access to ${REPO})`);
+  }
 }
 
 // ---- repositories using the Action: code search, which needs authentication --------------------

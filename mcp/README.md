@@ -43,7 +43,7 @@ Try it over stdio, the way a client starts the server: `npm run build -w mcp && 
 ## Requirements
 
 - Node.js 22 or later.
-- The Compact compiler: `compact update 0.31.1` (Tell prefers 0.31.1, the compiler for the ledger live today, and falls back to any installed version the contract's pragma accepts). Tell finds compilers under `~/.compact/versions`, or in `TELL_COMPILERS` (comma-separated directories holding `compactc.bin`).
+- The Compact compiler: `compact update 0.31.1` (Tell prefers 0.31.1 for Ledger 8 contracts and uses 0.36.0 for Ledger 9 contracts (mainnet since November 6, 2026; `compact update 0.36.0`), and falls back to any installed version the contract's pragma accepts). Tell finds compilers under `~/.compact/versions`, or in `TELL_COMPILERS` (comma-separated directories holding `compactc.bin`).
 - On Windows, the compiler runs in WSL, so the server runs in WSL too (see Claude Desktop below).
 
 ## Set up

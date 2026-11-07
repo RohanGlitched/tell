@@ -6,10 +6,12 @@ import path from 'node:path';
 import { analyze, type Finding, type Report, type Severity } from './analyze.js';
 import { compileForAnalysis, findCompilers, isContractFile, type Compiler } from './compile.js';
 import { readProgram } from './ir.js';
+import { policyFor, type Policy, type PolicyBody, type ResolvedPolicy } from './policy.js';
 
 export * from './analyze.js';
 export * from './ir.js';
 export * from './compile.js';
+export * from './policy.js';
 
 export const SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 export const severityRank = (s: Severity) => SEVERITIES.indexOf(s);
@@ -42,24 +44,37 @@ export function applySuppressions(findings: Finding[], src: string) {
     if (!f.line) continue;
     for (const l of [lines[f.line - 1], lines[f.line - 2]]) {
       const m = l?.match(/tell:allow(?:\s+([\w-]+(?:\s*,\s*[\w-]+)*))?/);
-      if (m && (!m[1] || m[1].split(/\s*,\s*/).includes(f.kind))) f.suppressed = true;
+      if (m && (!m[1] || m[1].split(/\s*,\s*/).includes(f.kind))) {
+        f.suppressed = true;
+        f.suppressedBy ??= 'tell:allow';
+      }
     }
   }
 }
 
-export function analyzeIr(ir: string, src?: string): Report {
-  const report = analyze(readProgram(ir), { sourceText: src });
+export function analyzeIr(ir: string, src?: string, policy?: ResolvedPolicy | PolicyBody): Report {
+  const report = analyze(readProgram(ir), { sourceText: src, policy });
   if (src) applySuppressions(report.findings, src);
   return report;
 }
 
-export async function scanFile(file: string, compilers?: Compiler[]): Promise<ContractResult> {
+// policyFile: a tell.json to use (null: none, even if one is found); policy: an inline policy.
+// Without either, the nearest tell.json or .tellrc.json above the contract applies.
+export type ScanOptions = { policyFile?: string | null; policy?: Policy };
+
+export async function scanFile(file: string, compilers?: Compiler[], opts: ScanOptions = {}): Promise<ContractResult> {
   const src = fs.readFileSync(file, 'utf8');
+  let pol: ResolvedPolicy | undefined;
+  try {
+    pol = policyFor(file, opts);
+  } catch (e) {
+    return { file, compiler: null, language: null, ok: false, error: (e as Error).message };
+  }
   const c = await compileForAnalysis(file, compilers);
   if (!c.ok) return { file, compiler: c.compiler?.version ?? null, language: c.compiler?.language ?? null, ok: false, error: c.error };
   let report: Report;
   try {
-    report = analyzeIr(c.ir, src);
+    report = analyzeIr(c.ir, src, pol);
   } catch (e) {
     return { file, compiler: c.compiler.version, language: c.compiler.language, ok: false, error: `Tell could not analyze this contract: ${(e as Error).message.slice(0, 300)}` };
   }
@@ -90,9 +105,9 @@ export function findContracts(root: string): string[] {
   return out.sort();
 }
 
-export async function scanPath(root: string): Promise<ContractResult[]> {
+export async function scanPath(root: string, opts: ScanOptions = {}): Promise<ContractResult[]> {
   const compilers = await findCompilers();
   const results: ContractResult[] = [];
-  for (const f of findContracts(root)) results.push(await scanFile(f, compilers));
+  for (const f of findContracts(root)) results.push(await scanFile(f, compilers, opts));
   return results;
 }

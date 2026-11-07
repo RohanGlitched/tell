@@ -17,7 +17,7 @@ inputs:
     required: false
     default: 'high'
   compact-version:
-    description: 'Compact toolchain to install (the one for the ledger live today by default)'
+    description: 'Compact toolchain to install: 0.31.1 (Ledger 8) by default; set 0.36.0 for Ledger 9 contracts (events, contract calls)'
     required: false
     default: '0.31.1'
   upload-sarif:
