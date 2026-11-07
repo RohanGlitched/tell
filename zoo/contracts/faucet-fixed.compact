@@ -1,0 +1,22 @@
+// Tell leak zoo: the faucet nonce, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Each claimer derives the nonce from a 32-byte seed in their own private
+// state, as Midnight's shielded token tutorial does. The claim counter keeps
+// nonces unique; the seed keeps them unknown, so the commitment hides who
+// received the coin.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger claims: Counter;
+
+witness nonceSeed(): Bytes<32>;
+
+export circuit claim(): [] {
+  const n = disclose(evolveNonce(claims.read() as Uint<128>, nonceSeed()));
+  claims.increment(1);
+  mintShieldedToken(pad(32, "faucet:token"), 100, n, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+}

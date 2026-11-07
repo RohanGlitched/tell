@@ -51,3 +51,8 @@ reduce-to-circuit:
       %t.30
       (public-ledger %records.3 (1) insert %employee.15 %tmp.17))
    (= #t %t.31 (tuple)) %t.31))
+tell-constructor:
+(constructor
+      ((%owner.13 (tbytes 32)))
+      (seq (public-ledger %employer.0 (0) write %owner.13)
+           (tuple)))

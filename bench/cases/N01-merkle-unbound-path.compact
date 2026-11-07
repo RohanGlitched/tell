@@ -1,0 +1,29 @@
+// Tell benchmark case N01-merkle-unbound-path: Merkle path not bound to the leaf (soundness, not privacy)
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: nonprivacy
+// class: soundness
+// circuit: claim
+// line: 27
+// why: privacy-safe like S10, but the path.leaf binding is missing: anyone can replay a public leaf's path and pass. A real security bug outside privacy; a privacy scanner is not expected to flag it.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: MerkleTree<10, Bytes<32>>;
+export ledger claims: Counter;
+
+witness memberKey(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit claim(): [] {
+  const leaf = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), memberKey()]);
+  const path = memberPath(leaf);
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "members only"); // BUG
+  claims.increment(1);
+}

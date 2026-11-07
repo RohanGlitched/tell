@@ -8105,3 +8105,42 @@ reduce-to-circuit:
      (public-ledger %revealed.23 (1 14) insert %slot.109
        %tmp.130))
   (= #t %t.7581 (tuple)) %t.7581))
+tell-constructor:
+(constructor
+     ((%code.58 (tbytes 32)) (%authorityKey.59 (tbytes 32)) (%sets.60 (tunsigned 255))
+       (%sealTime.61 (tunsigned 18446744073709551615))
+       (%drawTime.62 (tunsigned 18446744073709551615))
+       (%endTime.63 (tunsigned 18446744073709551615)))
+     (seq (assert
+            (if (if (< %sets.60 2) #f #t) (if (< 8 %sets.60) #f #t) #f)
+            "a pool needs 2 to 8 sets")
+          (assert
+            (if (if (< %drawTime.62 %sealTime.61) #f #t)
+                (< %drawTime.62 %endTime.63)
+                #f)
+            "times must run seal, draw, end")
+          (public-ledger %examCode.14 (0 0) write %code.58)
+          (public-ledger %authority.2 (0 1) write %authorityKey.59)
+          (public-ledger %setCount.30 (0 2) write %sets.60)
+          (public-ledger %sealBy.25 (0 3) write %sealTime.61)
+          (public-ledger %drawAt.11 (1 0) write %drawTime.62)
+          (public-ledger %examEnd.15 (1 1) write %endTime.63)
+          (public-ledger %phase.18 (1 2) write 0)
+          (let* ([(%tmp.116
+                    (tstruct
+                      Maybe
+                      (is_some (tboolean))
+                      (value (tunsigned 255)))) (let* ()
+                                                  (new (tstruct
+                                                         Maybe
+                                                         (is_some
+                                                           (tboolean))
+                                                         (value
+                                                           (tunsigned
+                                                             255)))
+                                                       #f
+                                                       (default
+                                                         (tunsigned
+                                                           255))))])
+            (public-ledger %drawn.13 (1 13) write %tmp.116))
+          (tuple)))

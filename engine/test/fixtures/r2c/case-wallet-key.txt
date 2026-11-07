@@ -12,3 +12,5 @@ reduce-to-circuit:
   (circuit %join.0 () (ttuple) (= #t %tmp.4 (call %ownPublicKey.3))
     (= #t %t.5 (public-ledger %players.1 (0) insert %tmp.4))
     (= #t %t.6 (tuple)) %t.6))
+tell-constructor:
+(constructor () (tuple))

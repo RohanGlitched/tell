@@ -1643,3 +1643,51 @@ reduce-to-circuit:
      %t.775
      (public-ledger %houseCoins.9 (9) remove %matchKey.108))
   (= #t %t.776 (tuple)) %t.776))
+tell-constructor:
+(constructor
+     ((%_winningNum.72 (tunsigned 255))
+       (%allowedChipColor.73 (tbytes 32)))
+     (seq (seq (assert
+                 (if (if (< %_winningNum.72 0) #f #t)
+                     (if (< 36 %_winningNum.72) #f #t)
+                     #f)
+                 "Cheat Detected: theHouse: Please keep the number on the table")
+               (let* ([(%_sk.74 (tbytes 32)) (call %localSecretKey.69)])
+                 (seq (let* ([(%tmp.118 (tbytes 32)) (let* ([(%_secret.134
+                                                               (tbytes 32)) %_sk.74])
+                                                       (call
+                                                         %persistentHash.58
+                                                         (tuple
+                                                           #vu8(114 111 117
+                                                                108 101 116
+                                                                116 101 58
+                                                                112 107 58
+                                                                0 0 0 0 0 0
+                                                                0 0 0 0 0 0
+                                                                0 0 0 0 0 0
+                                                                0 0)
+                                                           %_secret.134)))])
+                        (public-ledger %theHouse.13 (0) write %tmp.118))
+                      (public-ledger
+                        %chipColor.5
+                        (1)
+                        write
+                        %allowedChipColor.73)
+                      (let* ([(%tmp.119 (tbytes 32)) (let* ([(%_winningNum.135
+                                                               (tbytes 32)) (field->bytes
+                                                                              32
+                                                                              %_winningNum.72)]
+                                                            [(%_sk.136
+                                                               (tbytes 32)) %_sk.74])
+                                                       (call
+                                                         %persistentHash.58
+                                                         (tuple
+                                                           %_winningNum.135
+                                                           %_sk.136)))])
+                        (public-ledger
+                          %winningNumHash.15
+                          (2)
+                          write
+                          %tmp.119))
+                      (public-ledger %betState.2 (3) write 1))))
+          (tuple)))

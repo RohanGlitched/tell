@@ -1,0 +1,250 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.10 () (Kernel)))
+  (public-ledger-declaration
+    ((%reg.6
+       (0)
+       (__compact_Cell
+         (tcontract
+           Registry
+           (record
+             #f
+             ((tbytes 32) (tunsigned 18446744073709551615))
+             (ttuple)))))
+      (%other.3
+        (1)
+        (__compact_Cell
+          (tcontract
+            Registry
+            (record
+              #f
+              ((tbytes 32) (tunsigned 18446744073709551615))
+              (ttuple)))))
+      (%bonuses.2 (2) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.11
+    ((%value.12 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.13
+    ((%value.14 (tunsigned 18446744073709551615))
+      (%rand.15 (tbytes 32)))
+    (tbytes 32))
+  (witness %secretKey.16 () (tbytes 32))
+  (witness %choice.17 () (tunsigned 255))
+  (witness %bonus.18 () (tunsigned 18446744073709551615))
+  (witness %bonusSalt.19 () (tbytes 32))
+  (witness %price.20 () (tunsigned 18446744073709551615))
+  (circuit %pushChoice.4 () (ttuple) (= #t %c.23 (call %choice.17))
+    (= #t %t.34 (< 8 %c.23 4)) (= #t %t.35 (select #t %t.34 #t))
+    (assert %t.35 "four options") (= #t %t.36 (tuple))
+    (= #t %t.37 (public-ledger %reg.6 (0) read))
+    (= #t %t.38 (field->bytes 32 (field-native) %c.23))
+    (= #t
+       %t.39
+       (tuple
+         #vu8(99 97 115 101 58 99 104 111 105 99 101 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.38))
+    (= #t %t.40 (call %persistentHash.11 %t.39))
+    (= #t
+       %t.41
+       (contract-call
+         record
+         (%t.37
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         %t.40
+         1))
+    (= #t %t.42 (tuple)) %t.42)
+  (circuit %route.7 () (ttuple) (= #t %t.43 (call %secretKey.16))
+    (= #t
+       %t.44
+       (tuple
+         #vu8(99 97 115 101 58 119 104 111 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0)
+         %t.43))
+    (= #t %tag.24 (call %persistentHash.11 %t.44))
+    (= #t %t.28 (call %choice.17)) (= #t %t.45 (< 8 1 %t.28))
+    (= #t %t.46 (select %t.45 #t #f))
+    (= #t %t.47 (select %t.45 #f #t))
+    (= %t.46 %t.48 (public-ledger %reg.6 (0) read))
+    (= %t.46
+       %t.49
+       (contract-call
+         record
+         (%t.48
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         %tag.24
+         1))
+    (= %t.47 %t.50 (public-ledger %other.3 (1) read))
+    (= %t.47
+       %t.51
+       (contract-call
+         record
+         (%t.50
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         %tag.24
+         1))
+    (= #t %t.52 (tuple)) %t.52)
+  (circuit %balanced.1 () (ttuple) (= #t %t.29 (call %choice.17))
+    (= #t %t.53 (< 8 1 %t.29)) (= #t %t.54 (select %t.53 #t #f))
+    (= #t %t.55 (select %t.53 #f #t))
+    (= %t.54 %t.56 (public-ledger %reg.6 (0) read))
+    (= %t.54
+       %t.57
+       (contract-call
+         record
+         (%t.56
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         #vu8(97 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0)
+         1))
+    (= %t.55 %t.58 (public-ledger %reg.6 (0) read))
+    (= %t.55
+       %t.59
+       (contract-call
+         record
+         (%t.58
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         #vu8(97 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0)
+         1))
+    (= #t %t.60 (tuple)) %t.60)
+  (circuit %unbalanced.9 () (ttuple) (= #t %t.30 (call %choice.17))
+    (= #t %t.61 (< 8 1 %t.30)) (= #t %t.62 (select %t.61 #t #f))
+    (= #t %t.63 (select %t.61 #f #t))
+    (= %t.62 %t.64 (public-ledger %reg.6 (0) read))
+    (= %t.62
+       %t.65
+       (contract-call
+         record
+         (%t.64
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         #vu8(97 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0)
+         1))
+    (= %t.63 %t.66 (public-ledger %reg.6 (0) read))
+    (= %t.63
+       %t.67
+       (contract-call
+         record
+         (%t.66
+           (tcontract
+             Registry
+             (record
+               #f
+               ((tbytes 32) (tunsigned 18446744073709551615))
+               (ttuple))))
+         #vu8(97 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0)
+         2))
+    (= #t %t.68 (tuple)) %t.68)
+  (circuit %announce.0 ((%slot.25 (tbytes 32))) (ttuple)
+    (= #t %b.26 (call %bonus.18))
+    (= #t %t.69 (call %bonusSalt.19))
+    (= #t %tmp.31 (call %persistentCommit.13 %b.26 %t.69))
+    (= #t
+       %t.70
+       (public-ledger %bonuses.2 (2) insert %slot.25 %tmp.31))
+    (= #t
+       %t.71
+       (tuple 99 97 115 101 58 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 0 0 0 0 0 0 0 0))
+    (= #t
+       %t.72
+       (tuple 99 97 115 101 58 116 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 0 0 0 0 0 0 0 0))
+    (= #t %t.73 (field->bytes 16 (field-native) %b.26))
+    (= #t %t.74 (bytes->vector 16 %t.73))
+    (= #t
+       %t.75
+       (vector
+         (spread 32 %t.71)
+         (spread 32 %t.72)
+         (spread 16 %t.74)))
+    (= #t %t.76 (vector->bytes 80 %t.75))
+    (= #t %t.77 (emit 1 6 80 %t.76)) (= #t %t.78 (tuple)) %t.78)
+  (circuit %quote.5 () (ttuple) (= #t %t.79 (call %price.20))
+    (= #t
+       %t.33
+       (new (tstruct
+              UnshieldedMint
+              (domainSep (tbytes 32))
+              (tokenType (tbytes 32))
+              (amount
+                (tunsigned 340282366920938463463374607431768211455)))
+            #vu8(99 97 115 101 58 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+                 0 0 0 0 0 0 0 0 0)
+            #vu8(99 97 115 101 58 116 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+                 0 0 0 0 0 0 0 0 0)
+            %t.79))
+    (= #t
+       %t.80
+       (tuple 99 97 115 101 58 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 0 0 0 0 0 0 0 0))
+    (= #t
+       %t.81
+       (tuple 99 97 115 101 58 116 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+        0 0 0 0 0 0 0 0 0 0))
+    (= #t %t.82 (elt-ref %t.33 amount))
+    (= #t %t.83 (field->bytes 16 (field-native) %t.82))
+    (= #t %t.84 (bytes->vector 16 %t.83))
+    (= #t
+       %t.85
+       (vector
+         (spread 32 %t.80)
+         (spread 32 %t.81)
+         (spread 16 %t.84)))
+    (= #t %t.86 (vector->bytes 80 %t.85))
+    (= #t %t.87 (emit 1 6 80 %t.86)) (= #t %t.88 (tuple)) %t.88)
+  (circuit %spend.8 ((%n.27 (tbytes 32))) (ttuple)
+    (= #t %t.89 (emit 1 0 32 %n.27)) (= #t %t.90 (tuple))
+    %t.90))
+tell-constructor:
+(constructor
+      ((%r.21
+         (tcontract
+           Registry
+           (record
+             #f
+             ((tbytes 32) (tunsigned 18446744073709551615))
+             (ttuple))))
+        (%o.22
+          (tcontract
+            Registry
+            (record
+              #f
+              ((tbytes 32) (tunsigned 18446744073709551615))
+              (ttuple)))))
+      (seq (public-ledger %reg.6 (0) write %r.21)
+           (public-ledger %other.3 (1) write %o.22)
+           (tuple)))

@@ -1,0 +1,27 @@
+// Tell benchmark case L13-preimage-published: a secret checked against a stored hash, then published raw
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: secret-published
+// circuit: redeem
+// line: 26
+// why: the voucher secret matches a stored hash (authorization), then is written to a public log; anyone can reuse it where the hash is accepted.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger voucherHash: Bytes<32>;
+export ledger redeemed: Map<Bytes<32>, Boolean>;
+
+witness voucherSecret(): Bytes<32>;
+
+constructor(h: Bytes<32>) {
+  voucherHash = disclose(h);
+}
+
+export circuit redeem(): [] {
+  const s = voucherSecret();
+  assert(persistentHash<Vector<2, Bytes<32>>>([pad(32, "voucher"), s]) == voucherHash, "bad voucher");
+  redeemed.insert(disclose(s), true); // LEAK
+}

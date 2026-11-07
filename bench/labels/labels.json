@@ -1,0 +1,431 @@
+{
+  "note": "Hand labels, keyed tool|file|rule|line (all Nightshade configurations share the key 'nightshade'). label: tp | real-privacy | intended | real-other | false-alarm. leak: a short id so the same real leak found by several tools counts once. Reasoning for each label is in bench/labels/labelled-set.md and bench/labels/examples.md.",
+  "findings": {
+    "compact-guard|zoo/ballot-leaky.compact|CG002|23": {
+      "label": "tp"
+    },
+    "compact-guard|zoo/ballot-fixed.compact|CG002|24": {
+      "label": "false-alarm"
+    },
+    "compact-guard|cases/L01-assert-bound-hash.compact|CG006|22": {
+      "label": "real-other"
+    },
+    "compact-guard|cases/L02-type-width-hash.compact|CG006|19": {
+      "label": "real-other"
+    },
+    "compact-guard|cases/L03-hash-public-arg.compact|CG006|21": {
+      "label": "real-other"
+    },
+    "compact-guard|cases/L14-boolean-hash.compact|CG006|19": {
+      "label": "real-other"
+    },
+    "compact-guard|cases/L15-cell-hash.compact|CG006|19": {
+      "label": "real-other"
+    },
+    "compact-guard|cases/L16-public-digest-as-key.compact|CG006|20": {
+      "label": "tp"
+    },
+    "compact-guard|cases/N01-merkle-unbound-path.compact|CG005|27": {
+      "label": "real-other"
+    },
+    "compact-lint|cases/N01-merkle-unbound-path.compact|unbound-witness-path|27": {
+      "label": "real-other"
+    },
+    "tell|examples/examples/election/contract/election.compact|branch|100": {
+      "label": "real-privacy",
+      "leak": "election-reveal-links-vote"
+    },
+    "tell|examples/examples/shielded-chips/contract/roulette.compact|branch|148": {
+      "label": "false-alarm"
+    },
+    "compact-guard|examples/examples/shielded-chips/contract/chips.compact|CG001|172": {
+      "label": "false-alarm"
+    },
+    "compact-guard|examples/examples/shielded-chips/contract/chips.compact|CG001|360": {
+      "label": "false-alarm"
+    },
+    "compact-guard|examples/examples/zk-loan/contract/zk-loan.compact|CG002|106": {
+      "label": "false-alarm"
+    },
+    "compact-guard|examples/examples/zk-loan/contract/zk-loan.compact|CG004|176": {
+      "label": "intended"
+    },
+    "compact-guard|examples/examples/zk-loan/contract/zk-loan.compact|CG004|177": {
+      "label": "intended"
+    },
+    "compact-guard|examples/experimental/q2-ledger9/contracts/usdcx/bridged-usdc-mint.compact|CG004|84": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|130": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|152": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|173": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|186": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|216": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|nullifier-check-without-insert|229": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|unasserted-security-result|198": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|unasserted-security-result|241": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/private-bid/contract/private-bid.compact|caller-supplied-time-review|82": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/private-party/contract/private-party.compact|inconsistent-access-control|48": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/private-party/contract/private-party.compact|inconsistent-access-control|80": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/private-tip-jar/contract/private-tip-jar.compact|caller-supplied-ledger-equality|94": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/private-tip-jar/contract/tip-token.compact|unbounded-mint|29": {
+      "label": "real-other"
+    },
+    "nightshade|examples/examples/shielded-chips/contract/chips.compact|unbounded-mint|144": {
+      "label": "real-other"
+    },
+    "nightshade|examples/examples/shielded-chips/contract/chips.compact|default-recipient-or-owner|175": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/shielded-chips/contract/chips.compact|default-recipient-or-owner|210": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/shielded-chips/contract/roulette.compact|caller-supplied-ledger-equality|162": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|inconsistent-access-control|91": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|inconsistent-access-control|154": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/token-transfers/contract/token-transfers.compact|unbounded-mint|9": {
+      "label": "real-other"
+    },
+    "nightshade|examples/examples/token-transfers/contract/token-transfers.compact|unbounded-mint|57": {
+      "label": "real-other"
+    },
+    "nightshade|examples/examples/token-transfers/contract/token-transfers.compact|unbounded-mint|61": {
+      "label": "real-other"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|132": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|133": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|153": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|287": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|296": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|299": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|311": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|nullifier-check-without-insert|315": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|73": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|108": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|186": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|187": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|192": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|193": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|194": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|195": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|198": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|229": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|230": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|235": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|236": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|237": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|238": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/battleship/contract/battleship.compact|declared-secret-publication|241": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/calculator/contract/calculator.compact|declared-secret-publication|32": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/election/contract/election.compact|declared-secret-publication|74": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/election/contract/election.compact|declared-secret-publication|100": {
+      "label": "real-privacy",
+      "leak": "election-reveal-links-vote"
+    },
+    "nightshade|examples/examples/election/contract/election.compact|declared-secret-publication|102": {
+      "label": "real-privacy",
+      "leak": "election-reveal-links-vote"
+    },
+    "nightshade|examples/examples/shielded-chips/contract/roulette.compact|declared-secret-publication|267": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|declared-secret-publication|81": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|declared-secret-publication|83": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|declared-secret-publication|87": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|declared-secret-publication|90": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/silent-auction/contract/silent-auction.compact|declared-secret-publication|91": {
+      "label": "false-alarm"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|165": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|176": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|177": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|229": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|233": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|236": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|297": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|299": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|300": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|304": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|305": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|311": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|315": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|317": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|318": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|319": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|320": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|324": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|325": {
+      "label": "intended"
+    },
+    "nightshade|examples/examples/zk-loan/contract/zk-loan.compact|declared-secret-publication|326": {
+      "label": "intended"
+    },
+    "tell|cases/S07-key-hashed.compact|attributable|19": {
+      "label": "false-alarm"
+    },
+    "tell|zoo/ballot-fixed.compact|linkable|28": {
+      "label": "intended"
+    },
+    "tell|zoo/ballot-fixed.compact|linkable|33": {
+      "label": "intended"
+    },
+    "tell|zoo/ballot-leaky.compact|linkable|27": {
+      "label": "intended"
+    },
+    "tell|zoo/ballot-leaky.compact|linkable|32": {
+      "label": "intended"
+    },
+    "tell|zoo/board-leaky.compact|linkable|25": {
+      "label": "intended"
+    },
+    "tell|zoo/board-leaky.compact|linkable|30": {
+      "label": "intended"
+    },
+    "tell|zoo/reserve-fixed.compact|linkable|33": {
+      "label": "intended"
+    },
+    "tell|zoo/vault-fixed.compact|linkable|23": {
+      "label": "intended"
+    },
+    "tell|zoo/board-fixed.compact|published|26": {
+      "label": "intended"
+    },
+    "tell|zoo/board-fixed.compact|published|38": {
+      "label": "intended"
+    },
+    "tell|zoo/payband-fixed.compact|published|33": {
+      "label": "intended"
+    },
+    "tell|cases/L11-set-member.compact|published|20": {
+      "label": "intended"
+    },
+    "tell|cases/N01-merkle-unbound-path.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|cases/S01-assert-bound-commit.compact|published|23": {
+      "label": "intended"
+    },
+    "tell|cases/S02-type-width-commit.compact|published|20": {
+      "label": "intended"
+    },
+    "tell|cases/S03-hash-public-arg-salted.compact|published|22": {
+      "label": "intended"
+    },
+    "tell|cases/S06-per-action-tag.compact|published|22": {
+      "label": "intended"
+    },
+    "tell|cases/S07-key-hashed.compact|published|19": {
+      "label": "intended"
+    },
+    "tell|cases/S10-merkle-checkroot.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|cases/S12-public-fact.compact|published|25": {
+      "label": "intended"
+    },
+    "tell|cases/S05-branch-balanced.compact|predicate|28": {
+      "label": "false-alarm"
+    },
+    "tell|cases/S08-public-key-returned.compact|linkable|18": {
+      "label": "intended"
+    },
+    "tell|cases/S13-separate-key-domain.compact|linkable|20": {
+      "label": "intended"
+    },
+    "tell|cases/S13-separate-key-domain.compact|linkable|22": {
+      "label": "intended"
+    },
+    "tell|cases/L16-public-digest-as-key.compact|linkable|21": {
+      "label": "real-privacy"
+    },
+    "nightshade|zoo/vault-leaky.compact|spoofable-authorization|23": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L12-constructor-leak.compact|spoofable-authorization|24": {
+      "label": "real-other"
+    },
+    "nightshade|cases/N01-merkle-unbound-path.compact|merkle-leaf-binding-review|27": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/vault-leaky.compact|unconstrained-witness-to-state|19": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/board-fixed.compact|merkle-insert-without-dedupe|26": {
+      "label": "real-other"
+    },
+    "nightshade|cases/N01-merkle-unbound-path.compact|merkle-insert-without-dedupe|21": {
+      "label": "real-other"
+    },
+    "nightshade|cases/S10-merkle-checkroot.compact|merkle-insert-without-dedupe|21": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L01-assert-bound-hash.compact|unused-declaration|16": {
+      "label": "real-other"
+    },
+    "nightshade|cases/S01-assert-bound-commit.compact|unused-declaration|16": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L15-cell-hash.compact|write-only-ledger|14": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L16-public-digest-as-key.compact|write-only-ledger|14": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L16-public-digest-as-key.compact|write-only-ledger|15": {
+      "label": "real-other"
+    },
+    "nightshade|cases/S12-public-fact.compact|write-only-ledger|14": {
+      "label": "real-other"
+    },
+    "nightshade|cases/S13-separate-key-domain.compact|write-only-ledger|14": {
+      "label": "real-other"
+    },
+    "nightshade|cases/S13-separate-key-domain.compact|write-only-ledger|15": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/board-fixed.compact|declared-secret-publication|34": {
+      "label": "false-alarm"
+    },
+    "nightshade|cases/N01-merkle-unbound-path.compact|declared-secret-publication|27": {
+      "label": "false-alarm"
+    },
+    "nightshade|cases/S05-branch-balanced.compact|declared-secret-publication|26": {
+      "label": "false-alarm"
+    },
+    "nightshade|cases/S05-branch-balanced.compact|declared-secret-publication|28": {
+      "label": "false-alarm"
+    },
+    "nightshade|cases/S10-merkle-checkroot.compact|declared-secret-publication|28": {
+      "label": "false-alarm"
+    },
+    "nightshade|cases/S13-separate-key-domain.compact|declared-secret-publication|22": {
+      "label": "false-alarm"
+    }
+  }
+}

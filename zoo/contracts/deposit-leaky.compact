@@ -1,0 +1,30 @@
+// Tell leak zoo: a sealed bid paid in the clear.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Bidders seal their bid in a salted commitment, which is done right. Then
+// each bidder locks exactly the bid amount in unshielded tokens, so the
+// deposit says what the commitment was meant to hide. Unshielded amounts are
+// in the public transcript of every transaction.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger bids: Map<Bytes<32>, Bytes<32>>;
+
+witness bidderKey(): Bytes<32>;
+witness bidAmount(): Uint<64>;
+witness bidSalt(): Bytes<32>;
+
+export pure circuit bidderTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "deposit:bidder"), sk]);
+}
+
+export circuit bid(): [] {
+  const tag = disclose(bidderTag(bidderKey()));
+  assert(!bids.member(tag), "one bid per bidder");
+  const amount = bidAmount();
+  bids.insert(tag, disclose(persistentCommit<Uint<64>>(amount, bidSalt())));
+  receiveUnshielded(nativeToken(), disclose(amount) as Uint<128>);
+}

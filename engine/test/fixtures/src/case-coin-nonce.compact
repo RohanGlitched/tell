@@ -1,0 +1,41 @@
+// Review case: shielded mints and where their nonce comes from.
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger minted: Counter;
+export ledger payees: Map<Uint<64>, ZswapCoinPublicKey>;
+
+witness seed(): Bytes<32>;
+witness payee(): ZswapCoinPublicKey;
+
+// A wallet key is not a secret: a nonce derived from it and a counter is public. Reported.
+export circuit mintKeyed(): [] {
+  const pk = ownPublicKey();
+  const n = disclose(persistentHash<Vector<2, Bytes<32>>>([pk.bytes, (minted.read() as Field) as Bytes<32>]));
+  minted.increment(1);
+  mintShieldedToken(pad(32, "case:token"), 10, n, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+}
+
+// A public nonce, but minted to the contract itself with a public amount: nothing to hide. Not reported.
+export circuit mintToSelf(amount: Uint<64>): [] {
+  const n = evolveNonce(minted.read() as Uint<128>, pad(32, "case:fixed"));
+  minted.increment(1);
+  mintShieldedToken(pad(32, "case:token"), disclose(amount), n, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+}
+
+// The tutorial's pattern: the nonce comes from a private seed. Not reported.
+export circuit mintSeeded(index: Uint<128>): [] {
+  const n = disclose(evolveNonce(disclose(index), seed()));
+  mintShieldedToken(pad(32, "case:token"), 10, n, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+}
+
+// A payee from private state written to a public map: the wallet is named. Reported (medium).
+export circuit recordPayee(id: Uint<64>): [] {
+  payees.insert(disclose(id), disclose(payee()));
+}
+
+// The same map filled from an argument: a registry the caller fills on purpose. Info only.
+export circuit registerPayee(id: Uint<64>, pk: ZswapCoinPublicKey): [] {
+  payees.insert(disclose(id), disclose(pk));
+}

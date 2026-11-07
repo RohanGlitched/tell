@@ -1,0 +1,56 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%sealedDraw.4 (0) (__compact_Cell (tbytes 32)))
+      (%drawn.0 (1) (__compact_Cell (tunsigned 65535)))
+      (%open.1 (2) (__compact_Cell (tboolean)))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %winningNumber.8 () (tunsigned 65535))
+  (circuit %reveal.2 ((%n.11 (tunsigned 65535))) (ttuple)
+   (= %t.15 (public-ledger #t %open.1 (2) read))
+   (= %t.16 (select %t.15 #t #f))
+   (= %t.17 (select %t.15 #f #t))
+   (= %t.18 (select %t.15 #f #t))
+   (= %t.19 (select #t %t.18 #t))
+   (assert %t.19 "already drawn") (= %t.20 (tuple))
+   (= %t.21 (field->bytes #t 32 %n.11))
+   (= %t.22
+      (tuple
+        #vu8(114 97 102 102 108 101 58 115 101 97 108 0 0 0 0 0 0 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %t.21))
+   (= %t.23 (call #t %persistentHash.6 %t.22))
+   (= %t.24 (public-ledger #t %sealedDraw.4 (0) read))
+   (= %t.25 (== %t.23 %t.24)) (= %t.26 (select #t %t.25 #t))
+   (assert %t.26 "that is not the sealed number")
+   (= %t.27 (tuple))
+   (= %t.28 (public-ledger #t %drawn.0 (1) write %n.11))
+   (= %t.29 (public-ledger #t %open.1 (2) write #t))
+   (= %t.30 (tuple)) %t.30))
+tell-constructor:
+(constructor
+      ()
+      (seq (let* ([(%n.10 (tunsigned 65535)) (call
+                                               %winningNumber.8)])
+             (seq (assert (< %n.10 10000) "tickets run from 0 to 9999")
+                  (let* ([(%tmp.12 (tbytes 32)) (let* ([(%n.13
+                                                          (tunsigned
+                                                            65535)) %n.10])
+                                                  (call
+                                                    %persistentHash.6
+                                                    (tuple
+                                                      #vu8(114 97 102 102
+                                                           108 101 58 115
+                                                           101 97 108 0 0 0
+                                                           0 0 0 0 0 0 0 0
+                                                           0 0 0 0 0 0 0 0
+                                                           0 0)
+                                                      (field->bytes
+                                                        32
+                                                        %n.13))))])
+                    (public-ledger %sealedDraw.4 (0) write %tmp.12))
+                  (public-ledger %open.1 (2) write #f)))
+           (tuple)))

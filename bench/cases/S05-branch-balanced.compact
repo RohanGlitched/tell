@@ -1,0 +1,30 @@
+// Tell benchmark case S05-branch-balanced: branch on a secret with the same operation on both sides
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: branch
+// circuit: check
+// line: none
+// why: both sides insert a salted commitment into the same set; the transcript is the same shape either way and the values are hidden.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger checks: Set<Bytes<32>>;
+export ledger limit: Uint<64>;
+
+witness balance(): Uint<64>;
+witness checkSalt(): Bytes<32>;
+
+constructor(l: Uint<64>) {
+  limit = disclose(l);
+}
+
+export circuit check(): [] {
+  if (disclose(balance() > limit)) {
+    checks.insert(disclose(persistentCommit<Uint<8>>(1, checkSalt())));
+  } else {
+    checks.insert(disclose(persistentCommit<Uint<8>>(0, checkSalt())));
+  }
+}

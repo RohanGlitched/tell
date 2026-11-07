@@ -294,3 +294,34 @@ reduce-to-circuit:
         %tmp.92 %recipient.88 %totalCollected.55))
    (= #t %t.208 (public-ledger %partyState.8 (3) write 4))
    (= #t %t.209 (tuple)) %t.209))
+tell-constructor:
+(constructor
+      ((%partySize.35 (tunsigned 65535))
+        (%fee.36 (tunsigned 65535))
+        (%_secret.37 (tbytes 32)))
+      (seq (seq (assert
+                  (< 0 %partySize.35)
+                  "The party size must be greater than zero")
+                (assert (< 0 %fee.36) "Fee must be greater than zero")
+                (let* ([(%pubKey.38 (tbytes 32)) (let* ([(%_secret.67
+                                                           (tbytes 32)) %_secret.37])
+                                                   (call
+                                                     %persistentHash.30
+                                                     (tuple
+                                                       #vu8(112 114 105 118
+                                                            97 116 101 45
+                                                            112 97 114 116
+                                                            121 58 112 107
+                                                            58 0 0 0 0 0 0
+                                                            0 0 0 0 0 0 0 0
+                                                            0)
+                                                       %_secret.67)))])
+                  (seq (public-ledger %organizer.7 (0) write %pubKey.38)
+                       (public-ledger %entryFee.4 (2) write %fee.36)
+                       (public-ledger
+                         %maxListSize.6
+                         (1)
+                         write
+                         %partySize.35)
+                       (public-ledger %partyState.8 (3) write 0))))
+           (tuple)))

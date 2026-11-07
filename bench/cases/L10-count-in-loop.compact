@@ -1,0 +1,27 @@
+// Tell benchmark case L10-count-in-loop: secret-dependent increments in a fixed loop
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: branch
+// circuit: submit
+// line: 22
+// why: for each of eight hidden scores the circuit increments `passes` only if it is at least 50; the transcript shows how many (and which) scores passed.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger passes: Counter;
+export ledger submissions: Counter;
+
+witness scores(): Vector<8, Uint<8>>;
+
+export circuit submit(): [] {
+  const s = scores();
+  for (const x of s) {
+    if (disclose(x >= 50)) { // LEAK
+      passes.increment(1);
+    }
+  }
+  submissions.increment(1);
+}

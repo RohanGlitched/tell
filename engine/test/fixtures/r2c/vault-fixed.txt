@@ -39,3 +39,5 @@ reduce-to-circuit:
     (assert %t.26 "not the owner") (= #t %t.27 (tuple))
     (= #t %t.28 (public-ledger %withdrawals.4 (1) increment 1))
     (= #t %t.29 (tuple)) %t.29))
+tell-constructor:
+(constructor () (tuple))

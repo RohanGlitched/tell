@@ -253,3 +253,5 @@ reduce-to-circuit:
    (assert %t.211 "already claimed") (= #t %t.212 (tuple))
    (= #t %t.213 (public-ledger %spent.4 (1) insert %nul.27))
    (= #t %t.214 (tuple)) %t.214))
+tell-constructor:
+(constructor () (tuple))

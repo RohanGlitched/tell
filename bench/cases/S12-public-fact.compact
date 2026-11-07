@@ -1,0 +1,26 @@
+// Tell benchmark case S12-public-fact: an intended public yes/no published as-is
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: published
+// circuit: close
+// line: none
+// why: the poll owner closes the poll with a public flag that is supposed to be public; the flag is a circuit argument, not private data.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger closed: Boolean;
+export ledger owner: Bytes<32>;
+
+witness ownerKey(): Bytes<32>;
+
+constructor(o: Bytes<32>) {
+  owner = disclose(o);
+}
+
+export circuit close(final_: Boolean): [] {
+  assert(owner == persistentHash<Vector<2, Bytes<32>>>([pad(32, "poll:owner"), ownerKey()]), "owner only");
+  closed = disclose(final_);
+}

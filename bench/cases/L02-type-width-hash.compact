@@ -1,0 +1,20 @@
+// Tell benchmark case L02-type-width-hash: small-domain hash, bounded by the type (Uint<8>)
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: answer_
+// line: 19
+// why: a Uint<8> answer has 256 values; the published hash is reversed by hashing all 256.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger answers: Map<Bytes<32>, Bytes<32>>;
+
+witness answer(): Uint<8>;
+
+export circuit answer_(question: Bytes<32>): [] {
+  answers.insert(disclose(question), disclose(persistentHash<Uint<8>>(answer()))); // LEAK
+}

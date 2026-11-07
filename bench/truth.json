@@ -1,0 +1,15 @@
+{
+  "note": "Ground truth for the labelled set. Bench cases carry their truth in a header comment (truth/class/circuit/line); the zoo is listed here. A leak's span is the body of the named circuit (or constructor) containing the leak line. Each leaky file has exactly one planted privacy leak.",
+  "zoo": {
+    "zoo/ballot-leaky.compact": { "truth": "leak", "class": "guessable-hash", "circuit": "vote", "pattern": "disclose(choiceHash(c))", "why": "hash(choice) with choice asserted below 4: four hashes read every vote", "attackTest": "zoo/test/attacks.test.ts: ballot leaky" },
+    "zoo/ballot-fixed.compact": { "truth": "safe" },
+    "zoo/board-leaky.compact": { "truth": "leak", "class": "linkable-tag", "circuit": "post", "pattern": "authors.insert(n, tag)", "why": "every post stores the same hash(memberKey) as author: one identified post unmasks all of a member's posts", "attackTest": "zoo/test/attacks.test.ts: board leaky" },
+    "zoo/board-fixed.compact": { "truth": "safe" },
+    "zoo/payband-leaky.compact": { "truth": "leak", "class": "guessable-hash", "circuit": "file", "pattern": "disclose(recordOf(employee, pay))", "why": "hash(public employee id, salary): only the salary is unknown and it falls to brute force", "attackTest": "zoo/test/attacks.test.ts: payband leaky" },
+    "zoo/payband-fixed.compact": { "truth": "safe" },
+    "zoo/reserve-leaky.compact": { "truth": "leak", "class": "branch", "circuit": "bid", "pattern": "if (disclose(a >= reserve))", "why": "which set is written reveals whether each hidden bid meets the reserve", "attackTest": "zoo/test/attacks.test.ts: reserve leaky" },
+    "zoo/reserve-fixed.compact": { "truth": "safe" },
+    "zoo/vault-leaky.compact": { "truth": "leak", "class": "secret-published", "circuit": "claim", "pattern": "owner = disclose(secretKey())", "why": "the owner's secret key is written to the ledger", "attackTest": "zoo/test/attacks.test.ts: vault leaky" },
+    "zoo/vault-fixed.compact": { "truth": "safe" }
+  }
+}

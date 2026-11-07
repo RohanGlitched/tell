@@ -24,11 +24,30 @@ inputs:
     description: 'Upload findings to GitHub code scanning (needs security-events: write)'
     required: false
     default: 'true'
+  comment:
+    description: 'On pull requests, post review comments on the changed lines of .compact files (needs pull-requests: write)'
+    required: false
+    default: 'true'
+  suggest-fixes:
+    description: 'Work out verified fixes (compiled and re-scanned) and offer them as suggestions in comments and the job summary'
+    required: false
+    default: 'true'
+  comment-on:
+    description: 'Lowest severity that gets an inline comment: critical, high, medium or low'
+    required: false
+    default: 'medium'
+  github-token:
+    description: 'Token used to post pull request comments'
+    required: false
+    default: ${{ github.token }}
 
 outputs:
   sarif:
     description: 'Path of the SARIF file written'
     value: ${{ steps.scan.outputs.sarif }}
+  results:
+    description: 'Path of the JSON results (with verified fixes when suggest-fixes is on)'
+    value: ${{ steps.scan.outputs.results }}
 
 runs:
   using: composite
@@ -47,18 +66,36 @@ runs:
     - id: scan
       name: Scan
       shell: bash
+      env:
+        TELL_SUGGEST: ${{ inputs.suggest-fixes }}
       run: |
         out="$RUNNER_TEMP/tell.sarif"
+        json="$RUNNER_TEMP/tell.json"
         fail="${{ inputs.fail-on }}"
-        args=(--sarif "$out")
+        args=(--sarif "$out" --json-out "$json")
         if [ "$fail" != "none" ]; then args+=(--fail-on "$fail"); fi
+        if [ "$TELL_SUGGEST" = "true" ]; then args+=(--fix-dry-run); fi
         set +e
         read -r -a paths <<< "${{ inputs.path }}"
         npx --prefix "${{ github.action_path }}/engine" tsx "${{ github.action_path }}/engine/src/cli.ts" "${paths[@]}" "${args[@]}"
         code=$?
         set -e
         echo "sarif=$out" >> "$GITHUB_OUTPUT"
+        if [ -f "$json" ]; then echo "results=$json" >> "$GITHUB_OUTPUT"; fi
         echo "code=$code" >> "$GITHUB_OUTPUT"
+    - name: Review
+      # Job summary always; inline comments on pull requests. Never fails the job by itself.
+      if: ${{ always() && steps.scan.outputs.results != '' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        TELL_COMMENT: ${{ inputs.comment }}
+        TELL_SUGGEST: ${{ inputs.suggest-fixes }}
+        TELL_COMMENT_ON: ${{ inputs.comment-on }}
+        TELL_RESULTS: ${{ steps.scan.outputs.results }}
+      run: |
+        npx --prefix "${{ github.action_path }}/engine" tsx "${{ github.action_path }}/engine/src/action.ts" --results "$TELL_RESULTS" \
+          || echo "::warning title=Tell::the review step failed; the scan result stands"
     - if: ${{ inputs.upload-sarif == 'true' && always() }}
       uses: github/codeql-action/upload-sarif@v3
       with:

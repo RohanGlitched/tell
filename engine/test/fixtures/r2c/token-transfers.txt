@@ -1057,3 +1057,5 @@ reduce-to-circuit:
            %t.413
            %output.230))
    (= #t %t.415 (select %t.395 %t.400 %t.414)) %t.415))
+tell-constructor:
+(constructor () (tuple))

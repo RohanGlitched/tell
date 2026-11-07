@@ -83,3 +83,27 @@ reduce-to-circuit:
            %t.53))
    (= #t %t.54 (public-ledger %message.0 (1) write %tmp.23))
    %formerMsg.15))
+tell-constructor:
+(constructor
+      ()
+      (seq (public-ledger %state.5 (0) write 0)
+           (let* ([(%tmp.18
+                     (tstruct
+                       Maybe
+                       (is_some (tboolean))
+                       (value (topaque "string")))) (let* ()
+                                                      (new (tstruct
+                                                             Maybe
+                                                             (is_some
+                                                               (tboolean))
+                                                             (value
+                                                               (topaque
+                                                                 "string")))
+                                                           #f
+                                                           (default
+                                                             (topaque
+                                                               "string"))))])
+             (public-ledger %message.0 (1) write %tmp.18))
+           (let* ([(%tmp.19 (tunsigned 65535)) 1])
+             (public-ledger %sequence.4 (2) increment %tmp.19))
+           (tuple)))

@@ -38,3 +38,5 @@ reduce-to-circuit:
        (public-ledger #t %authors.0 (2) insert %n.14 %tag.13))
     (= %t.29 (public-ledger #t %count.1 (3) increment 1))
     (= %t.30 (tuple)) %t.30))
+tell-constructor:
+(constructor () (tuple))

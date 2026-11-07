@@ -53,3 +53,5 @@ reduce-to-circuit:
     (assert %t.50 "incorrect division") (= #t %t.51 (tuple))
     (= #t %t.52 (public-ledger %result.3 (0) write %quo.20))
     (= #t %t.53 (tuple)) %t.53))
+tell-constructor:
+(constructor () (tuple))

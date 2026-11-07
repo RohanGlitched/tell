@@ -478,3 +478,98 @@ reduce-to-circuit:
         %tmp.160 %recipient.156 %total.76))
    (= #t %t.298 (public-ledger %auctionState.1 (7) write 3))
    (= #t %t.299 (tuple)) %t.299))
+tell-constructor:
+(constructor
+      ((%_minPrice.48 (tunsigned 65535))
+        (%maxBidCount.49 (tunsigned 65535))
+        (%address.50 (tstruct UserAddress (bytes (tbytes 32)))))
+      (seq (let* ([(%_sk.51 (tbytes 32)) (call %localSk.46)])
+             (let* ([(%pubKey.52 (tbytes 32)) (let* ([(%_sk.95
+                                                        (tbytes 32)) %_sk.51])
+                                                (let* ([(%hash.96
+                                                          (tbytes 32)) (call
+                                                                         %persistentHash.39
+                                                                         (tuple
+                                                                           #vu8(115
+                                                                                105
+                                                                                108
+                                                                                101
+                                                                                110
+                                                                                116
+                                                                                45
+                                                                                97
+                                                                                117
+                                                                                99
+                                                                                116
+                                                                                105
+                                                                                111
+                                                                                110
+                                                                                58
+                                                                                112
+                                                                                107
+                                                                                58
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0
+                                                                                0)
+                                                                           %_sk.95))])
+                                                  %hash.96))])
+               (seq (public-ledger
+                      %auctionOrganizer.0
+                      (0)
+                      write
+                      %pubKey.52)
+                    (let* ([(%_salt.54 (tbytes 32)) (call %localSalt.47)])
+                      (let* ([(%hashedPrice.55 (tbytes 32)) (let* ([(%_minPrice.97
+                                                                      (tunsigned
+                                                                        65535)) %_minPrice.48]
+                                                                   [(%_salt.98
+                                                                      (tbytes
+                                                                        32)) %_salt.54])
+                                                              (call
+                                                                %persistentCommit.43
+                                                                %_minPrice.97
+                                                                %_salt.98))])
+                        (seq (let* ([(%tmp.84 (tunsigned 18446744073709551615)) 50])
+                               (public-ledger
+                                 %depositAmount.6
+                                 (3)
+                                 write
+                                 %tmp.84))
+                             (public-ledger
+                               %maxBids.9
+                               (2)
+                               write
+                               %maxBidCount.49)
+                             (public-ledger
+                               %hiddenPrice.7
+                               (1)
+                               write
+                               %hashedPrice.55)
+                             (let* ([(%tmp.85 (tunsigned 65535)) 0])
+                               (public-ledger
+                                 %highestBid.8
+                                 (6)
+                                 write
+                                 %tmp.85))
+                             (public-ledger
+                               %organizerAddress.11
+                               (9)
+                               write
+                               %address.50)
+                             (public-ledger
+                               %auctionState.1
+                               (7)
+                               write
+                               2)))))))
+           (tuple)))

@@ -1,0 +1,59 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.3 () (Kernel)))
+  (public-ledger-declaration
+    ((%bids.2 (0) (Map (tbytes 32) (tbytes 32)))))
+  (native
+    %persistentHash.10
+    ((%value.11 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.12
+    ((%value.13 (tunsigned 18446744073709551615))
+      (%rand.14 (tbytes 32)))
+    (tbytes 32))
+  (witness %bidderKey.15 () (tbytes 32))
+  (witness %bidAmount.16 () (tunsigned 18446744073709551615))
+  (witness %bidSalt.17 () (tbytes 32))
+  (circuit %bid.0 () (ttuple)
+   (= #t %sk.23 (call %bidderKey.15))
+   (= #t
+      %t.28
+      (tuple
+        #vu8(100 101 112 111 115 105 116 58 98 105 100 100 101 114 0
+             0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+        %sk.23))
+   (= #t %tag.19 (call %persistentHash.10 %t.28))
+   (= #t %t.29 (public-ledger %bids.2 (0) member %tag.19))
+   (= #t %t.30 (select %t.29 #t #f))
+   (= #t %t.31 (select %t.29 #f #t))
+   (= #t %t.32 (select %t.29 #f #t))
+   (= #t %t.33 (select #t %t.32 #t))
+   (assert %t.33 "one bid per bidder") (= #t %t.34 (tuple))
+   (= #t %amount.20 (call %bidAmount.16))
+   (= #t %t.35 (call %bidSalt.17))
+   (= #t %tmp.22 (call %persistentCommit.12 %amount.20 %t.35))
+   (= #t
+      %t.36
+      (public-ledger %bids.2 (0) insert %tag.19 %tmp.22))
+   (= #t
+      %color.24
+      #vu8(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+           0 0 0 0))
+   (= #t %t.37 (default (tbytes 32)))
+   (= #t
+      %tmp.26
+      (new (tstruct
+             Either
+             (is_left (tboolean))
+             (left (tbytes 32))
+             (right (tbytes 32)))
+           #t
+           %color.24
+           %t.37))
+   (= #t
+      %t.38
+      (public-ledger %kernel.3 () incUnshieldedInputs %tmp.26
+        %amount.20))
+   (= #t %t.39 (tuple)) %t.39))
+tell-constructor:
+(constructor () (tuple))

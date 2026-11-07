@@ -21,3 +21,5 @@ reduce-to-circuit:
        %t.11
        (public-ledger %rooms.1 (0) insert %roomId.6 %tmp.8))
     (= #t %t.12 (tuple)) %t.12))
+tell-constructor:
+(constructor () (tuple))

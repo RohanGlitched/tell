@@ -1,0 +1,25 @@
+// Tell benchmark case L07-same-tag-every-action: the same tag on every action
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: linkable-tag
+// circuit: checkIn
+// line: 23
+// why: every check-in stores hash(key) next to the place, so all check-ins by one person share a tag; one identified check-in reveals that person's whole history.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger visits: Map<Uint<64>, Bytes<32>>;
+export ledger visitors: Map<Uint<64>, Bytes<32>>;
+export ledger n: Counter;
+
+witness visitorKey(): Bytes<32>;
+
+export circuit checkIn(place: Bytes<32>): [] {
+  const i = n.read();
+  visits.insert(i, disclose(place));
+  visitors.insert(i, disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "visit:who"), visitorKey()]))); // LEAK
+  n.increment(1);
+}

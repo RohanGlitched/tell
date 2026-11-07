@@ -1,0 +1,23 @@
+// Tell benchmark case S03-hash-public-arg-salted: public id and small secret, committed with a salt
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: guessable-hash
+// circuit: record
+// line: none
+// why: same record as a commitment with a witness salt.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger incomes: Map<Uint<32>, Bytes<32>>;
+
+witness income(): Uint<32>;
+witness incomeSalt(): Bytes<32>;
+
+export circuit record(id: Uint<32>): [] {
+  const v = income();
+  assert(v < 1000000, "monthly income below one million");
+  incomes.insert(disclose(id), disclose(persistentCommit<Vector<2, Field>>([id as Field, v as Field], incomeSalt())));
+}

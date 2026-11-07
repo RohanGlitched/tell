@@ -12,13 +12,41 @@ jobs:
         with: { node-version: '22' }
       - uses: midnightntwrk/setup-compact-action@v1
         with: { compact-version: '0.31.1' }
-      - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --include-workspace-root
+      # Ledger 9 zoo contracts (events, contract calls) are compiled with 0.36.0; 0.31.1 stays the default.
+      - name: Add Compact 0.36.0
+        run: compact update 0.36.0 && compact update 0.31.1 && test -x ~/.compact/versions/0.36.0/*/compactc.bin
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --workspace desk --include-workspace-root
+      - name: Ledger 9 zoo runtime (compact-runtime 0.21)
+        run: npm ci --no-audit --no-fund --prefix zoo/ledger9
       - name: Compile the zoo
         run: npm run compact -w zoo
       - name: Engine precision tests
         run: npm test -w engine
       - name: Zoo attack tests
         run: npm test -w zoo
+      - name: Compile Tell Desk
+        run: npm run compact -w desk
+      - name: Tell Desk lifecycle, rejection and attacker tests
+        run: npm test -w desk
+  integrations:
+    # The MCP server (an MCP client calls every tool against the zoo) and the VS Code extension
+    # (finding-to-diagnostic mapping, CLI parsing, the runner with the real compiler), then the .vsix.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        with: { compact-version: '0.31.1' }
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace mcp --workspace vscode --include-workspace-root
+      - name: MCP server tests
+        run: npm test -w mcp
+      - name: Package the extension
+        run: npm run package -w vscode
+      - name: VS Code extension tests (including the packaged bundle)
+        run: npm test -w vscode
+      - name: Typecheck
+        run: npm run typecheck -w mcp && npm run typecheck -w vscode
   compilers:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.
@@ -26,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compact: ['0.30.0', '0.31.1', '0.34.0', '0.35.0']
+        compact: ['0.30.0', '0.31.1', '0.34.0', '0.35.0', '0.36.0']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,7 +73,7 @@ jobs:
       - name: Fixed contracts stay clean
         uses: ./
         with:
-          path: zoo/contracts/ballot-fixed.compact zoo/contracts/payband-fixed.compact zoo/contracts/reserve-fixed.compact zoo/contracts/vault-fixed.compact zoo/contracts/board-fixed.compact
+          path: zoo/contracts/ballot-fixed.compact zoo/contracts/payband-fixed.compact zoo/contracts/reserve-fixed.compact zoo/contracts/vault-fixed.compact zoo/contracts/board-fixed.compact zoo/contracts/raffle-fixed.compact zoo/contracts/faucet-fixed.compact zoo/contracts/deposit-fixed.compact
           fail-on: medium
           upload-sarif: 'false'
       - name: Leaky contracts are caught
@@ -53,8 +81,33 @@ jobs:
         uses: ./
         continue-on-error: true
         with:
-          path: zoo/contracts/ballot-leaky.compact zoo/contracts/payband-leaky.compact zoo/contracts/reserve-leaky.compact zoo/contracts/vault-leaky.compact zoo/contracts/board-leaky.compact
+          path: zoo/contracts/ballot-leaky.compact zoo/contracts/payband-leaky.compact zoo/contracts/reserve-leaky.compact zoo/contracts/vault-leaky.compact zoo/contracts/board-leaky.compact zoo/contracts/raffle-leaky.compact zoo/contracts/faucet-leaky.compact zoo/contracts/deposit-leaky.compact
           fail-on: medium
       - name: Expect the leaky scan to fail
         if: steps.leaky.outcome != 'failure'
         run: echo "Tell missed a leak in the zoo" && exit 1
+      - name: Tell Desk scans at grade A (nothing above info)
+        uses: ./
+        with:
+          path: desk/contracts/desk.compact
+          fail-on: low
+          upload-sarif: 'false'
+      - name: Ledger 9 fixed contracts stay clean (Compact 0.36.0)
+        uses: ./
+        with:
+          path: zoo/ledger9/contracts/poll-fixed.compact
+          compact-version: '0.36.0'
+          fail-on: medium
+          upload-sarif: 'false'
+      - name: Ledger 9 leaky contracts are caught (Compact 0.36.0)
+        id: leaky9
+        uses: ./
+        continue-on-error: true
+        with:
+          path: zoo/ledger9/contracts/poll-leaky.compact
+          compact-version: '0.36.0'
+          fail-on: medium
+          upload-sarif: 'false'
+      - name: Expect the Ledger 9 leaky scan to fail
+        if: steps.leaky9.outcome != 'failure'
+        run: echo "Tell missed a leak in the Ledger 9 zoo" && exit 1

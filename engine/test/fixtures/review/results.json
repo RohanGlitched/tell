@@ -1,0 +1,566 @@
+[
+ {
+  "file": "/work/zoo/contracts/ballot-leaky.compact",
+  "compiler": "0.31.1",
+  "language": "0.23.0",
+  "ok": true,
+  "report": {
+   "circuits": [],
+   "findings": [
+    {
+     "circuit": "register",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "voters",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "voterKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:voterKey|62616c6c6f743a766f7465720000000000000000000000000000000000000000",
+     "title": "voterKey() is hidden, but leaves the same tag every time",
+     "detail": "`voters` insert receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "voters.insert"
+     ],
+     "line": 27
+    },
+    {
+     "circuit": "vote",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "voters",
+     "op": "member",
+     "sources": [
+      {
+       "name": "voterKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:voterKey|62616c6c6f743a766f7465720000000000000000000000000000000000000000",
+     "title": "voterKey() is hidden, but leaves the same tag every time",
+     "detail": "`voters` member receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "voters.member",
+      "ballots.member",
+      "ballots.insert"
+     ],
+     "line": 32
+    },
+    {
+     "circuit": "vote",
+     "kind": "guessable-hash",
+     "severity": "critical",
+     "field": "ballots",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "choice",
+       "kind": "witness",
+       "type": "Uint<8>",
+       "bits": 2
+      }
+     ],
+     "bits": 2,
+     "via": "persistentHash",
+     "title": "choice() is hidden behind a persistentHash anyone can reverse",
+     "detail": "`ballots` receives persistentHash(… choice() …), but the only unknown input is choice() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
+     "fix": "Use persistentCommit(value, salt) with a fresh 32-byte random salt kept in private state, or mix a 32-byte secret into the hash.",
+     "fields": [
+      "ballots.insert"
+     ],
+     "line": 36
+    }
+   ],
+   "unknownForms": []
+  },
+  "counts": {
+   "critical": 1,
+   "high": 0,
+   "medium": 0,
+   "low": 2,
+   "info": 0
+  },
+  "grade": "F",
+  "fixes": {
+   "file": "/work/zoo/contracts/ballot-leaky.compact",
+   "grade": "F",
+   "suggestions": [
+    {
+     "key": "e88fbe2819ef",
+     "finding": {
+      "circuit": "vote",
+      "kind": "guessable-hash",
+      "severity": "critical",
+      "field": "ballots",
+      "op": "insert",
+      "sources": [
+       {
+        "name": "choice",
+        "kind": "witness",
+        "type": "Uint<8>",
+        "bits": 2
+       }
+      ],
+      "bits": 2,
+      "via": "persistentHash",
+      "title": "choice() is hidden behind a persistentHash anyone can reverse",
+      "detail": "`ballots` receives persistentHash(… choice() …), but the only unknown input is choice() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
+      "fix": "Use persistentCommit(value, salt) with a fresh 32-byte random salt kept in private state, or mix a 32-byte secret into the hash.",
+      "fields": [
+       "ballots.insert"
+      ],
+      "line": 36
+     },
+     "rule": "commit-hash",
+     "summary": "store a commitment with a fresh nonce instead of the guessable persistentHash",
+     "notes": [
+      "Off-chain: implement the `ballotsNonce` witness to return 32 fresh random bytes on every call and keep them in private state with the value; they are needed to open or prove the commitment later.",
+      "Anything that recomputed the old value to look this entry up (off-chain code, or a helper such as an exported hash circuit) must use persistentCommit with the stored nonce instead."
+     ],
+     "patch": {
+      "diff": "--- a/zoo/contracts/ballot-leaky.compact\n+++ b/zoo/contracts/ballot-leaky.compact\n@@ -27,11 +27,13 @@\n   voters.insert(disclose(voterTag(voterKey())));\n }\n \n+witness ballotsNonce(): Bytes<32>; // fresh random bytes per call, kept to open the commitment\n+\n export circuit vote(): [] {\n   const tag = disclose(voterTag(voterKey()));\n   assert(voters.member(tag), \"not a registered voter\");\n   assert(!ballots.member(tag), \"already voted\");\n   const c = choice();\n   assert(c < 4, \"there are four candidates\");\n-  ballots.insert(tag, disclose(choiceHash(c)));\n+  ballots.insert(tag, disclose(persistentCommit<Bytes<32>>(choiceHash(c), ballotsNonce())));\n }\n",
+      "range": {
+       "start": 30,
+       "end": 36,
+       "lines": [
+        "witness ballotsNonce(): Bytes<32>; // fresh random bytes per call, kept to open the commitment",
+        "",
+        "export circuit vote(): [] {",
+        "  const tag = disclose(voterTag(voterKey()));",
+        "  assert(voters.member(tag), \"not a registered voter\");",
+        "  assert(!ballots.member(tag), \"already voted\");",
+        "  const c = choice();",
+        "  assert(c < 4, \"there are four candidates\");",
+        "  ballots.insert(tag, disclose(persistentCommit<Bytes<32>>(choiceHash(c), ballotsNonce())));"
+       ]
+      },
+      "witness": "ballotsNonce"
+     },
+     "verification": {
+      "ok": true,
+      "compiles": true,
+      "compiler": "0.31.1",
+      "gone": true,
+      "newFindings": [],
+      "gradeBefore": "F",
+      "gradeAfter": "B"
+     }
+    }
+   ],
+   "combined": {
+    "diff": "--- a/zoo/contracts/ballot-leaky.compact\n+++ b/zoo/contracts/ballot-leaky.compact\n@@ -27,11 +27,13 @@\n   voters.insert(disclose(voterTag(voterKey())));\n }\n \n+witness ballotsNonce(): Bytes<32>; // fresh random bytes per call, kept to open the commitment\n+\n export circuit vote(): [] {\n   const tag = disclose(voterTag(voterKey()));\n   assert(voters.member(tag), \"not a registered voter\");\n   assert(!ballots.member(tag), \"already voted\");\n   const c = choice();\n   assert(c < 4, \"there are four candidates\");\n-  ballots.insert(tag, disclose(choiceHash(c)));\n+  ballots.insert(tag, disclose(persistentCommit<Bytes<32>>(choiceHash(c), ballotsNonce())));\n }\n",
+    "applied": [
+     "e88fbe2819ef"
+    ],
+    "verification": {
+     "ok": true,
+     "compiles": true,
+     "compiler": "0.31.1",
+     "gone": true,
+     "newFindings": [],
+     "gradeBefore": "F",
+     "gradeAfter": "B"
+    }
+   }
+  }
+ },
+ {
+  "file": "/work/zoo/contracts/vault-leaky.compact",
+  "compiler": "0.31.1",
+  "language": "0.23.0",
+  "ok": true,
+  "report": {
+   "circuits": [],
+   "findings": [
+    {
+     "circuit": "claim",
+     "kind": "secret-published",
+     "severity": "critical",
+     "field": "owner",
+     "op": "write",
+     "sources": [
+      {
+       "name": "secretKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 256,
+     "title": "secretKey() looks like a secret key, and it is published",
+     "detail": "`owner` write receives secretKey() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+     "fix": "Publish persistentHash([domain, key]) as a public identifier instead, and keep the key itself in private state.",
+     "fields": [
+      "owner.write"
+     ],
+     "line": 19
+    }
+   ],
+   "unknownForms": []
+  },
+  "counts": {
+   "critical": 1,
+   "high": 0,
+   "medium": 0,
+   "low": 0,
+   "info": 0
+  },
+  "grade": "F",
+  "fixes": {
+   "file": "/work/zoo/contracts/vault-leaky.compact",
+   "grade": "F",
+   "suggestions": [
+    {
+     "key": "1913612da4f7",
+     "finding": {
+      "circuit": "claim",
+      "kind": "secret-published",
+      "severity": "critical",
+      "field": "owner",
+      "op": "write",
+      "sources": [
+       {
+        "name": "secretKey",
+        "kind": "witness",
+        "type": "Bytes<32>",
+        "bits": 256
+       }
+      ],
+      "bits": 256,
+      "title": "secretKey() looks like a secret key, and it is published",
+      "detail": "`owner` write receives secretKey() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+      "fix": "Publish persistentHash([domain, key]) as a public identifier instead, and keep the key itself in private state.",
+      "fields": [
+       "owner.write"
+      ],
+      "line": 19
+     },
+     "rule": "hash-key",
+     "summary": "publish a hash of the key instead of the key",
+     "notes": [
+      "The ledger keeps persistentHash([\"vault-leaky:owner\", key]); the key never leaves private state. Checks against `owner` now hash the same way (line 23).",
+      "Any off-chain code that reads `owner` gets the hash, not the key."
+     ],
+     "patch": {
+      "diff": "--- a/zoo/contracts/vault-leaky.compact\n+++ b/zoo/contracts/vault-leaky.compact\n@@ -16,10 +16,10 @@\n \n export circuit claim(): [] {\n   assert(owner == default<Bytes<32>>, \"already claimed\");\n-  owner = disclose(secretKey());\n+  owner = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()]));\n }\n \n export circuit withdraw(): [] {\n-  assert(owner == disclose(secretKey()), \"not the owner\");\n+  assert(owner == disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()])), \"not the owner\");\n   withdrawals.increment(1);\n }\n",
+      "range": {
+       "start": 19,
+       "end": 23,
+       "lines": [
+        "  owner = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()]));",
+        "}",
+        "",
+        "export circuit withdraw(): [] {",
+        "  assert(owner == disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()])), \"not the owner\");"
+       ]
+      }
+     },
+     "verification": {
+      "ok": true,
+      "compiles": true,
+      "compiler": "0.31.1",
+      "gone": true,
+      "newFindings": [],
+      "gradeBefore": "F",
+      "gradeAfter": "A"
+     }
+    }
+   ],
+   "combined": {
+    "diff": "--- a/zoo/contracts/vault-leaky.compact\n+++ b/zoo/contracts/vault-leaky.compact\n@@ -16,10 +16,10 @@\n \n export circuit claim(): [] {\n   assert(owner == default<Bytes<32>>, \"already claimed\");\n-  owner = disclose(secretKey());\n+  owner = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()]));\n }\n \n export circuit withdraw(): [] {\n-  assert(owner == disclose(secretKey()), \"not the owner\");\n+  assert(owner == disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, \"vault-leaky:owner\"), secretKey()])), \"not the owner\");\n   withdrawals.increment(1);\n }\n",
+    "applied": [
+     "1913612da4f7"
+    ],
+    "verification": {
+     "ok": true,
+     "compiles": true,
+     "compiler": "0.31.1",
+     "gone": true,
+     "newFindings": [],
+     "gradeBefore": "F",
+     "gradeAfter": "A"
+    }
+   }
+  }
+ },
+ {
+  "file": "/work/zoo/contracts/board-leaky.compact",
+  "compiler": "0.31.1",
+  "language": "0.23.0",
+  "ok": true,
+  "report": {
+   "circuits": [],
+   "findings": [
+    {
+     "circuit": "join",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "members",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "memberKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:memberKey|626f6172643a6d656d6265720000000000000000000000000000000000000000",
+     "title": "memberKey() is hidden, but leaves the same tag every time",
+     "detail": "`members` insert receives persistentHash(… memberKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "members.insert"
+     ],
+     "line": 25
+    },
+    {
+     "circuit": "post",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "members",
+     "op": "member",
+     "sources": [
+      {
+       "name": "memberKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:memberKey|626f6172643a6d656d6265720000000000000000000000000000000000000000",
+     "title": "memberKey() is hidden, but leaves the same tag every time",
+     "detail": "`members` member receives persistentHash(… memberKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "members.member"
+     ],
+     "line": 30
+    },
+    {
+     "circuit": "post",
+     "kind": "published",
+     "severity": "info",
+     "field": "posts",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "text",
+       "kind": "argument",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 256,
+     "title": "argument `text` is published in the clear",
+     "detail": "`posts` insert receives argument `text` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+     "fix": "If it should stay private, store a commitment instead: persistentCommit(value, salt) with a random salt from private state.",
+     "fields": [
+      "posts.insert"
+     ],
+     "line": 32
+    },
+    {
+     "circuit": "post",
+     "kind": "attributable",
+     "severity": "medium",
+     "field": "authors",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "memberKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "title": "every `post` stores the same tag derived from memberKey()",
+     "detail": "`authors` insert stores persistentHash(… memberKey() …) as data on each call. The value is the same every time for the same holder, so all of one holder's `post` actions line up, and identifying one identifies all of them.",
+     "fix": "Store a one-time tag instead: hash the secret together with a per-action public value (a post number, a counter) or a fresh random value.",
+     "fields": [
+      "authors.insert"
+     ],
+     "line": 33
+    }
+   ],
+   "unknownForms": []
+  },
+  "counts": {
+   "critical": 0,
+   "high": 0,
+   "medium": 1,
+   "low": 2,
+   "info": 1
+  },
+  "grade": "C",
+  "fixes": {
+   "file": "/work/zoo/contracts/board-leaky.compact",
+   "grade": "C",
+   "suggestions": [
+    {
+     "key": "1a4e9bcb0562",
+     "finding": {
+      "circuit": "post",
+      "kind": "attributable",
+      "severity": "medium",
+      "field": "authors",
+      "op": "insert",
+      "sources": [
+       {
+        "name": "memberKey",
+        "kind": "witness",
+        "type": "Bytes<32>",
+        "bits": 256
+       }
+      ],
+      "bits": 0,
+      "via": "persistentHash",
+      "title": "every `post` stores the same tag derived from memberKey()",
+      "detail": "`authors` insert stores persistentHash(… memberKey() …) as data on each call. The value is the same every time for the same holder, so all of one holder's `post` actions line up, and identifying one identifies all of them.",
+      "fix": "Store a one-time tag instead: hash the secret together with a per-action public value (a post number, a counter) or a fresh random value.",
+      "fields": [
+       "authors.insert"
+      ],
+      "line": 33
+     },
+     "rule": "one-time-tag",
+     "summary": "store a one-time tag, hash(domain, secret, entry key), instead of the same tag on every entry",
+     "notes": [
+      "Each entry now carries persistentHash([\"board-leaky:authors\", memberKey(), key]): different for every entry, and only the holder of the secret can recompute it to prove authorship.",
+      "`members.member` still receives the same tag in every `post` transcript, so the transactions themselves stay linkable. To make them unlinkable too, prove membership with a Merkle path that never names the leaf (see zoo/contracts/board-fixed.compact)."
+     ],
+     "patch": {
+      "diff": "--- a/zoo/contracts/board-leaky.compact\n+++ b/zoo/contracts/board-leaky.compact\n@@ -30,6 +30,6 @@\n   assert(members.member(tag), \"members only\");\n   const n = count.read() as Uint<32>;\n   posts.insert(n, disclose(text));\n-  authors.insert(n, tag);\n+  authors.insert(n, disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, \"board-leaky:authors\"), memberKey(), (n as Field) as Bytes<32>])));\n   count.increment(1);\n }\n",
+      "range": {
+       "start": 33,
+       "end": 33,
+       "lines": [
+        "  authors.insert(n, disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, \"board-leaky:authors\"), memberKey(), (n as Field) as Bytes<32>])));"
+       ]
+      }
+     },
+     "verification": {
+      "ok": true,
+      "compiles": true,
+      "compiler": "0.31.1",
+      "gone": true,
+      "newFindings": [],
+      "gradeBefore": "C",
+      "gradeAfter": "B"
+     }
+    }
+   ],
+   "combined": {
+    "diff": "--- a/zoo/contracts/board-leaky.compact\n+++ b/zoo/contracts/board-leaky.compact\n@@ -30,6 +30,6 @@\n   assert(members.member(tag), \"members only\");\n   const n = count.read() as Uint<32>;\n   posts.insert(n, disclose(text));\n-  authors.insert(n, tag);\n+  authors.insert(n, disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, \"board-leaky:authors\"), memberKey(), (n as Field) as Bytes<32>])));\n   count.increment(1);\n }\n",
+    "applied": [
+     "1a4e9bcb0562"
+    ],
+    "verification": {
+     "ok": true,
+     "compiles": true,
+     "compiler": "0.31.1",
+     "gone": true,
+     "newFindings": [],
+     "gradeBefore": "C",
+     "gradeAfter": "B"
+    }
+   }
+  }
+ },
+ {
+  "file": "/work/zoo/contracts/ballot-fixed.compact",
+  "compiler": "0.31.1",
+  "language": "0.23.0",
+  "ok": true,
+  "report": {
+   "circuits": [],
+   "findings": [
+    {
+     "circuit": "register",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "voters",
+     "op": "insert",
+     "sources": [
+      {
+       "name": "voterKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:voterKey|62616c6c6f743a766f7465720000000000000000000000000000000000000000",
+     "title": "voterKey() is hidden, but leaves the same tag every time",
+     "detail": "`voters` insert receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "voters.insert"
+     ],
+     "line": 28
+    },
+    {
+     "circuit": "vote",
+     "kind": "linkable",
+     "severity": "low",
+     "field": "voters",
+     "op": "member",
+     "sources": [
+      {
+       "name": "voterKey",
+       "kind": "witness",
+       "type": "Bytes<32>",
+       "bits": 256
+      }
+     ],
+     "bits": 0,
+     "via": "persistentHash",
+     "tagFp": "persistentHash|w:voterKey|62616c6c6f743a766f7465720000000000000000000000000000000000000000",
+     "title": "voterKey() is hidden, but leaves the same tag every time",
+     "detail": "`voters` member receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+     "fix": "Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.",
+     "fields": [
+      "voters.member",
+      "ballots.member",
+      "ballots.insert"
+     ],
+     "line": 33
+    }
+   ],
+   "unknownForms": []
+  },
+  "counts": {
+   "critical": 0,
+   "high": 0,
+   "medium": 0,
+   "low": 2,
+   "info": 0
+  },
+  "grade": "B",
+  "fixes": {
+   "file": "/work/zoo/contracts/ballot-fixed.compact",
+   "grade": "B",
+   "suggestions": []
+  }
+ }
+]

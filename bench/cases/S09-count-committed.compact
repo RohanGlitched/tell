@@ -1,0 +1,25 @@
+// Tell benchmark case S09-count-committed: the count computed privately and committed
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: branch
+// circuit: submit
+// line: none
+// why: the pass count is folded inside the circuit and only a salted commitment is published.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger results: Set<Bytes<32>>;
+export ledger submissions: Counter;
+
+witness scores(): Vector<8, Uint<8>>;
+witness resultSalt(): Bytes<32>;
+
+export circuit submit(): [] {
+  const s = scores();
+  const k = fold((acc: Uint<8>, x: Uint<8>): Uint<8> => (x >= 50 ? acc + 1 : acc) as Uint<8>, 0 as Uint<8>, s);
+  results.insert(disclose(persistentCommit<Uint<8>>(k, resultSalt())));
+  submissions.increment(1);
+}

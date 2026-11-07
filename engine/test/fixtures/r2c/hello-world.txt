@@ -9,3 +9,5 @@ reduce-to-circuit:
        %t.4
        (public-ledger %message.0 (0) write %newMessage.3))
     (= #t %t.5 (tuple)) %t.5))
+tell-constructor:
+(constructor () (tuple))

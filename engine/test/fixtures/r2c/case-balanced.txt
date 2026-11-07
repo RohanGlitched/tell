@@ -24,3 +24,5 @@ reduce-to-circuit:
        %t.20
        (public-ledger %results.1 (0) insert %tmp.10))
     (= #t %t.21 (tuple)) %t.21))
+tell-constructor:
+(constructor () (tuple))

@@ -25,7 +25,23 @@ export type LedgerField = { name: string; id: string; index: number[]; type: Typ
 export type Callable = { name: string; id: string; params: Param[]; result: Type };
 export type Binding = { guard: SExpr; target: string; expr: SExpr };
 export type Step = { k: 'bind'; b: Binding } | { k: 'assert'; cond: SExpr; message: string };
-export type Circuit = Callable & { steps: Step[]; ret: SExpr };
+// `isConstructor`: the contract's constructor, which runs once at deploy time. Its writes are the
+// contract's initial public state, so it is analysed like a circuit.
+export type Circuit = Callable & { steps: Step[]; ret: SExpr; isConstructor?: boolean };
+
+// Type expressions the compiler prints as operands: 0.36 writes `(field->bytes 32 (field-native) x)`
+// and `(- (tunsigned 255) a b)` where 0.35 and older wrote `(field->bytes 32 x)` and `(- 8 a b)`.
+// They are not values; the analysis skips them.
+const TYPE_HEADS = new Set([
+  'tbytes', 'tunsigned', 'tboolean', 'tfield', 'topaque', 'tvector', 'ttuple', 'tstruct', 'tenum',
+  'tcontract', 'talias', 'tunknown', 'tpoint',
+]);
+// Field and curve kinds inside those: (field-native), (field-base (curve-secp256k1)), (field-scalar …).
+// Not (field->bytes …), which is a conversion.
+export const isTypeForm = (x: SExpr): boolean => {
+  const h = head(x);
+  return h !== null && (TYPE_HEADS.has(h) || /^(field|curve)-[a-z0-9]+$/.test(h));
+};
 
 export type Program = {
   ledger: Map<string, LedgerField>;
@@ -145,10 +161,14 @@ const params = (x: SExpr): Param[] =>
     return { id, name: baseName(id), type: parseType(l[1]) };
   });
 
+// compile.ts appends the constructor, taken from the last pass that still has it, after this marker.
+export const CONSTRUCTOR_MARK = '\ntell-constructor:\n';
+
 export function readProgram(text: string): Program {
   const start = text.indexOf('(program');
   if (start < 0) throw new Error('no (program …) found in the compiler trace');
-  const [prog] = parseAll(text.slice(start));
+  const mark = text.indexOf(CONSTRUCTOR_MARK);
+  const [prog] = parseAll(text.slice(start, mark > start ? mark : undefined));
   if (head(prog) !== 'program') throw new Error('expected (program …)');
   const p: Program = { ledger: new Map(), witnesses: new Map(), natives: new Map(), circuits: [] };
   for (const item of (prog as SExpr[]).slice(1)) {
@@ -184,7 +204,83 @@ export function readProgram(text: string): Program {
       p.circuits.push({ id, name: baseName(id), params: params(l[2]), result: parseType(l[3]), steps, ret: body[body.length - 1] });
     }
   }
+  if (mark > start) {
+    const [ctor] = parseAll(text.slice(mark + CONSTRUCTOR_MARK.length));
+    if (head(ctor) === 'constructor') {
+      const l = ctor as SExpr[];
+      const { steps, ret } = lowerBody(l.slice(2));
+      p.circuits.push({ id: '%constructor', name: 'constructor', params: params(l[1]), result: { k: 'tuple', items: [] }, steps, ret, isConstructor: true });
+    }
+  }
   return p;
+}
+
+// The constructor never reaches reduce-to-circuit (it is not proved), so Tell reads it from the
+// last pass before that, where it is still a nested expression: (seq …), (let* ([(%x type) e]) body),
+// (if c a b), (assert c "msg"). Helpers are already inlined and loops unrolled there. This lowers it
+// to the same guarded bindings reduce-to-circuit prints, so one analysis covers both.
+const EFFECTS = new Set(['seq', 'let*', 'if', 'assert', 'public-ledger', 'emit', 'contract-call']);
+export function lowerBody(body: SExpr[]): { steps: Step[]; ret: SExpr } {
+  const steps: Step[] = [];
+  let n = 0;
+  const T: SExpr = { t: 'bool', v: true };
+  const F: SExpr = { t: 'bool', v: false };
+  const sym = (v: string): SExpr => ({ t: 'sym', v });
+  const isTrue = (g: SExpr) => !Array.isArray(g) && g.t === 'bool' && g.v;
+  const bind = (guard: SExpr, expr: SExpr, target = `%tell.${n++}`): SExpr => {
+    steps.push({ k: 'bind', b: { guard, target, expr } });
+    return sym(target);
+  };
+  const effectful = (x: SExpr): boolean => isList(x) && !isTypeForm(x) && (EFFECTS.has(head(x) ?? '') || x.some(effectful));
+  const atom = (x: SExpr) => (isList(x) ? bind(T, x) : x);
+  const lower = (x: SExpr, g: SExpr): SExpr => {
+    if (!isList(x) || isTypeForm(x)) return x;
+    const h = head(x);
+    switch (h) {
+      case 'seq': {
+        let last: SExpr = [sym('tuple')];
+        for (const y of x.slice(1)) last = lower(y, g);
+        return last;
+      }
+      case 'let*': {
+        for (const b of x[1] as SExpr[]) {
+          const [decl, e] = b as SExpr[];
+          bind(g, lower(e, g), symName((decl as SExpr[])[0]));
+        }
+        let last: SExpr = [sym('tuple')];
+        for (const y of x.slice(2)) last = lower(y, g);
+        return last;
+      }
+      case 'if': {
+        const c = atom(lower(x[1], g));
+        const yes = x[2] ?? [sym('tuple')];
+        const no = x[3] ?? [sym('tuple')];
+        if (!effectful(yes) && !effectful(no)) return [sym('select'), c, yes, no];
+        const gYes = isTrue(g) ? c : bind(T, [sym('select'), g, c, F]);
+        const notC = bind(T, [sym('not'), c]);
+        const gNo = isTrue(g) ? notC : bind(T, [sym('select'), g, notC, F]);
+        const a = lower(yes, gYes);
+        const b = lower(no, gNo);
+        return [sym('select'), c, a, b];
+      }
+      case 'assert': {
+        const c = lower(x[1], g);
+        const message = !Array.isArray(x[2]) && x[2]?.t === 'str' ? x[2].v : '';
+        steps.push({ k: 'assert', cond: isTrue(g) ? c : [sym('select'), g, c, T], message });
+        return [sym('tuple')];
+      }
+      case 'public-ledger':
+      case 'emit':
+      case 'contract-call':
+      case 'call':
+        return bind(g, x.map((y, i) => (i === 0 ? y : lower(y, g))));
+      default:
+        return x.map((y, i) => (i === 0 && isSym(y) ? y : lower(y, g)));
+    }
+  };
+  let ret: SExpr = [sym('tuple')];
+  for (const y of body) ret = lower(y, T);
+  return { steps, ret };
 }
 
 export const isVar = (x: SExpr): x is { t: 'sym'; v: string } => isSym(x) && x.v.startsWith('%');

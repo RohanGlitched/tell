@@ -240,3 +240,5 @@ reduce-to-circuit:
       (public-ledger #t %posts.5 (1) insert %n.34 %text.30))
    (= %t.213 (public-ledger #t %count.0 (3) increment 1))
    (= %t.214 (tuple)) %t.214))
+tell-constructor:
+(constructor () (tuple))

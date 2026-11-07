@@ -1,0 +1,31 @@
+// Tell leak zoo (Ledger 9): the poll receipt, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The receipt event carries the same salted commitment the ledger stores.
+// A voter finds it with the salt from their private state; anyone else sees
+// a value that hides the vote.
+
+pragma language_version >= 0.25.0;
+
+import CompactStandardLibrary;
+
+export ledger ballots: Map<Bytes<32>, Bytes<32>>;
+
+witness voterKey(): Bytes<32>;
+witness choice(): Uint<8>;
+witness ballotSalt(): Bytes<32>;
+
+export pure circuit voterTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "poll:voter"), sk]);
+}
+
+export circuit vote(): [] {
+  const tag = disclose(voterTag(voterKey()));
+  assert(!ballots.member(tag), "already voted");
+  const c = choice();
+  assert(c < 4, "four options");
+  const sealedVote = disclose(persistentCommit<Uint<8>>(c, ballotSalt()));
+  ballots.insert(tag, sealedVote);
+  emit(Misc { name: sealedVote, payload: pad(256, "poll:voted") });
+}
