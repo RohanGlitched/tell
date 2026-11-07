@@ -1,0 +1,23 @@
+// Tell benchmark case S13-separate-key-domain: account id and private scalar from separate hash domains
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: secret-published
+// circuit: register
+// line: none
+// why: the public id and the private scalar come from differently tagged hashes of the seed; the id says nothing about the scalar.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger accountId: Bytes<32>;
+export ledger encKey: JubjubPoint;
+
+witness seed(): Bytes<32>;
+
+export circuit register(): [] {
+  accountId = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:id"), seed()]));
+  const k = persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:enc"), seed()]);
+  encKey = disclose(ecMulGenerator(degradeToTransient(k)));
+}

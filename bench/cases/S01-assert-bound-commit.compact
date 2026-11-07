@@ -1,0 +1,24 @@
+// Tell benchmark case S01-assert-bound-commit: small-domain value, bounded by an assert, committed with a random salt
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: guessable-hash
+// circuit: rate
+// line: none
+// why: same rating, but persistentCommit with a 32-byte witness salt; the ten guesses no longer match.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger ratings: Map<Bytes<32>, Bytes<32>>;
+
+witness raterKey(): Bytes<32>;
+witness rating(): Uint<64>;
+witness ratingSalt(): Bytes<32>;
+
+export circuit rate(item: Bytes<32>): [] {
+  const r = rating();
+  assert(r < 10, "ratings run from 0 to 9");
+  ratings.insert(disclose(item), disclose(persistentCommit<Uint<64>>(r, ratingSalt())));
+}

@@ -1,0 +1,26 @@
+// Tell benchmark case L12-constructor-leak: a secret written by the constructor
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: secret-published
+// circuit: constructor
+// line: 20
+// why: the constructor stores the deployer's admin secret as-is; it is in the deploy transaction's initial state.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger admin: Bytes<32>;
+export ledger actions: Counter;
+
+witness adminSecret(): Bytes<32>;
+
+constructor() {
+  admin = disclose(adminSecret()); // LEAK
+}
+
+export circuit act(): [] {
+  assert(admin == adminSecret(), "admin only");
+  actions.increment(1);
+}

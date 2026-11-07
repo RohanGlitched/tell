@@ -1,0 +1,1609 @@
+{
+  "tool": "nightshade-all",
+  "version": "Nightshade 0.1.1",
+  "repo": "https://github.com/DicksonWu654/nightshade",
+  "configuration": "every rule that needs no policy (83 of 96), hygiene profile",
+  "command": "nightshade <file> --compiler-version <profile> --json --detectors <ids> --profile hygiene",
+  "files": [
+    {
+      "id": "zoo/ballot-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/ballot-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations",
+      "findings": []
+    },
+    {
+      "id": "zoo/board-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Expression budget exhausted; results are incomplete",
+      "findings": [
+        {
+          "rule": "merkle-insert-without-dedupe",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 26,
+          "circuit": "join",
+          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "unconstrained-witness-to-state",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 19,
+          "circuit": "claim",
+          "message": "Raw witness value reaches ledger state without a value-specific assertion. claim writes raw output of secretKey into owner on a modeled successful history without an assertion depending on that witness leaf. Disclosure permits publication; it does not validate the value. An unrelated caller guard or a witness attestation about the value supplies no circuit validation. Public registration and prover-chosen metadata can be intentional; review the required application relation.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "spoofable-authorization",
+          "severity": "high",
+          "native": "high/high",
+          "line": 23,
+          "circuit": "withdraw",
+          "message": "Raw witness check gates a privileged effect. withdraw requires raw witness data from secretKey to equal ledger owner on every modeled successful reach. The guard covers 1 effect site: ledger-write withdrawals. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/L01-assert-bound-hash.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "unused-declaration",
+          "severity": "info",
+          "native": "info/high",
+          "line": 16,
+          "circuit": null,
+          "message": "unused declaration. witness raterKey has no reference in this compilation unit",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/L02-type-width-hash.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/L03-hash-public-arg.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/L04-commit-constant-nonce.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "predictable-commitment-randomness",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 21,
+          "circuit": "pick_",
+          "message": "Public commitment uses predictable randomness. persistentCommit commits private-derived input using statically known randomness, and its result influences ledger-operation picks.insert. This removes the protection supplied by secret, unpredictable commitment randomness; low-entropy inputs can remain guessable. Intentional deterministic commitments require review.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "cases/L05-commit-public-nonce.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/L06-branch-unbalanced.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/L07-same-tag-every-action.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/L08-cast-not-hash.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/L09-secret-returned.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/L10-count-in-loop.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; development-pattern-loop: Local structural review does not model loop transfers; development-pattern-loop: Local structural review does not model loop transfers; development-pattern-loop: Local structural review does not model loop transfers",
+      "findings": []
+    },
+    {
+      "id": "cases/L11-set-member.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations",
+      "findings": []
+    },
+    {
+      "id": "cases/L12-constructor-leak.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "spoofable-authorization",
+          "severity": "low",
+          "native": "low/low",
+          "line": 24,
+          "circuit": "act",
+          "message": "Witness validation gates a state-changing effect. act requires raw witness data from adminSecret to equal ledger admin on every modeled successful reach. The guard covers 1 effect site: ledger-write actions. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/L13-preimage-published.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "ledger-bound-preimage-publication",
+          "severity": "medium",
+          "native": "medium/medium",
+          "line": 26,
+          "circuit": "redeem",
+          "message": "Ledger-bound private preimage is published. Private value from voucherSecret reaches ledger-operation redeemed.insert without a hiding transformation. A hash of this value is asserted equal to ledger voucherHash on the same potential successful path. Ledger operation data is public. If an untrusted observer obtains a reusable authentication secret through this boundary, secrecy is lost. An intentional reveal protocol may permit this flow.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "cases/L14-boolean-hash.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/L15-cell-hash.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 14,
+          "circuit": null,
+          "message": "write only ledger. Ledger field lastAnswer is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "low-entropy-hash-disclosure",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 19,
+          "circuit": "answer_",
+          "message": "Published hash has a small private input domain. answer_ publishes a direct persistentHash digest of answer, whose declared Uint<8> domain has at most 256 values. The modeled hash input contains one private source and may include public context, which adds no secret uncertainty. Hashing alone does not hide such a small domain. Intentional disclosure, reveal phases and public identifiers require review; no secrecy intent or actual entropy is inferred.",
+          "quantity": "256 values",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "cases/L16-public-digest-as-key.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 14,
+          "circuit": null,
+          "message": "write only ledger. Ledger field accountId is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 15,
+          "circuit": null,
+          "message": "write only ledger. Ledger field encKey is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "published-digest-generator-scalar-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 21,
+          "circuit": "register",
+          "message": "Published digest determines a stored generator multiplication scalar. This path publishes persistentHash<Vector<1, Bytes<32>>> of the same immutable private witness operand used by native degradeToTransient, whose Field result feeds native ecMulGenerator directly. The generator result survives in ledger encKey. The scalar is determined by the published digest. Review whether the application requires this scalar to remain private; encryption use, enrollment safety, ciphertext impact, deployed impact and path feasibility are not established.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "cases/N01-merkle-unbound-path.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; analysis-budget: unconstrained-witness-to-state unavailable/incomplete for <work>/nightshade-all/cases_N01-merkle-unbound-path.compact/N01-merkle-unbound-path.compact::claim: H; analysis-budget: transient-digest-to-ledger unavailable/incomplete for <work>/nightshade-all/cases_N01-merkle-unbound-path.compact/N01-merkle-unbound-path.compact::claim: Highe; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": [
+        {
+          "rule": "merkle-insert-without-dedupe",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 21,
+          "circuit": "join",
+          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "merkle-leaf-binding-review",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 27,
+          "circuit": "claim",
+          "message": "Checked Merkle leaf is not bound to the path lookup input. claim enforces a root check on this witness-returned path without requiring its Bytes<32> leaf to equal lookup argument 1. Passing a value to a witness does not constrain the witness result. Review whether this argument identifies the intended member; lookup indices or independently checked inputs may be intentional.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/S01-assert-bound-commit.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "unused-declaration",
+          "severity": "info",
+          "native": "info/high",
+          "line": 16,
+          "circuit": null,
+          "message": "unused declaration. witness raterKey has no reference in this compilation unit",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/S02-type-width-commit.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/S03-hash-public-arg-salted.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/S04-commit-random-nonce.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/S05-branch-balanced.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/S06-per-action-tag.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/S07-key-hashed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/S08-public-key-returned.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": []
+    },
+    {
+      "id": "cases/S09-count-committed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "cases/S10-merkle-checkroot.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; analysis-budget: unconstrained-witness-to-state unavailable/incomplete for <work>/nightshade-all/cases_S10-merkle-checkroot.compact/S10-merkle-checkroot.compact::claim: Higher-; analysis-budget: transient-digest-to-ledger unavailable/incomplete for <work>/nightshade-all/cases_S10-merkle-checkroot.compact/S10-merkle-checkroot.compact::claim: Higher-orde; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": [
+        {
+          "rule": "merkle-insert-without-dedupe",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 21,
+          "circuit": "join",
+          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/S11-constructor-hash.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "cases/S12-public-fact.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 14,
+          "circuit": null,
+          "message": "write only ledger. Ledger field closed is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "cases/S13-separate-key-domain.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 14,
+          "circuit": null,
+          "message": "write only ledger. Ledger field accountId is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 15,
+          "circuit": null,
+          "message": "write only ledger. Ledger field encKey is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/battleship/contract/battleship.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 38,
+          "circuit": null,
+          "message": "write only ledger. Ledger field board1State is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "spoofable-authorization",
+          "severity": "low",
+          "native": "low/low",
+          "line": 72,
+          "circuit": "constructor",
+          "message": "Witness validation gates a state-changing effect. constructor requires raw witness data from localSetBoard to equal a public constant on every modeled successful reach. The guard covers 6 effect sites: ledger-write player1, ledger-write board1, ledger-write board1, ledger-write board1State, ledger-write board2State, ledger-write winState. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "spoofable-authorization",
+          "severity": "low",
+          "native": "low/low",
+          "line": 105,
+          "circuit": "acceptGame",
+          "message": "Witness validation gates a state-changing effect. acceptGame requires raw witness data from localSetBoard to equal a public constant on every modeled successful reach. The guard covers 5 effect sites: ledger-write player2, ledger-write board2, ledger-write board2, ledger-write board2State, ledger-write turn. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 130,
+          "circuit": "player1Shoot",
+          "message": "Required absence lacks a surviving matching insertion. player1Shoot has a modeled successful state-changing history requiring absence from board2Hits, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 152,
+          "circuit": "player2Shoot",
+          "message": "Required absence lacks a surviving matching insertion. player2Shoot has a modeled successful state-changing history requiring absence from board1Hits, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 173,
+          "circuit": "checkBoard1",
+          "message": "Required absence lacks a surviving matching insertion. checkBoard1 has a modeled successful state-changing history requiring absence from board1Hits, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 186,
+          "circuit": "checkBoard1",
+          "message": "Required absence lacks a surviving matching insertion. checkBoard1 has a modeled successful state-changing history requiring absence from board1, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unasserted-security-result",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 198,
+          "circuit": "checkBoard1",
+          "message": "Predicate result reaches an effect without enforcement. A comparison or canonical predicate is discarded before an effect, stored, or returned in an aggregate after an effect without requiring its exact outcome to be true. Recording status can be intentional; security intent is unknown.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 216,
+          "circuit": "checkBoard2",
+          "message": "Required absence lacks a surviving matching insertion. checkBoard2 has a modeled successful state-changing history requiring absence from board2Hits, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 229,
+          "circuit": "checkBoard2",
+          "message": "Required absence lacks a surviving matching insertion. checkBoard2 has a modeled successful state-changing history requiring absence from board2, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unasserted-security-result",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 241,
+          "circuit": "checkBoard2",
+          "message": "Predicate result reaches an effect without enforcement. A comparison or canonical predicate is discarded before an effect, stored, or returned in an aggregate after an effect without requiring its exact outcome to be true. Recording status can be intentional; security intent is unknown.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/calculator/contract/calculator.compact",
+      "status": "complete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 3,
+          "circuit": null,
+          "message": "write only ledger. Ledger field result is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/election/contract/election.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 18,
+          "circuit": null,
+          "message": "write only ledger. Ledger field candidate0 is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 19,
+          "circuit": null,
+          "message": "write only ledger. Ledger field candidate1 is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 28,
+          "circuit": null,
+          "message": "write only ledger. Ledger field winner is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 85,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/hello-world/contract/hello-world.compact",
+      "status": "complete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 3,
+          "circuit": null,
+          "message": "write only ledger. Ledger field message is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/private-bid/contract/private-bid.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; initialization-effect-unsupported: Consecutive invocation analysis does not carry transaction/context effects; initialization review is incomplete; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable; initialization-effect-unsupported: Consecutive invocation analysis does not carry transaction/context effects; initialization review is incomplete",
+      "findings": [
+        {
+          "rule": "caller-supplied-time-review",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 82,
+          "circuit": "placeBid",
+          "message": "Caller Uint<64> passes a ledger bound without an enforced clock bound. This effect-bearing branch enforces a caller Uint<64> comparison with a ledger value, without enforcing blockTimeGte/Gt on that same value. Whether this quantity represents time requires independent review.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/private-party/contract/private-party.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": [
+        {
+          "rule": "inconsistent-access-control",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 48,
+          "circuit": "rsvp",
+          "message": "Exported writer omits a sibling caller-check convention. rsvp has a modeled successful write to partyState without the secret-preimage convention required by 3 of 5 distinct exported writers, or a modeled alternative of the same strength. The convention checks organizer. Mixed public and restricted operations may be intentional; review the intended access policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "inconsistent-access-control",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 80,
+          "circuit": "checkIn",
+          "message": "Exported writer omits a sibling caller-check convention. checkIn has a modeled successful write to partyState without the secret-preimage convention required by 3 of 5 distinct exported writers, or a modeled alternative of the same strength. The convention checks organizer. Mixed public and restricted operations may be intentional; review the intended access policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "zero-amount-unshielded-send",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 105,
+          "circuit": "claimFees",
+          "message": "Unshielded send amount retains zero in its modeled range. A canonical sendUnshielded call has no modeled positive lower bound on its amount on this successful history. Review whether zero should be rejected. This static range observation does not establish a feasible zero transaction, proof success, node rejection or deployed impact.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/private-tip-jar/contract/private-tip-jar.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": [
+        {
+          "rule": "caller-supplied-ledger-equality",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 94,
+          "circuit": "tip",
+          "message": "Caller input equality with public ledger bytes gates an effect. tip requires an unchanged caller-supplied Bytes<32> input to equal definite preexisting public ledger data before every modeled successful reach of 2 effect site(s). At least one reaching history lacks the supported private-preimage check against preexisting ledger data. This equality alone does not establish secret possession. Other protocol checks may apply; routing and record-consistency checks can intentionally match.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 126,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 135,
+          "circuit": null,
+          "message": "Shielded send metadata is discarded. The canonical shielded send result is discarded by this source use. Review whether the caller needs its sent or change metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/private-tip-jar/contract/tip-token.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 29,
+          "circuit": null,
+          "message": "Shielded mint metadata is discarded. The canonical shielded mint result is discarded by this source use. Review whether the caller needs the returned coin metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 29,
+          "circuit": "mint",
+          "message": "Mint quantity has no modeled application cap. mint reaches mintShielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 29,
+          "circuit": "mint",
+          "message": "Token operation has no required caller-input constraint. mint reaches mintShieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/secret-message/contract/secret-message.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 10,
+          "circuit": null,
+          "message": "write only ledger. Ledger field messageHash is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/shielded-chips/contract/chips.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; shielded-descriptor-provenance-unavailable: Exported result has relevant unresolved descriptor provenance; exported shielded descriptor review is incomplete; transient-ledger-evidence-unavailable: transient-digest-to-ledger unavailable/incomplete for <work>/nightshade-all/examples_examples_shielded-chips_contract_chips.compact/chips; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 144,
+          "circuit": "mintToTreasury",
+          "message": "Mint quantity has no modeled application cap. mintToTreasury reaches mintShielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 144,
+          "circuit": "mint",
+          "message": "Mint quantity has no modeled application cap. mint reaches mintShielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "received-coin-not-validated",
+          "severity": "low",
+          "native": "low/low",
+          "line": 174,
+          "circuit": "burn",
+          "message": "Review received coin color and value constraints. burn receives a shielded coin with a missing recognized application constraint on one or more of: color, value. This affects 3 of 3 modeled successful receives at this invocation. Protocol receipt alone does not check expected payment terms. Unrestricted deposits may be intentional.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "default-recipient-or-owner",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 175,
+          "circuit": "burn",
+          "message": "Known default active recipient. burn uses a statically known all-zero 32-byte active recipient at sendImmediateShielded on a modeled successful history. Inactive Either payloads are excluded. Intentional burning, testing or authority removal can be valid; review the operation's destination policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "default-recipient-or-owner",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 210,
+          "circuit": "burnFromTreasury",
+          "message": "Known default active recipient. burnFromTreasury uses a statically known all-zero 32-byte active recipient at sendShielded on a modeled successful history. Inactive Either payloads are excluded. Intentional burning, testing or authority removal can be valid; review the operation's destination policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "exported-shielded-descriptor",
+          "severity": "info",
+          "native": "info/high",
+          "line": 251,
+          "circuit": "mint",
+          "message": "Shielded coin descriptor fields reach an exported result. Canonical shielded coin descriptor fields have an unchanged resolved source route to this exported result. The result is available at the Compact/application output boundary. Review whether callers should receive these fields; intentional wallet metadata APIs can match. This does not establish successful execution, public ledger publication, a secrecy-policy violation or exploitability.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 306,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/shielded-chips/contract/roulette.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; transient-ledger-evidence-unavailable: transient-digest-to-ledger unavailable/incomplete for <work>/nightshade-all/examples_examples_shielded-chips_contract_roulette.compact/ro; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "received-coin-not-validated",
+          "severity": "low",
+          "native": "low/low",
+          "line": 142,
+          "circuit": "houseDeposit",
+          "message": "Review received coin color and value constraints. houseDeposit receives a shielded coin with a missing recognized application constraint on one or more of: value. This affects 1 of 1 modeled successful receives at this invocation. Protocol receipt alone does not check expected payment terms. Unrestricted deposits may be intentional.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-supplied-ledger-equality",
+          "severity": "medium",
+          "native": "medium/high",
+          "line": 162,
+          "circuit": "betColor",
+          "message": "Caller input equality with public ledger bytes gates an effect. betColor requires an unchanged caller-supplied Bytes<32> input to equal definite preexisting public ledger data before every modeled successful reach of 4 effect site(s). At least one reaching history lacks the supported private-preimage check against preexisting ledger data. This equality alone does not establish secret possession. Other protocol checks may apply; routing and record-consistency checks can intentionally match.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "received-coin-not-validated",
+          "severity": "low",
+          "native": "low/low",
+          "line": 164,
+          "circuit": "betColor",
+          "message": "Review received coin color and value constraints. betColor receives a shielded coin with a missing recognized application constraint on one or more of: value. This affects 2 of 2 modeled successful receives at this invocation. Protocol receipt alone does not check expected payment terms. Unrestricted deposits may be intentional.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 227,
+          "circuit": null,
+          "message": "Shielded send metadata is discarded. The canonical shielded send result is discarded by this source use. Review whether the caller needs its sent or change metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 284,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 287,
+          "circuit": null,
+          "message": "Shielded send metadata is discarded. The canonical shielded send result is discarded by this source use. Review whether the caller needs its sent or change metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "redundant-boolean-branch",
+          "severity": "info",
+          "native": "info/high",
+          "line": 298,
+          "circuit": null,
+          "message": "redundant boolean branch. Both arms contain only opposite Boolean literal returns. A direct return of the condition or its negation can express this source shape; preserve the condition's effects and disclosure boundary.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/silent-auction/contract/silent-auction.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "unnecessary-disclose",
+          "severity": "info",
+          "native": "info/high",
+          "line": 61,
+          "circuit": null,
+          "message": "unnecessary disclose. Disclosure operand is already public from literals or direct ledger data",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unnecessary-disclose",
+          "severity": "info",
+          "native": "info/high",
+          "line": 65,
+          "circuit": null,
+          "message": "unnecessary disclose. Disclosure operand is already public from literals or direct ledger data",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "inconsistent-access-control",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 91,
+          "circuit": "bid",
+          "message": "Exported writer omits a sibling caller-check convention. bid has a modeled successful write to auctionState without the secret-preimage convention required by 3 of 5 distinct exported writers, or a modeled alternative of the same strength. The convention checks auctionOrganizer. Mixed public and restricted operations may be intentional; review the intended access policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "zero-amount-unshielded-send",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 122,
+          "circuit": "revealWin",
+          "message": "Unshielded send amount retains zero in its modeled range. A canonical sendUnshielded call has no modeled positive lower bound on its amount on this successful history. Review whether zero should be rejected. This static range observation does not establish a feasible zero transaction, proof success, node rejection or deployed impact.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 133,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "zero-amount-unshielded-send",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 149,
+          "circuit": "claimWin",
+          "message": "Unshielded send amount retains zero in its modeled range. A canonical sendUnshielded call has no modeled positive lower bound on its amount on this successful history. Review whether zero should be rejected. This static range observation does not establish a feasible zero transaction, proof success, node rejection or deployed impact.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "inconsistent-access-control",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 154,
+          "circuit": "claimWin",
+          "message": "Exported writer omits a sibling caller-check convention. claimWin has a modeled successful write to auctionState without the secret-preimage convention required by 3 of 5 distinct exported writers, or a modeled alternative of the same strength. The convention checks auctionOrganizer. Mixed public and restricted operations may be intentional; review the intended access policy.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/token-transfers/contract/token-transfers.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 9,
+          "circuit": "mintAndReceive",
+          "message": "Mint quantity has no modeled application cap. mintAndReceive reaches mintUnshielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 9,
+          "circuit": "mintAndReceive",
+          "message": "Token operation has no required caller-input constraint. mintAndReceive reaches mintUnshieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unnecessary-disclose",
+          "severity": "info",
+          "native": "info/high",
+          "line": 10,
+          "circuit": null,
+          "message": "unnecessary disclose. Disclosure operand is already public from literals or direct ledger data",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unnecessary-disclose",
+          "severity": "info",
+          "native": "info/high",
+          "line": 21,
+          "circuit": null,
+          "message": "unnecessary disclose. Disclosure operand is already public from literals or direct ledger data",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 23,
+          "circuit": "sendToUser",
+          "message": "Token operation has no required caller-input constraint. sendToUser reaches sendUnshielded on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "zero-amount-unshielded-send",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 23,
+          "circuit": "sendToUser",
+          "message": "Unshielded send amount retains zero in its modeled range. A canonical sendUnshielded call has no modeled positive lower bound on its amount on this successful history. Review whether zero should be rejected. This static range observation does not establish a feasible zero transaction, proof success, node rejection or deployed impact.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 41,
+          "circuit": "sendNightTokensToUser",
+          "message": "Token operation has no required caller-input constraint. sendNightTokensToUser reaches sendUnshielded on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "zero-amount-unshielded-send",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 41,
+          "circuit": "sendNightTokensToUser",
+          "message": "Unshielded send amount retains zero in its modeled range. A canonical sendUnshielded call has no modeled positive lower bound on its amount on this successful history. Review whether zero should be rejected. This static range observation does not establish a feasible zero transaction, proof success, node rejection or deployed impact.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "received-coin-not-validated",
+          "severity": "low",
+          "native": "low/low",
+          "line": 49,
+          "circuit": "receiveShieldedTokens",
+          "message": "Review received coin color and value constraints. receiveShieldedTokens receives a shielded coin with a missing recognized application constraint on one or more of: color, value. This affects 1 of 1 modeled successful receives at this invocation. Protocol receipt alone does not check expected payment terms. Unrestricted deposits may be intentional.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "exported-shielded-descriptor",
+          "severity": "info",
+          "native": "info/high",
+          "line": 53,
+          "circuit": "sendShieldedToUser",
+          "message": "Shielded coin descriptor fields reach an exported result. Canonical shielded coin descriptor fields have an unchanged resolved source route to this exported result. The result is available at the Compact/application output boundary. Review whether callers should receive these fields; intentional wallet metadata APIs can match. This does not establish successful execution, public ledger publication, a secrecy-policy violation or exploitability.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 53,
+          "circuit": "sendShieldedToUser",
+          "message": "Token operation has no required caller-input constraint. sendShieldedToUser reaches sendShielded on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "exported-shielded-descriptor",
+          "severity": "info",
+          "native": "info/high",
+          "line": 57,
+          "circuit": "mintShieldedToSelf",
+          "message": "Shielded coin descriptor fields reach an exported result. Canonical shielded coin descriptor fields have an unchanged resolved source route to this exported result. The result is available at the Compact/application output boundary. Review whether callers should receive these fields; intentional wallet metadata APIs can match. This does not establish successful execution, public ledger publication, a secrecy-policy violation or exploitability.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 57,
+          "circuit": "mintShieldedToSelf",
+          "message": "Mint quantity has no modeled application cap. mintShieldedToSelf reaches mintShielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 57,
+          "circuit": "mintShieldedToSelf",
+          "message": "Token operation has no required caller-input constraint. mintShieldedToSelf reaches mintShieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unbounded-mint",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 61,
+          "circuit": "mintAndSendShielded",
+          "message": "Mint quantity has no modeled application cap. mintAndSendShielded reaches mintShielded with a variable amount whose successful-path envelope retains the native 64-bit upper limit and has no modeled public-ledger upper bound. A lower-only check or unrelated caller guard does not establish a quantity cap. Trusted-issuer and intentionally public minting can be valid; review the monetary policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 61,
+          "circuit": "mintAndSendShielded",
+          "message": "Token operation has no required caller-input constraint. mintAndSendShielded reaches mintShieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "exported-shielded-descriptor",
+          "severity": "info",
+          "native": "info/high",
+          "line": 63,
+          "circuit": "mintAndSendShielded",
+          "message": "Shielded coin descriptor fields reach an exported result. Canonical shielded coin descriptor fields have an unchanged resolved source route to this exported result. The result is available at the Compact/application output boundary. Review whether callers should receive these fields; intentional wallet metadata APIs can match. This does not establish successful execution, public ledger publication, a secrecy-policy violation or exploitability.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 63,
+          "circuit": "mintAndSendShielded",
+          "message": "Token operation has no required caller-input constraint. mintAndSendShielded reaches sendShielded on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/examples/zk-loan/contract/zk-loan.compact",
+      "status": "incomplete",
+      "adjusted": "pragma 0.27, profile 0.35.0",
+      "note": "profile compact-0.35.0-zkir2; development-pattern-loop: Local structural review does not model loop transfers; development-pattern-loop: Local structural review does not model loop transfers; development-pattern-loop: Local structural review does not model loop transfers",
+      "findings": [
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 132,
+          "circuit": "requestLoan",
+          "message": "Required absence lacks a surviving matching insertion. requestLoan has a modeled successful state-changing history requiring absence from blacklist, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 133,
+          "circuit": "requestLoan",
+          "message": "Required absence lacks a surviving matching insertion. requestLoan has a modeled successful state-changing history requiring absence from onGoingPinMigration, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 153,
+          "circuit": "respondToLoan",
+          "message": "Required absence lacks a surviving matching insertion. respondToLoan has a modeled successful state-changing history requiring absence from blacklist, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 154,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 176,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 262,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 287,
+          "circuit": "changePin",
+          "message": "Required absence lacks a surviving matching insertion. changePin has a modeled successful state-changing history requiring absence from blacklist, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 293,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 296,
+          "circuit": "changePin",
+          "message": "Required absence lacks a surviving matching insertion. changePin has a modeled successful state-changing history requiring absence from onGoingPinMigration, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 299,
+          "circuit": "changePin",
+          "message": "Required absence lacks a surviving matching insertion. changePin has a modeled successful state-changing history requiring absence from loans, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 311,
+          "circuit": "changePin",
+          "message": "Required absence lacks a surviving matching insertion. changePin has a modeled successful state-changing history requiring absence from onGoingPinMigration, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "nullifier-check-without-insert",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 315,
+          "circuit": "changePin",
+          "message": "Required absence lacks a surviving matching insertion. changePin has a modeled successful state-changing history requiring absence from loans, without a definite surviving insertion of that exact value/key into the same collection. Review whether this check is intended to consume a one-use identifier.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/axelar-gateway/AxelarGateway.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 104,
+          "circuit": null,
+          "message": "write only ledger. Ledger field operators_hash is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 198,
+          "circuit": "deploy_token",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 199,
+          "circuit": "deploy_token",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 200,
+          "circuit": "deploy_token",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 201,
+          "circuit": "deploy_token",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 205,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "configured-membership-capacity-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 215,
+          "circuit": null,
+          "message": "Immediate configured state cannot satisfy distinct memberships. Immediately after this modeled constructor history, the current collection contains at most 0 members, while the reached gate prefix requires 1 pairwise-distinct members. Those requirements are inconsistent for this represented state. Later configuration changes, concrete invocation feasibility and cryptographic validity remain unproven; this does not establish permanent unusability.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 236,
+          "circuit": "approve_contract_call",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 256,
+          "circuit": "approve_contract_call_with_mint",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "caller-key-zero-entry-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 258,
+          "circuit": "approve_contract_call_with_mint",
+          "message": "Caller-key numeric Map insertion survives a zero-amount invocation. With the actual inserted amount zero, a modeled full successful invocation retains a zero-valued numeric Map write at an unchanged caller-supplied Bytes<32> key. This history has no required initial membership for that exact key and no required finite literal key domain. Review whether unrestricted zero entries are intended. Intentional zero APIs can match this source relationship.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/caller/Caller.compact",
+      "status": "complete",
+      "note": "profile compact-0.35.0-zkir2",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/caller/Proxy.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; keyed-state-component-unavailable: External-contract callee effects have unknown ledger scope; keyed-state-component-unavailable: External-contract callee effects have unknown ledger scope",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/eth-addr-secp/prove-eth-addr-secp.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1Point",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/events/Events.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; zero-default-evidence-unavailable: Membership origin crosses a may-alias write or unqualified receiver replacement; capacity-constraint-unavailable: Required capacity predicate structure is incomplete",
+      "findings": [
+        {
+          "rule": "zero-amount-unguarded-map-debit-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 37,
+          "circuit": "transfer",
+          "message": "Review zero-amount Map debit lookup with unknown prior membership. A modeled full successful invocation with the actual debit amount zero looks up this numeric Map entry while same-entry membership is unknown, subtracts that zero from the exact immutable lookup result, and writes the result to the same exact entry. Review whether this source relationship is intended.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/fungible-token/FungibleToken.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; zero-default-evidence-unavailable: Membership origin crosses a may-alias write or unqualified receiver replacement; capacity-constraint-unavailable: Required capacity predicate structure is incomplete; capacity-constraint-unavailable: Required capacity predicate structure is incomplete",
+      "findings": [
+        {
+          "rule": "zero-amount-unguarded-map-debit-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 32,
+          "circuit": "transfer",
+          "message": "Review zero-amount Map debit lookup with unknown prior membership. A modeled full successful invocation with the actual debit amount zero looks up this numeric Map entry while same-entry membership is unknown, subtracts that zero from the exact immutable lookup result, and writes the result to the same exact entry. Review whether this source relationship is intended.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/no-witness-dex/DEX.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/no-witness-dex/FungibleToken.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; zero-default-evidence-unavailable: Membership origin crosses a may-alias write or unqualified receiver replacement; capacity-constraint-unavailable: Required capacity predicate structure is incomplete; capacity-constraint-unavailable: Required capacity predicate structure is incomplete",
+      "findings": [
+        {
+          "rule": "zero-amount-unguarded-map-debit-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 31,
+          "circuit": "transfer",
+          "message": "Review zero-amount Map debit lookup with unknown prior membership. A modeled full successful invocation with the actual debit amount zero looks up this numeric Map entry while same-entry membership is unknown, subtracts that zero from the exact immutable lookup result, and writes the result to the same exact entry. Review whether this source relationship is intended.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/recover-secp/recover-secp.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1EcdsaSignatureWithRecovery",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/self-recursion/SelfRecursion.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; keyed-state-component-unavailable: External-contract callee effects have unknown ledger scope",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/DEX.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/MyToken.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter; unknown-destructuring: Cannot project a destructured value; dynamic-contract-call: 0.35 dynamic contract call resolves its implementation at runtime; post-call reads are incomplete because the callee may re-enter",
+      "findings": [
+        {
+          "rule": "zero-amount-unguarded-map-debit-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 38,
+          "circuit": "transfer",
+          "message": "Review zero-amount Map debit lookup with unknown prior membership. A modeled full successful invocation with the actual debit amount zero looks up this numeric Map entry while same-entry membership is unknown, subtracts that zero from the exact immutable lookup result, and writes the result to the same exact entry. Review whether this source relationship is intended.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/USDC.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; capacity-constraint-unavailable: Required capacity predicate structure is incomplete",
+      "findings": [
+        {
+          "rule": "zero-amount-unguarded-map-debit-review",
+          "severity": "info",
+          "native": "info/high",
+          "line": 27,
+          "circuit": "transfer",
+          "message": "Review zero-amount Map debit lookup with unknown prior membership. A modeled full successful invocation with the actual debit amount zero looks up this numeric Map entry while same-entry membership is unknown, subtracts that zero from the exact immutable lookup result, and writes the result to the same exact entry. Review whether this source relationship is intended.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/usdcx/bridged-usdc-mint.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1EcdsaSignature",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/verify-sequential-secp/verify-sequential-secp.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1Point",
+      "findings": []
+    }
+  ],
+  "seconds": 116,
+  "corpus": {
+    "sets": [
+      "zoo",
+      "cases",
+      "examples"
+    ],
+    "examplesCommit": "377495c5efbd5b1f3123f5aee2776c3694b05eda"
+  }
+}

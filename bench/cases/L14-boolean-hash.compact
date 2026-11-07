@@ -1,0 +1,20 @@
+// Tell benchmark case L14-boolean-hash: hash of a Boolean
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: consent
+// line: 19
+// why: two possible preimages; hashing true and false reads every answer.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger consents: Map<Bytes<32>, Bytes<32>>;
+
+witness agrees(): Boolean;
+
+export circuit consent(form: Bytes<32>): [] {
+  consents.insert(disclose(form), disclose(persistentHash<Boolean>(agrees()))); // LEAK
+}

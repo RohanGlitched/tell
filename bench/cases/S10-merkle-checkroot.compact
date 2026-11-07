@@ -1,0 +1,30 @@
+// Tell benchmark case S10-merkle-checkroot: membership by Merkle root, path bound to the leaf
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: linkable-tag
+// circuit: claim
+// line: none
+// why: checkRoot reveals only the root; the path is bound to the recomputed leaf. (Claims are unlimited here; double-claim prevention would need a nullifier, which is a separate concern.)
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: MerkleTree<10, Bytes<32>>;
+export ledger claims: Counter;
+
+witness memberKey(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit claim(): [] {
+  const leaf = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), memberKey()]);
+  const path = memberPath(leaf);
+  assert(path.leaf == leaf, "path is not for this member");
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "members only");
+  claims.increment(1);
+}

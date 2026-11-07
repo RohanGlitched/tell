@@ -1,0 +1,20 @@
+// Tell benchmark case S07-key-hashed: a secret key hashed with a domain tag and stored
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: secret-published
+// circuit: enroll
+// line: none
+// why: a 256-bit key under persistentHash; only the hash is stored (one device, one tag: not linkable across actions).
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger keyOf: Map<Bytes<32>, Bytes<32>>;
+
+witness deviceKey(): Bytes<32>;
+
+export circuit enroll(device: Bytes<32>): [] {
+  keyOf.insert(disclose(device), disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "device:key"), deviceKey()])));
+}

@@ -1,0 +1,23 @@
+// Tell benchmark case L01-assert-bound-hash: small-domain hash, bounded by an assert (type is wide)
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: rate
+// line: 22
+// why: rating is Uint<64> but asserted below 10, so the published hash has 10 possible preimages; hashing 0..9 recovers every rating.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger ratings: Map<Bytes<32>, Bytes<32>>;
+
+witness raterKey(): Bytes<32>;
+witness rating(): Uint<64>;
+
+export circuit rate(item: Bytes<32>): [] {
+  const r = rating();
+  assert(r < 10, "ratings run from 0 to 9");
+  ratings.insert(disclose(item), disclose(persistentHash<Uint<64>>(r))); // LEAK
+}

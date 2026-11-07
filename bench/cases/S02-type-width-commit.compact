@@ -1,0 +1,21 @@
+// Tell benchmark case S02-type-width-commit: small-domain type, committed with a random salt
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: guessable-hash
+// circuit: answer_
+// line: none
+// why: same Uint<8> answer under persistentCommit with a witness salt.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger answers: Map<Bytes<32>, Bytes<32>>;
+
+witness answer(): Uint<8>;
+witness answerSalt(): Bytes<32>;
+
+export circuit answer_(question: Bytes<32>): [] {
+  answers.insert(disclose(question), disclose(persistentCommit<Uint<8>>(answer(), answerSalt())));
+}

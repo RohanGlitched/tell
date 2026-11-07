@@ -1,0 +1,20 @@
+// Tell benchmark case L08-cast-not-hash: a secret key cast to a field and stored
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: secret-published
+// circuit: enroll
+// line: 19
+// why: degradeToTransient is a type conversion, not a hash; the stored field is the key.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger keyOf: Map<Bytes<32>, Field>;
+
+witness deviceKey(): Bytes<32>;
+
+export circuit enroll(device: Bytes<32>): [] {
+  keyOf.insert(disclose(device), disclose(degradeToTransient(deviceKey()))); // LEAK
+}

@@ -1,0 +1,25 @@
+// Tell benchmark case S06-per-action-tag: a fresh tag per action
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: linkable-tag
+// circuit: checkIn
+// line: none
+// why: the tag hashes the key with the check-in number, so no two check-ins share a tag.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger visits: Map<Uint<64>, Bytes<32>>;
+export ledger visitors: Map<Uint<64>, Bytes<32>>;
+export ledger n: Counter;
+
+witness visitorKey(): Bytes<32>;
+
+export circuit checkIn(place: Bytes<32>): [] {
+  const i = n.read();
+  visits.insert(i, disclose(place));
+  visitors.insert(i, disclose(persistentHash<Vector<3, Bytes<32>>>([pad(32, "visit:who"), visitorKey(), (i as Field) as Bytes<32>])));
+  n.increment(1);
+}
