@@ -2,6 +2,11 @@
 # an inline comment with the bits revealed and a verified fix as a suggestion, and the job summary
 # shows the grade before and after. Uses the Action from this checkout (`uses: ./`); other
 # repositories use `RohanGlitched/tell@v1` as in examples/tell-pr-review.yml.
+#
+# The demo pull requests add a leak on purpose, so here the check is green when Tell catches it
+# (the scan fails at high, with a high or critical finding in the results) and red when Tell
+# misses it, as in the scan-zoo job of ci.yml. In your own repository, leave out the last two
+# steps and `continue-on-error`: the scan step's failure is what blocks the merge.
 name: tell-pr-demo
 
 on:
@@ -18,7 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: ./
+      - name: Tell reviews the change (expected to fail on the demo leak)
+        id: tell
+        uses: ./
+        continue-on-error: true
         with:
           path: demo
           fail-on: high
@@ -26,3 +34,20 @@ jobs:
           suggest-fixes: 'true'
           comment-on: medium
           upload-sarif: 'false'
+      - name: Tell caught the leak, as intended
+        if: steps.tell.outcome == 'failure'
+        env:
+          RESULTS: ${{ steps.tell.outputs.results }}
+        # the scan failed because of a finding, not because a contract did not compile or a step broke
+        run: |
+          node -e '
+            const r = JSON.parse(require("fs").readFileSync(process.env.RESULTS, "utf8"));
+            const hits = r.flatMap((c) => (c.ok ? c.report.findings : []).filter((f) => !f.suppressed && ["critical", "high"].includes(f.severity)).map((f) => `${c.file}:${f.line ?? "?"} ${f.severity} ${f.title}`));
+            const broken = r.filter((c) => !c.ok).map((c) => c.file);
+            if (broken.length) { console.log("::error title=Tell::did not compile: " + broken.join(", ")); process.exit(1); }
+            if (!hits.length) { console.log("::error title=Tell::the scan failed without a high or critical finding"); process.exit(1); }
+            console.log("Tell caught the leak, as intended:\n  " + hits.join("\n  "));
+          '
+      - name: Tell missed the leak
+        if: steps.tell.outcome != 'failure'
+        run: echo "::error title=Tell::the demo change leaks, and Tell did not fail at high" && exit 1

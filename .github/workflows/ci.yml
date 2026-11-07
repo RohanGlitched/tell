@@ -3,18 +3,24 @@ on: [push, pull_request]
 permissions:
   contents: read
   security-events: write
+# Every job that installs a compiler runs midnightntwrk/setup-compact-action with continue-on-error,
+# then .github/scripts/install-compact.sh: `compact update` retried with backoff, then the release
+# zip itself. Both ask the GitHub API for the release list; GITHUB_TOKEN authenticates those calls.
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - uses: midnightntwrk/setup-compact-action@v1
+        continue-on-error: true
         with: { compact-version: '0.31.1' }
       # Ledger 9 zoo contracts (events, contract calls) are compiled with 0.36.0; 0.31.1 stays the default.
-      - name: Add Compact 0.36.0
-        run: compact update 0.36.0 && compact update 0.31.1 && test -x ~/.compact/versions/0.36.0/*/compactc.bin
+      - name: Compact 0.31.1 (default) and 0.36.0, retried
+        run: bash .github/scripts/install-compact.sh 0.31.1 0.36.0
       - run: npm ci --no-audit --no-fund --workspace engine --workspace zoo --workspace desk --include-workspace-root
       - name: Ledger 9 zoo runtime (compact-runtime 0.21)
         run: npm ci --no-audit --no-fund --prefix zoo/ledger9
@@ -28,16 +34,112 @@ jobs:
         run: npm run compact -w desk
       - name: Tell Desk lifecycle, rejection and attacker tests
         run: npm test -w desk
-  integrations:
-    # The MCP server (an MCP client calls every tool against the zoo) and the VS Code extension
-    # (finding-to-diagnostic mapping, CLI parsing, the runner with the real compiler), then the .vsix.
+  desk-compilers:
+    # Tell Desk under the next compilers. 0.35.0 and 0.36.0 generate code for compact-runtime 0.20
+    # and 0.21 (async circuits, a new circuit-context API), so the suite in desk/compat runs the
+    # lifecycle, the main rejections and the public-data attacker on that runtime; the full suite
+    # (test job) stays on 0.31.1, the ledger live today. Then Tell scans the contract with the same
+    # compiler: still grade A, nothing above info.
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { compact: '0.35.0', runtime: '0.20.0' }
+          - { compact: '0.36.0', runtime: '0.21.0' }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - uses: midnightntwrk/setup-compact-action@v1
+        continue-on-error: true
+        with: { compact-version: '${{ matrix.compact }}' }
+      - name: Compact ${{ matrix.compact }}, retried
+        run: bash .github/scripts/install-compact.sh ${{ matrix.compact }}
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace desk --include-workspace-root
+      - name: Compile Tell Desk with ${{ matrix.compact }}
+        working-directory: desk
+        run: |
+          compact compile +${{ matrix.compact }} --skip-zk contracts/desk.compact compat/managed/desk
+          head -2 compat/managed/desk/contract/index.js
+      - name: compact-runtime ${{ matrix.runtime }}
+        run: npm install --no-save --no-package-lock --no-audit --no-fund --prefix desk/compat @midnight-ntwrk/compact-runtime@${{ matrix.runtime }}
+      - name: Tell Desk lifecycle, rejections and attacker on ${{ matrix.compact }}
+        working-directory: desk
+        run: npx vitest run --config compat/vitest.config.ts
+      - name: Tell scans Desk at grade A with ${{ matrix.compact }}
+        working-directory: engine
+        run: npx tsx src/cli.ts ../desk/contracts/desk.compact --fail-on low
+        env:
+          TELL_COMPILERS: /home/runner/.compact/versions/${{ matrix.compact }}/x86_64-unknown-linux-musl
+  desk-dry-run:
+    # The Preprod demo, offline: proving keys built here (git-ignored), then the deploy's checks
+    # and the whole lifecycle in the simulator (desk/scripts/dry-run.ts).
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        continue-on-error: true
         with: { compact-version: '0.31.1' }
+      - name: Compact 0.31.1, retried
+        run: bash .github/scripts/install-compact.sh 0.31.1
+      - run: npm ci --no-audit --no-fund --workspace engine --workspace desk --include-workspace-root
+      - name: Compile Tell Desk
+        run: npm run compact -w desk
+      - name: Tell Desk proving keys
+        timeout-minutes: 6
+        run: time npm run compact:keys -w desk
+      - name: Dry run of the Preprod demo
+        run: npm run dry-run -w desk
+  web:
+    # The site as Vercel builds it (the prebuild vendors the engine and fetches six compilers),
+    # served by `next start`, then the Playwright suite against it, API tests included. Tests that
+    # scan a real repository stay behind TELL_E2E_NETWORK; the Preprod reads have no indexer key
+    # here, so /desk and /live show their marked fallback states.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci --no-audit --no-fund --workspace web --include-workspace-root
+      - name: Build the site
+        run: npm run build -w web
+      - name: Typecheck the site and its tests
+        run: npm run typecheck -w web
+      - name: Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: web
+      - name: Playwright e2e and API tests
+        run: npm run e2e -w web
+        env:
+          PW_SERVER: start
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: web/test-results
+          retention-days: 7
+  integrations:
+    # The MCP server (an MCP client calls every tool against the zoo) and the VS Code extension
+    # (finding-to-diagnostic mapping, CLI parsing, the runner with the real compiler), then the .vsix.
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - uses: midnightntwrk/setup-compact-action@v1
+        continue-on-error: true
+        with: { compact-version: '0.31.1' }
+      - name: Compact 0.31.1, retried
+        run: bash .github/scripts/install-compact.sh 0.31.1
       - run: npm ci --no-audit --no-fund --workspace engine --workspace mcp --workspace vscode --include-workspace-root
       - name: MCP server tests
         run: npm test -w mcp
@@ -62,6 +164,8 @@ jobs:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
@@ -71,11 +175,33 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - uses: midnightntwrk/setup-compact-action@v1
+        continue-on-error: true
         with: { compact-version: '${{ matrix.compact }}' }
+      - name: Compact ${{ matrix.compact }}, retried
+        run: bash .github/scripts/install-compact.sh ${{ matrix.compact }}
       - run: npm ci --no-audit --no-fund --workspace engine --include-workspace-root
       - name: Zoo, contract by contract, with compiler ${{ matrix.compact }}
         working-directory: engine
         run: npx tsx scripts/zoo-check.ts --compiler ${{ matrix.compact }}
+  install-retry:
+    # The retry path itself: `compact update` made to fail every time, so the compiler has to come
+    # from the release zip, and the result must compile a contract.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: A compact whose update always fails
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
+          mkdir -p "$RUNNER_TEMP/shim"
+          printf '#!/usr/bin/env bash\nif [ "$1" = update ]; then echo "Error: Failed to update (simulated)" >&2; exit 1; fi\nexec "$HOME/.local/bin/compact" "$@"\n' > "$RUNNER_TEMP/shim/compact"
+          chmod +x "$RUNNER_TEMP/shim/compact"
+      - name: install-compact.sh falls back to the release zip
+        run: PATH="$RUNNER_TEMP/shim:$PATH" bash .github/scripts/install-compact.sh 0.31.1 0.30.0
+      - name: The fallback's compiler compiles the zoo ballot
+        run: |
+          PATH="$RUNNER_TEMP/shim:$PATH" compact compile +0.31.1 --skip-zk zoo/contracts/ballot-leaky.compact "$RUNNER_TEMP/out"
+          PATH="$RUNNER_TEMP/shim:$PATH" compact compile --skip-zk zoo/contracts/ballot-fixed.compact "$RUNNER_TEMP/out2"
+          ls "$RUNNER_TEMP/out/contract/index.js" "$RUNNER_TEMP/out2/contract/index.js"
   scan-zoo:
     # Tell scanning its own leak zoo: every fixed contract passes at medium, every leaky one fails.
     runs-on: ubuntu-latest
