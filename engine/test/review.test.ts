@@ -63,6 +63,16 @@ describe('placing a comment', () => {
     const s = sug('ballot-leaky');
     expect(placeComment(s.finding, s, commentableLines(ballotEdit.patch))).toEqual({ line: 36, suggestion: false });
   });
+  it('a patch on lines next to the finding, inside its hunk, is still a one-click suggestion', () => {
+    const s = sug('ballot-leaky');
+    const f = { ...s.finding, line: 36 };
+    const moved = { ...s, patch: { ...s.patch!, range: { start: 37, end: 37, lines: ['  x'] } } };
+    const hunk = commentableLines('@@ -34,5 +34,5 @@\n a\n b\n-c\n+c2\n d\n e');
+    expect(placeComment(f, moved, hunk)).toEqual({ line: 37, suggestion: true });
+    // but not across hunks
+    const two = commentableLines('@@ -35,2 +35,2 @@\n a\n+b\n@@ -60,2 +60,2 @@\n x\n+y');
+    expect(placeComment(f, { ...s, patch: { ...s.patch!, range: { start: 60, end: 60, lines: ['y'] } } }, two)).toEqual({ line: 36, suggestion: false });
+  });
   it('a finding on an unchanged line gets no inline comment', () => {
     const s = sug('vault-leaky');
     expect(placeComment(s.finding, s, commentableLines('@@ -1,2 +1,2 @@\n a\n+b'))).toBeNull();

@@ -1,0 +1,25 @@
+// Tell leak zoo: a public account id that is also a private key.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Each user registers an account id, hash(seed), and a public key that others
+// encrypt messages to. To save a derivation, the key pair's private scalar is
+// the same hash. The account id is on the ledger, so anyone who reads it holds
+// the private key of the matching encryption key.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger accounts: Map<Bytes<32>, JubjubPoint>;
+
+witness seed(): Bytes<32>;
+
+export pure circuit accountOf(s: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "keyring:account"), s]);
+}
+
+export circuit register(): [] {
+  const id = accountOf(seed());
+  accounts.insert(disclose(id), disclose(ecMulGenerator(degradeToTransient(id))));
+}

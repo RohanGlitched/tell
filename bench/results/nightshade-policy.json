@@ -6,151 +6,6 @@
   "command": "nightshade <file> --compiler-version <profile> --json (via --config)",
   "files": [
     {
-      "id": "zoo/ballot-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/ballot-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 36,
-          "circuit": "vote",
-          "message": "Declared secret reaches a public sink. Secret choice influences ledger-operation ballots.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/board-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 34,
-          "circuit": "post",
-          "message": "Declared secret reaches a public sink. Secret memberPath influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 34,
-          "circuit": "post",
-          "message": "Declared secret reaches a public sink. Secret memberKey influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/board-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/payband-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/payband-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 36,
-          "circuit": "file",
-          "message": "Declared secret reaches a public sink. Secret salary influences ledger-operation records.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/reserve-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/reserve-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 37,
-          "circuit": "bid",
-          "message": "Declared secret reaches a public sink. Secret amount influences ledger-operation qualified.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 39,
-          "circuit": "bid",
-          "message": "Declared secret reaches a public sink. Secret amount influences ledger-operation belowReserve.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/vault-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/vault-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "declared-secret-publication",
-          "severity": "high",
-          "native": "high/medium",
-          "line": 19,
-          "circuit": "claim",
-          "message": "Declared secret reaches a public sink. Secret secretKey influences ledger-write owner as raw data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "spoofable-authorization",
-          "severity": "high",
-          "native": "high/high",
-          "line": 23,
-          "circuit": "withdraw",
-          "message": "Raw witness check gates a privileged effect. withdraw requires raw witness data from secretKey to equal ledger owner on every modeled successful reach. The guard covers 1 effect site: ledger-write withdrawals. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
-          "quantity": null,
-          "privacy": false
-        }
-      ]
-    },
-    {
       "id": "cases/L01-assert-bound-hash.compact",
       "status": "complete",
       "note": "profile compact-0.31.1-zkir2",
@@ -1408,9 +1263,290 @@
       "status": "incomplete",
       "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1Point",
       "findings": []
+    },
+    {
+      "id": "zoo/ballot-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/ballot-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 36,
+          "circuit": "vote",
+          "message": "Declared secret reaches a public sink. Secret choice influences ledger-operation ballots.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 34,
+          "circuit": "post",
+          "message": "Declared secret reaches a public sink. Secret memberPath influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 34,
+          "circuit": "post",
+          "message": "Declared secret reaches a public sink. Secret memberKey influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/club-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 34,
+          "circuit": "claim",
+          "message": "Declared secret reaches a public sink. Secret memberPath influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 34,
+          "circuit": "claim",
+          "message": "Declared secret reaches a public sink. Secret memberKey influences ledger-operation members.checkRoot as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 21,
+          "circuit": null,
+          "message": "Shielded mint metadata is discarded. The canonical shielded mint result is discarded by this source use. Review whether the caller needs the returned coin metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 27,
+          "circuit": null,
+          "message": "Shielded mint metadata is discarded. The canonical shielded mint result is discarded by this source use. Review whether the caller needs the returned coin metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 27,
+          "circuit": "register",
+          "message": "Declared secret reaches a public sink. Secret seed influences ledger-operation accounts.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 24,
+          "circuit": "register",
+          "message": "Declared secret reaches a public sink. Secret seed influences ledger-operation accounts.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/payband-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 36,
+          "circuit": "file",
+          "message": "Declared secret reaches a public sink. Secret salary influences ledger-operation records.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 27,
+          "circuit": "constructor",
+          "message": "Declared secret reaches a public sink. Secret winningNumber influences ledger-write sealedDraw as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/reserve-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 37,
+          "circuit": "bid",
+          "message": "Declared secret reaches a public sink. Secret amount influences ledger-operation qualified.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 39,
+          "circuit": "bid",
+          "message": "Declared secret reaches a public sink. Secret amount influences ledger-operation belowReserve.insert as derived data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/vault-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "declared-secret-publication",
+          "severity": "high",
+          "native": "high/medium",
+          "line": 19,
+          "circuit": "claim",
+          "message": "Declared secret reaches a public sink. Secret secretKey influences ledger-write owner as raw data, contrary to the configured privacy policy. Disclosure permission does not remove this dependency.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "spoofable-authorization",
+          "severity": "high",
+          "native": "high/high",
+          "line": 23,
+          "circuit": "withdraw",
+          "message": "Raw witness check gates a privileged effect. withdraw requires raw witness data from secretKey to equal ledger owner on every modeled successful reach. The guard covers 1 effect site: ledger-write withdrawals. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
     }
   ],
-  "seconds": 81,
+  "seconds": 19,
   "corpus": {
     "sets": [
       "zoo",

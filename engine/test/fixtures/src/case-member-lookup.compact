@@ -1,0 +1,38 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// Proving membership by looking up the caller's own tag, and the patterns that are fine.
+export ledger members: Set<Bytes<32>>;
+export ledger claims: Counter;
+export ledger admins: Set<Bytes<32>>;
+export ledger paused: Boolean;
+export ledger spent: Set<Bytes<32>>;
+export ledger redeemed: Counter;
+witness memberKey(): Bytes<32>;
+witness adminKey(): Bytes<32>;
+witness voucherKey(): Bytes<32>;
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+// leak: every claim names the member who made it
+export circuit claim(): [] {
+  const tag = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), memberKey()]);
+  assert(members.member(disclose(tag)), "members only");
+  claims.increment(1);
+}
+
+// fine: an officer check (which admin acted is the usual design)
+export circuit pause(): [] {
+  const tag = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:admin"), adminKey()]);
+  assert(admins.member(disclose(tag)), "admins only");
+  paused = true;
+}
+
+// fine: a one-time nullifier, checked and inserted in the same call
+export circuit redeem(): [] {
+  const nul = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:voucher"), voucherKey()]);
+  assert(!spent.member(disclose(nul)), "already redeemed");
+  spent.insert(disclose(nul));
+  redeemed.increment(1);
+}

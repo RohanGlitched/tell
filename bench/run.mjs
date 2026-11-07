@@ -28,7 +28,7 @@ const EXAMPLES_COMMIT = '377495c5efbd5b1f3123f5aee2776c3694b05eda';
 
 const argv = process.argv.slice(2);
 const opt = (n) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : undefined);
-const ALL_TOOLS = ['tell', 'nightshade', 'nightshade-all', 'nightshade-policy', 'compact-guard', 'compact-lint', 'oz-detectors'];
+const ALL_TOOLS = ['tell', 'tell-policy', 'nightshade', 'nightshade-all', 'nightshade-policy', 'compact-guard', 'compact-lint', 'oz-detectors'];
 const tools = (opt('--tools') ?? ALL_TOOLS.join(',')).split(',');
 const sets = (opt('--sets') ?? 'zoo,cases,examples').split(',');
 
@@ -99,15 +99,18 @@ const PRIVACY_RULES = {
 
 // ---------------------------------------------------------------- Tell
 
-function runTell(files) {
+// tell: inference only (--no-policy). tell-policy: with bench/policies/tell.json, the intent each
+// file's header states, written down as a policy (see bench/policies/README.md).
+function runTell(files, variant = 'tell') {
   const tsx = path.join(ROOT, 'node_modules/.bin/tsx');
+  const policyArgs = variant === 'tell-policy' ? ['--policy', path.join(BENCH, 'policies/tell.json')] : ['--no-policy'];
   const version = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;
   // a git worktree created on Windows cannot be read by Linux git; BENCH_TELL_COMMIT names it then
   const commit = git(ROOT, ['rev-parse', '--short', 'HEAD']) ?? process.env.BENCH_TELL_COMMIT ?? 'working tree';
   const out = [];
   for (const f of files) {
-    process.stderr.write(`tell ${f.id}\n`);
-    const r = run(tsx, ['engine/src/cli.ts', f.abs, '--json']);
+    process.stderr.write(`${variant} ${f.id}\n`);
+    const r = run(tsx, ['engine/src/cli.ts', f.abs, '--json', ...policyArgs]);
     let res;
     try {
       res = JSON.parse(r.stdout);
@@ -138,7 +141,14 @@ function runTell(files) {
         })),
     });
   }
-  return { tool: 'tell', version: `${version} (${commit})`, repo: 'https://github.com/RohanGlitched/tell', command: 'npx tsx engine/src/cli.ts <file> --json', files: out };
+  return {
+    tool: variant,
+    version: `${version} (${commit})`,
+    repo: 'https://github.com/RohanGlitched/tell',
+    configuration: variant === 'tell-policy' ? 'with the declared-intent policy bench/policies/tell.json' : 'inference only, no policy file',
+    command: `npx tsx engine/src/cli.ts <file> --json ${variant === 'tell-policy' ? '--policy bench/policies/tell.json' : '--no-policy'}`,
+    files: out,
+  };
 }
 
 // ---------------------------------------------------------------- Nightshade
@@ -358,7 +368,7 @@ fs.mkdirSync(path.join(BENCH, 'results'), { recursive: true });
 for (const t of tools) {
   const t0 = Date.now();
   let res;
-  if (t === 'tell') res = runTell(files);
+  if (t === 'tell' || t === 'tell-policy') res = runTell(files, t);
   else if (t.startsWith('nightshade')) res = runNightshade(files, t);
   else if (t === 'compact-guard') res = runCompactGuard(files);
   else if (t === 'compact-lint') res = runCompactLint(files);

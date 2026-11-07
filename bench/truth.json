@@ -1,15 +1,115 @@
 {
   "note": "Ground truth for the labelled set. Bench cases carry their truth in a header comment (truth/class/circuit/line); the zoo is listed here. A leak's span is the body of the named circuit (or constructor) containing the leak line. Each leaky file has exactly one planted privacy leak.",
   "zoo": {
-    "zoo/ballot-leaky.compact": { "truth": "leak", "class": "guessable-hash", "circuit": "vote", "pattern": "disclose(choiceHash(c))", "why": "hash(choice) with choice asserted below 4: four hashes read every vote", "attackTest": "zoo/test/attacks.test.ts: ballot leaky" },
-    "zoo/ballot-fixed.compact": { "truth": "safe" },
-    "zoo/board-leaky.compact": { "truth": "leak", "class": "linkable-tag", "circuit": "post", "pattern": "authors.insert(n, tag)", "why": "every post stores the same hash(memberKey) as author: one identified post unmasks all of a member's posts", "attackTest": "zoo/test/attacks.test.ts: board leaky" },
-    "zoo/board-fixed.compact": { "truth": "safe" },
-    "zoo/payband-leaky.compact": { "truth": "leak", "class": "guessable-hash", "circuit": "file", "pattern": "disclose(recordOf(employee, pay))", "why": "hash(public employee id, salary): only the salary is unknown and it falls to brute force", "attackTest": "zoo/test/attacks.test.ts: payband leaky" },
-    "zoo/payband-fixed.compact": { "truth": "safe" },
-    "zoo/reserve-leaky.compact": { "truth": "leak", "class": "branch", "circuit": "bid", "pattern": "if (disclose(a >= reserve))", "why": "which set is written reveals whether each hidden bid meets the reserve", "attackTest": "zoo/test/attacks.test.ts: reserve leaky" },
-    "zoo/reserve-fixed.compact": { "truth": "safe" },
-    "zoo/vault-leaky.compact": { "truth": "leak", "class": "secret-published", "circuit": "claim", "pattern": "owner = disclose(secretKey())", "why": "the owner's secret key is written to the ledger", "attackTest": "zoo/test/attacks.test.ts: vault leaky" },
-    "zoo/vault-fixed.compact": { "truth": "safe" }
+    "zoo/ballot-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/ballot-leaky.compact": {
+      "truth": "leak",
+      "class": "guessable-hash",
+      "circuit": "vote",
+      "pattern": "disclose(choiceHash(c))",
+      "why": "hash(choice) with choice asserted below 4: four hashes read every vote",
+      "attackTest": "zoo/test/attacks.test.ts: ballot leaky"
+    },
+    "zoo/board-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/board-leaky.compact": {
+      "truth": "leak",
+      "class": "linkable-tag",
+      "circuit": "post",
+      "pattern": "authors.insert(n, tag)",
+      "why": "every post stores the same hash(memberKey) as author: one identified post unmasks all of a member's posts",
+      "attackTest": "zoo/test/attacks.test.ts: board leaky"
+    },
+    "zoo/club-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/club-leaky.compact": {
+      "truth": "leak",
+      "class": "linkable-tag",
+      "circuit": "claim",
+      "pattern": "members.member(disclose(memberLeaf",
+      "why": "a claim looks the caller leaf up in the member set; the lookup key is in the public transcript, so every claim names its member",
+      "attackTest": "zoo/test/linking.test.ts: club leaky"
+    },
+    "zoo/deposit-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/deposit-leaky.compact": {
+      "truth": "leak",
+      "class": "token-amount",
+      "circuit": "bid",
+      "pattern": "receiveUnshielded(nativeToken(), disclose(amount)",
+      "why": "each bidder locks exactly the sealed bid in unshielded tokens; unshielded amounts are public, so the deposit reveals the bid the commitment hides",
+      "attackTest": "zoo/test/deploy-tokens.test.ts: deposit leaky"
+    },
+    "zoo/faucet-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/faucet-leaky.compact": {
+      "truth": "leak",
+      "class": "coin-nonce",
+      "circuit": "claim",
+      "pattern": "mintShieldedToken(pad(32, \"faucet:token\")",
+      "why": "the shielded coin nonce is evolved from a public ledger value, color and amount are public, so the recipient wallet can be confirmed one hash per candidate key",
+      "attackTest": "zoo/test/deploy-tokens.test.ts: faucet leaky"
+    },
+    "zoo/keyring-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/keyring-leaky.compact": {
+      "truth": "leak",
+      "class": "derivable-secret",
+      "circuit": "register",
+      "pattern": "accounts.insert(disclose(id)",
+      "why": "the public account id is also the private scalar of the encryption key stored next to it",
+      "attackTest": "zoo/test/linking.test.ts: keyring leaky"
+    },
+    "zoo/payband-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/payband-leaky.compact": {
+      "truth": "leak",
+      "class": "guessable-hash",
+      "circuit": "file",
+      "pattern": "disclose(recordOf(employee, pay))",
+      "why": "hash(public employee id, salary): only the salary is unknown and it falls to brute force",
+      "attackTest": "zoo/test/attacks.test.ts: payband leaky"
+    },
+    "zoo/raffle-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/raffle-leaky.compact": {
+      "truth": "leak",
+      "class": "guessable-hash",
+      "circuit": "constructor",
+      "pattern": "sealedDraw = disclose(seal(n))",
+      "why": "the constructor seals the winning number (one of 10,000) with a plain hash: 10,000 hashes read it from the initial state",
+      "attackTest": "zoo/test/deploy-tokens.test.ts: raffle leaky"
+    },
+    "zoo/reserve-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/reserve-leaky.compact": {
+      "truth": "leak",
+      "class": "branch",
+      "circuit": "bid",
+      "pattern": "if (disclose(a >= reserve))",
+      "why": "which set is written reveals whether each hidden bid meets the reserve",
+      "attackTest": "zoo/test/attacks.test.ts: reserve leaky"
+    },
+    "zoo/vault-fixed.compact": {
+      "truth": "safe"
+    },
+    "zoo/vault-leaky.compact": {
+      "truth": "leak",
+      "class": "secret-published",
+      "circuit": "claim",
+      "pattern": "owner = disclose(secretKey())",
+      "why": "the owner's secret key is written to the ledger",
+      "attackTest": "zoo/test/attacks.test.ts: vault leaky"
+    }
   }
 }

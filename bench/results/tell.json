@@ -1,269 +1,10 @@
 {
   "tool": "tell",
-  "version": "0.1.0 (d3a9104, engine unchanged on this branch)",
+  "version": "0.1.0 (d62e618)",
   "repo": "https://github.com/RohanGlitched/tell",
-  "command": "npx tsx engine/src/cli.ts <file> --json",
+  "configuration": "inference only, no policy file",
+  "command": "npx tsx engine/src/cli.ts <file> --json --no-policy",
   "files": [
-    {
-      "id": "zoo/ballot-fixed.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 28,
-          "circuit": "register",
-          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` insert receives persistentHash(\u2026 voterKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 33,
-          "circuit": "vote",
-          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` member receives persistentHash(\u2026 voterKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/ballot-leaky.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 27,
-          "circuit": "register",
-          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` insert receives persistentHash(\u2026 voterKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 32,
-          "circuit": "vote",
-          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` member receives persistentHash(\u2026 voterKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "guessable-hash",
-          "severity": "critical",
-          "native": "critical",
-          "line": 36,
-          "circuit": "vote",
-          "message": "choice() is hidden behind a persistentHash anyone can reverse. `ballots` receives persistentHash(\u2026 choice() \u2026), but the only unknown input is choice() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
-          "quantity": "2 bits",
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/board-fixed.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "published",
-          "severity": "info",
-          "native": "info",
-          "line": 26,
-          "circuit": "join",
-          "message": "argument `leaf` is published in the clear. `members` insert receives argument `leaf` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
-          "quantity": "256 bits",
-          "privacy": true
-        },
-        {
-          "rule": "published",
-          "severity": "info",
-          "native": "info",
-          "line": 38,
-          "circuit": "post",
-          "message": "argument `text` is published in the clear. `posts` insert receives argument `text` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
-          "quantity": "256 bits",
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/board-leaky.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 25,
-          "circuit": "join",
-          "message": "memberKey() is hidden, but leaves the same tag every time. `members` insert receives persistentHash(\u2026 memberKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "linkable",
-          "severity": "low",
-          "native": "low",
-          "line": 30,
-          "circuit": "post",
-          "message": "memberKey() is hidden, but leaves the same tag every time. `members` member receives persistentHash(\u2026 memberKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "published",
-          "severity": "info",
-          "native": "info",
-          "line": 32,
-          "circuit": "post",
-          "message": "argument `text` is published in the clear. `posts` insert receives argument `text` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
-          "quantity": "256 bits",
-          "privacy": true
-        },
-        {
-          "rule": "attributable",
-          "severity": "medium",
-          "native": "medium",
-          "line": 33,
-          "circuit": "post",
-          "message": "every `post` stores the same tag derived from memberKey(). `authors` insert stores persistentHash(\u2026 memberKey() \u2026) as data on each call. The value is the same every time for the same holder, so all of one holder's `post` actions line up, and identifying one identifies all of them.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/payband-fixed.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "published",
-          "severity": "info",
-          "native": "info",
-          "line": 33,
-          "circuit": "file",
-          "message": "argument `employee` is published in the clear. `records` insert receives argument `employee` (Uint<32>, 32 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
-          "quantity": "32 bits",
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/payband-leaky.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "published",
-          "severity": "info",
-          "native": "info",
-          "line": 36,
-          "circuit": "file",
-          "message": "argument `employee` is published in the clear. `records` insert receives argument `employee` (Uint<32>, 32 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
-          "quantity": "32 bits",
-          "privacy": true
-        },
-        {
-          "rule": "guessable-hash",
-          "severity": "critical",
-          "native": "critical",
-          "line": 36,
-          "circuit": "file",
-          "message": "salary() is hidden behind a persistentHash anyone can reverse. `records` receives persistentHash(\u2026 salary() \u2026), but the only unknown input is salary() (Uint<32>), about 32 bits. Anyone reading the chain can try every value (at most 2^32 tries) and recover it.",
-          "quantity": "32 bits",
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/reserve-fixed.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "info",
-          "native": "info",
-          "line": 33,
-          "circuit": "bid",
-          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(\u2026 bidderKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/reserve-leaky.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "info",
-          "native": "info",
-          "line": 35,
-          "circuit": "bid",
-          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(\u2026 bidderKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
-          "quantity": null,
-          "privacy": true
-        },
-        {
-          "rule": "branch",
-          "severity": "medium",
-          "native": "medium",
-          "line": 37,
-          "circuit": "bid",
-          "message": "whether `qualified` is touched depends on amount(). This insert on `qualified` only happens on one side of a condition involving amount(). The public transcript shows which side ran, so observers learn the condition's outcome.",
-          "quantity": "1 bits",
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/vault-fixed.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "linkable",
-          "severity": "info",
-          "native": "info",
-          "line": 23,
-          "circuit": "claim",
-          "message": "secretKey() is hidden, but leaves the same tag every time. `owner` write receives persistentHash(\u2026 secretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
-          "quantity": null,
-          "privacy": true
-        }
-      ]
-    },
-    {
-      "id": "zoo/vault-leaky.compact",
-      "status": "complete",
-      "note": "compact 0.31.1",
-      "findings": [
-        {
-          "rule": "secret-published",
-          "severity": "critical",
-          "native": "critical",
-          "line": 19,
-          "circuit": "claim",
-          "message": "secretKey() looks like a secret key, and it is published. `owner` write receives secretKey() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
-          "quantity": "256 bits",
-          "privacy": true
-        }
-      ]
-    },
     {
       "id": "cases/L01-assert-bound-hash.compact",
       "status": "complete",
@@ -285,7 +26,7 @@
           "native": "critical",
           "line": 22,
           "circuit": "rate",
-          "message": "rating() is hidden behind a persistentHash anyone can reverse. `ratings` receives persistentHash(\u2026 rating() \u2026), but the only unknown input is rating() (Uint<64>), about 4 bits. Anyone reading the chain can try every value (at most 16 tries) and recover it.",
+          "message": "rating() is hidden behind a persistentHash anyone can reverse. `ratings` receives persistentHash(… rating() …), but the only unknown input is rating() (Uint<64>), about 4 bits. Anyone reading the chain can try every value (at most 16 tries) and recover it.",
           "quantity": "4 bits",
           "privacy": true
         }
@@ -312,7 +53,7 @@
           "native": "critical",
           "line": 19,
           "circuit": "answer_",
-          "message": "answer() is hidden behind a persistentHash anyone can reverse. `answers` receives persistentHash(\u2026 answer() \u2026), but the only unknown input is answer() (Uint<8>), about 8 bits. Anyone reading the chain can try every value (at most 256 tries) and recover it.",
+          "message": "answer() is hidden behind a persistentHash anyone can reverse. `answers` receives persistentHash(… answer() …), but the only unknown input is answer() (Uint<8>), about 8 bits. Anyone reading the chain can try every value (at most 256 tries) and recover it.",
           "quantity": "8 bits",
           "privacy": true
         }
@@ -339,7 +80,7 @@
           "native": "critical",
           "line": 21,
           "circuit": "record",
-          "message": "income() is hidden behind a persistentHash anyone can reverse. `incomes` receives persistentHash(\u2026 income() \u2026), but the only unknown input is income() (Uint<32>), about 20 bits. Anyone reading the chain can try every value (at most 1,048,576 tries) and recover it.",
+          "message": "income() is hidden behind a persistentHash anyone can reverse. `incomes` receives persistentHash(… income() …), but the only unknown input is income() (Uint<32>), about 20 bits. Anyone reading the chain can try every value (at most 1,048,576 tries) and recover it.",
           "quantity": "20 bits",
           "privacy": true
         }
@@ -366,7 +107,7 @@
           "native": "critical",
           "line": 21,
           "circuit": "pick_",
-          "message": "pick() is hidden behind a persistentCommit anyone can reverse. `picks` receives persistentCommit(\u2026 pick() \u2026), but the only unknown input is pick() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
+          "message": "pick() is hidden behind a persistentCommit anyone can reverse. `picks` receives persistentCommit(… pick() …), but the only unknown input is pick() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
           "quantity": "2 bits",
           "privacy": true
         }
@@ -383,7 +124,7 @@
           "native": "critical",
           "line": 23,
           "circuit": "pick_",
-          "message": "pick() is hidden behind a persistentCommit anyone can reverse. `picks` receives persistentCommit(\u2026 pick() \u2026), but the only unknown input is pick() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
+          "message": "pick() is hidden behind a persistentCommit anyone can reverse. `picks` receives persistentCommit(… pick() …), but the only unknown input is pick() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
           "quantity": "2 bits",
           "privacy": true
         }
@@ -400,8 +141,18 @@
           "native": "low",
           "line": 26,
           "circuit": "check",
-          "message": "whether `above` is touched depends on balance(). This increment on `above` only happens on one side of a condition involving balance(). The public transcript shows which side ran, so observers learn the condition's outcome. Nothing else this circuit publishes ties the transaction to its caller, so this reads like a public tally of anonymous choices.",
+          "message": "whether `above` is touched depends on balance(). This increment on `above` only happens on one side of a condition involving balance(). The public transcript shows which side ran, so observers learn the condition's outcome. Nothing else this circuit publishes ties the transaction to its caller, and a Midnight transaction does not name its sender by itself (fees are paid in shielded DUST), so this reads like a public tally of anonymous choices. It still leaks the outcome of each call: if callers can be identified another way (an unshielded payment in the same transaction, an app that submits for its users, network metadata), declare \"caller\": \"identified\" in tell.json and this rates medium.",
           "quantity": "1 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 21,
+          "circuit": "constructor",
+          "message": "argument `l` is published in the clear. `limit` write receives argument `l` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
           "privacy": true
         }
       ]
@@ -427,7 +178,7 @@
           "native": "medium",
           "line": 23,
           "circuit": "checkIn",
-          "message": "every `checkIn` stores the same tag derived from visitorKey(). `visitors` insert stores persistentHash(\u2026 visitorKey() \u2026) as data on each call. The value is the same every time for the same holder, so all of one holder's `checkIn` actions line up, and identifying one identifies all of them.",
+          "message": "every `checkIn` stores the same tag derived from visitorKey(). `visitors` insert stores persistentHash(… visitorKey() …) as data on each call. The value is the same every time for the same holder, so all of one holder's `checkIn` actions line up, and identifying one identifies all of them.",
           "quantity": null,
           "privacy": true
         }
@@ -467,11 +218,11 @@
       "findings": [
         {
           "rule": "secret-published",
-          "severity": "critical",
-          "native": "critical",
+          "severity": "low",
+          "native": "low",
           "line": 18,
           "circuit": "recoveryCode",
-          "message": "recoverySecret() looks like a secret key, and it is published. `return` value receives recoverySecret() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+          "message": "recoverySecret() looks like a secret key, and it is returned. `return` value receives recoverySecret() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner. A circuit's result is not on chain, though: the transaction carries only a randomized commitment to the call's inputs and outputs. The value goes to the code that called the circuit, your DApp or, in a cross-contract call, the calling contract, which may publish it. It is a disclosure out of the proof, not to the network.",
           "quantity": "256 bits",
           "privacy": true
         }
@@ -488,7 +239,7 @@
           "native": "low",
           "line": 23,
           "circuit": "submit",
-          "message": "how many of the 8 entries of scores() are in use shows on chain. Each entry of scores() is checked with its own condition, and ledger operations (passes.increment) run only for some of them. The public transcript counts the operations, so observers learn how many entries were in use, and in which positions.",
+          "message": "how many of the 8 entries of scores() are in use shows on chain. Each entry of scores() is checked with its own condition, and ledger operations (passes.increment) run only for some of them. The public transcript counts the operations, so observers learn how many entries were in use, and in which positions. Nothing else this circuit publishes ties the transaction to its caller, and a Midnight transaction does not name its sender by itself (fees are paid in shielded DUST), so this reads like a public tally of anonymous choices. It still leaks the outcome of each call: if callers can be identified another way (an unshielded payment in the same transaction, an app that submits for its users, network metadata), declare \"caller\": \"identified\" in tell.json and this rates medium.",
           "quantity": "8 bits",
           "privacy": true
         }
@@ -511,11 +262,11 @@
         },
         {
           "rule": "linkable",
-          "severity": "info",
-          "native": "info",
+          "severity": "medium",
+          "native": "medium",
           "line": 25,
           "circuit": "claim",
-          "message": "memberKey() is hidden, but leaves the same tag every time. `members` member receives persistentHash(\u2026 memberKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "which member made each `claim` call shows on chain. `claim` looks up persistentHash(… memberKey() …) in `members`, and the key of a lookup is part of the public transcript. The tag is the same on every call and equals the caller's registered entry, so each call is tied to that member, and all of one member's calls line up. Proving membership this way is not anonymous.",
           "quantity": null,
           "privacy": true
         }
@@ -525,7 +276,18 @@
       "id": "cases/L12-constructor-leak.compact",
       "status": "complete",
       "note": "compact 0.31.1",
-      "findings": []
+      "findings": [
+        {
+          "rule": "secret-published",
+          "severity": "critical",
+          "native": "critical",
+          "line": 20,
+          "circuit": "constructor",
+          "message": "adminSecret() looks like a secret key, and it is published. `admin` write receives adminSecret() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+          "quantity": "256 bits",
+          "privacy": true
+        }
+      ]
     },
     {
       "id": "cases/L13-preimage-published.compact",
@@ -539,6 +301,16 @@
           "line": 26,
           "circuit": "redeem",
           "message": "voucherSecret() looks like a secret key, and it is published. `redeemed` insert receives voucherSecret() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 20,
+          "circuit": "constructor",
+          "message": "argument `h` is published in the clear. `voucherHash` write receives argument `h` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
         }
@@ -565,7 +337,7 @@
           "native": "critical",
           "line": 19,
           "circuit": "consent",
-          "message": "agrees() is hidden behind a persistentHash anyone can reverse. `consents` receives persistentHash(\u2026 agrees() \u2026), but the only unknown input is agrees() (Boolean), about 1 bit. Anyone reading the chain can try every value (at most 2 tries) and recover it.",
+          "message": "agrees() is hidden behind a persistentHash anyone can reverse. `consents` receives persistentHash(… agrees() …), but the only unknown input is agrees() (Boolean), about 1 bit. Anyone reading the chain can try every value (at most 2 tries) and recover it.",
           "quantity": "1 bits",
           "privacy": true
         }
@@ -582,7 +354,7 @@
           "native": "critical",
           "line": 19,
           "circuit": "answer_",
-          "message": "answer() is hidden behind a persistentHash anyone can reverse. `lastAnswer` receives persistentHash(\u2026 answer() \u2026), but the only unknown input is answer() (Uint<8>), about 8 bits. Anyone reading the chain can try every value (at most 256 tries) and recover it.",
+          "message": "answer() is hidden behind a persistentHash anyone can reverse. `lastAnswer` receives persistentHash(… answer() …), but the only unknown input is answer() (Uint<8>), about 8 bits. Anyone reading the chain can try every value (at most 256 tries) and recover it.",
           "quantity": "8 bits",
           "privacy": true
         }
@@ -595,11 +367,21 @@
       "findings": [
         {
           "rule": "linkable",
-          "severity": "info",
-          "native": "info",
+          "severity": "low",
+          "native": "low",
           "line": 21,
           "circuit": "register",
-          "message": "seed() is hidden, but leaves the same tag every time. `accountId` write receives persistentHash(\u2026 seed() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "seed() leaves a tag that is the same in every contract hashing it this way. `accountId` write receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has no domain separator and no contract address, so any contract that hashes the same secret the same way publishes the same tag: a user who reuses the secret can be followed from contract to contract.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "derivable-secret",
+          "severity": "critical",
+          "native": "critical",
+          "line": 22,
+          "circuit": "register",
+          "message": "the private key of this public key is on the ledger. `encKey` write receives ecMulGenerator(k), a public key whose private key is k. Here k is computed only from a value this contract also publishes (a hash of seed()), with nothing secret mixed in, so anyone who reads the ledger can compute k: decrypt what is encrypted to this key, or sign as it.",
           "quantity": null,
           "privacy": true
         }
@@ -685,13 +467,13 @@
       "note": "compact 0.31.1",
       "findings": [
         {
-          "rule": "predicate",
+          "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 28,
-          "circuit": "check",
-          "message": "a yes/no fact about balance() is published. `checks` insert depends on a comparison involving balance(). Observers learn one bit about it per call.",
-          "quantity": "1 bits",
+          "line": 21,
+          "circuit": "constructor",
+          "message": "argument `l` is published in the clear. `limit` write receives argument `l` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
           "privacy": true
         }
       ]
@@ -734,7 +516,7 @@
           "native": "medium",
           "line": 19,
           "circuit": "enroll",
-          "message": "every `enroll` stores the same tag derived from deviceKey(). `keyOf` insert stores persistentHash(\u2026 deviceKey() \u2026) as data on each call. The value is the same every time for the same holder, so all of one holder's `enroll` actions line up, and identifying one identifies all of them.",
+          "message": "every `enroll` stores the same tag derived from deviceKey(). `keyOf` insert stores persistentHash(… deviceKey() …) as data on each call. The value is the same every time for the same holder, so all of one holder's `enroll` actions line up, and identifying one identifies all of them.",
           "quantity": null,
           "privacy": true
         }
@@ -751,7 +533,7 @@
           "native": "info",
           "line": 18,
           "circuit": "myId",
-          "message": "recoverySecret() is hidden, but leaves the same tag every time. `return` value receives persistentHash(\u2026 recoverySecret() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "recoverySecret() is hidden, but leaves the same tag every time. `return` value receives persistentHash(… recoverySecret() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
           "quantity": null,
           "privacy": true
         }
@@ -784,7 +566,18 @@
       "id": "cases/S11-constructor-hash.compact",
       "status": "complete",
       "note": "compact 0.31.1",
-      "findings": []
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "constructor",
+          "message": "adminSecret() is hidden, but leaves the same tag every time. `admin` write receives persistentHash(… adminSecret() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
     },
     {
       "id": "cases/S12-public-fact.compact",
@@ -800,6 +593,16 @@
           "message": "argument `final_` is published in the clear. `closed` write receives argument `final_` (Boolean, 1 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "1 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 20,
+          "circuit": "constructor",
+          "message": "argument `o` is published in the clear. `owner` write receives argument `o` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
         }
       ]
     },
@@ -814,7 +617,7 @@
           "native": "info",
           "line": 20,
           "circuit": "register",
-          "message": "seed() is hidden, but leaves the same tag every time. `accountId` write receives persistentHash(\u2026 seed() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "seed() is hidden, but leaves the same tag every time. `accountId` write receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
           "quantity": null,
           "privacy": true
         },
@@ -824,7 +627,7 @@
           "native": "info",
           "line": 22,
           "circuit": "register",
-          "message": "seed() is hidden, but leaves the same tag every time. `encKey` write receives persistentHash(\u2026 seed() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "seed() is hidden, but leaves the same tag every time. `encKey` write receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
           "quantity": null,
           "privacy": true
         }
@@ -837,11 +640,11 @@
       "findings": [
         {
           "rule": "linkable",
-          "severity": "info",
-          "native": "info",
+          "severity": "low",
+          "native": "low",
           "line": 95,
           "circuit": "acceptGame",
-          "message": "localSk() is hidden, but leaves the same tag every time. `player2` write receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `player2` write receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `acceptGame`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -896,13 +699,13 @@
           "privacy": true
         },
         {
-          "rule": "linkable",
+          "rule": "branch",
           "severity": "low",
           "native": "low",
           "line": 192,
           "circuit": "checkBoard1",
-          "message": "localSk() is hidden, but leaves the same tag every time. `board1` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `checkBoard1`, `checkBoard2`, so those transactions can be tied to one person.",
-          "quantity": null,
+          "message": "whether `board1` is touched depends on localCheckBoard(). This member on `board1` only happens on one side of a condition involving localCheckBoard(). The public transcript shows which side ran, so observers learn the condition's outcome. Nothing else this circuit publishes ties the transaction to its caller, and a Midnight transaction does not name its sender by itself (fees are paid in shielded DUST), so this reads like a public tally of anonymous choices. It still leaks the outcome of each call: if callers can be identified another way (an unshielded payment in the same transaction, an app that submits for its users, network metadata), declare \"caller\": \"identified\" in tell.json and this rates medium.",
+          "quantity": "1 bits",
           "privacy": true
         },
         {
@@ -916,13 +719,13 @@
           "privacy": true
         },
         {
-          "rule": "linkable",
+          "rule": "branch",
           "severity": "low",
           "native": "low",
           "line": 235,
           "circuit": "checkBoard2",
-          "message": "localSk() is hidden, but leaves the same tag every time. `board2` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `checkBoard1`, `checkBoard2`, so those transactions can be tied to one person.",
-          "quantity": null,
+          "message": "whether `board2` is touched depends on localCheckBoard(). This member on `board2` only happens on one side of a condition involving localCheckBoard(). The public transcript shows which side ran, so observers learn the condition's outcome. Nothing else this circuit publishes ties the transaction to its caller, and a Midnight transaction does not name its sender by itself (fees are paid in shielded DUST), so this reads like a public tally of anonymous choices. It still leaks the outcome of each call: if callers can be identified another way (an unshielded payment in the same transaction, an app that submits for its users, network metadata), declare \"caller\": \"identified\" in tell.json and this rates medium.",
+          "quantity": "1 bits",
           "privacy": true
         },
         {
@@ -932,6 +735,26 @@
           "line": 241,
           "circuit": "checkBoard2",
           "message": "a yes/no fact about localCheckBoard() is published. `winState` write depends on a comparison involving localCheckBoard(). Observers learn one bit about it per call.",
+          "quantity": "1 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 61,
+          "circuit": "constructor",
+          "message": "localSk() is hidden, but leaves the same tag every time. `player1` write receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `acceptGame`, `constructor`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "low",
+          "native": "low",
+          "line": 73,
+          "circuit": "constructor",
+          "message": "localSetBoard() is published in the clear. `board1State` write receives localSetBoard() (Uint<1>, 1 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "1 bits",
           "privacy": true
         }
@@ -1035,7 +858,7 @@
           "native": "low",
           "line": 50,
           "circuit": "registerToVote",
-          "message": "localSk() is hidden, but leaves the same tag every time. `registeredVoters` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, so those transactions can be tied to one person.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `registeredVoters` member receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1045,7 +868,7 @@
           "native": "low",
           "line": 67,
           "circuit": "commitVote",
-          "message": "localSk() is hidden, but leaves the same tag every time. `registeredVoters` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, so those transactions can be tied to one person.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `registeredVoters` member receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1055,7 +878,7 @@
           "native": "info",
           "line": 74,
           "circuit": "commitVote",
-          "message": "localGetVote() + localSk() are hidden, but leave the same tag every time. `hashedVoteMap` insert receives persistentHash(\u2026 localGetVote() + localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "localGetVote() + localSk() are hidden, but leave the same tag every time. `hashedVoteMap` insert receives persistentHash(… localGetVote() + localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
           "quantity": null,
           "privacy": true
         },
@@ -1065,7 +888,7 @@
           "native": "low",
           "line": 94,
           "circuit": "revealVote",
-          "message": "localSk() is hidden, but leaves the same tag every time. `hashedVoteMap` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, so those transactions can be tied to one person.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `hashedVoteMap` member receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1077,6 +900,36 @@
           "circuit": "revealVote",
           "message": "whether `candidate0VoteCounter` is touched depends on localGetVote(). This increment on `candidate0VoteCounter` only happens on one side of a condition involving localGetVote(). The public transcript shows which side ran, so observers learn the condition's outcome.",
           "quantity": "1 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 36,
+          "circuit": "constructor",
+          "message": "localSk() is hidden, but leaves the same tag every time. `organizer` write receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `registerToVote`, `commitVote`, `revealVote`, `constructor`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 37,
+          "circuit": "constructor",
+          "message": "argument `candidateA` is published in the clear. `candidate0` write receives argument `candidateA` (Opaque<\"string\">, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 38,
+          "circuit": "constructor",
+          "message": "argument `candidateB` is published in the clear. `candidate1` write receives argument `candidateB` (Opaque<\"string\">, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
           "privacy": true
         }
       ]
@@ -1109,7 +962,17 @@
           "native": "low",
           "line": 105,
           "circuit": "placeBid",
-          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bidCommitments` member receives persistentHash(\u2026 localSecretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `placeBid`, `revealBid`, so those transactions can be tied to one person.",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bidCommitments` member receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `placeBid`, `revealBid`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 105,
+          "circuit": "placeBid",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bidCommitments` insert receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
           "quantity": null,
           "privacy": true
         },
@@ -1119,7 +982,7 @@
           "native": "low",
           "line": 117,
           "circuit": "revealBid",
-          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bidCommitments` member receives persistentHash(\u2026 localSecretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `placeBid`, `revealBid`, so those transactions can be tied to one person.",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bidCommitments` member receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `placeBid`, `revealBid`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1130,6 +993,16 @@
           "line": 124,
           "circuit": "revealBid",
           "message": "argument `amount` is published in the clear. `revealedBids` insert receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 58,
+          "circuit": "constructor",
+          "message": "argument `minimum` is published in the clear. `minimumBid` write receives argument `minimum` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
           "privacy": true
         }
@@ -1154,10 +1027,30 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 92,
+          "line": 105,
           "circuit": "claimFees",
           "message": "argument `address` is published in the clear. `kernel` claimUnshieldedCoinSpend receives argument `address` (UserAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 26,
+          "circuit": "constructor",
+          "message": "argument `fee` is published in the clear. `entryFee` write receives argument `fee` (Uint<16>, 16 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "16 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 27,
+          "circuit": "constructor",
+          "message": "argument `partySize` is published in the clear. `maxListSize` write receives argument `partySize` (Uint<16>, 16 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "16 bits",
           "privacy": true
         }
       ]
@@ -1175,6 +1068,16 @@
           "circuit": "tip",
           "message": "argument `coin.nonce` is published in the clear. `pot` member receives argument `coin.nonce` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "shielded-coin",
+          "severity": "low",
+          "native": "low",
+          "line": 105,
+          "circuit": "tip",
+          "message": "the value of this shielded coin can be recovered: its nonce is public. The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from argument `coin.nonce`, which is not secret, so anyone can recompute it. The value, argument `coin.value`, falls to a search of about 40 bits. The shielded output hides less than it appears to.",
+          "quantity": "40 bits",
           "privacy": true
         },
         {
@@ -1196,6 +1099,36 @@
           "message": "argument `tipKey` is published in the clear. `pot` member receives argument `tipKey` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "shielded-coin",
+          "severity": "medium",
+          "native": "medium",
+          "line": 135,
+          "circuit": "withdraw",
+          "message": "who receives this shielded coin can be confirmed: its nonce is public. The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from public data only (ledger state, a counter or a constant), so anyone can recompute it. Then ownPublicKey().bytes, the recipient, can be tested against known wallet keys, one hash per candidate. The shielded output hides less than it appears to.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 71,
+          "circuit": "constructor",
+          "message": "ownerSecretKey() is hidden, but leaves the same tag every time. `owner` write receives persistentHash(… ownerSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 72,
+          "circuit": "constructor",
+          "message": "argument `acceptedColor` is published in the clear. `tipColor` write receives argument `acceptedColor` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
         }
       ]
     },
@@ -1208,7 +1141,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 28,
+          "line": 29,
           "circuit": "mint",
           "message": "argument `amount` is published in the clear. `kernel` mintShielded receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1227,7 +1160,7 @@
           "native": "low",
           "line": 23,
           "circuit": "publishMessageHash",
-          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(\u2026 secretMessage() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `publishMessageHash`, `publishMessageWithSeparator`, `publishMessageHashWithOwner`, so those transactions can be tied to one person.",
+          "message": "secretMessage() leaves a tag that is the same in every contract hashing it this way. `messageHash` write receives persistentHash(… secretMessage() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has no domain separator and no contract address, so any contract that hashes the same secret the same way publishes the same tag: a user who reuses the secret can be followed from contract to contract.",
           "quantity": null,
           "privacy": true
         },
@@ -1237,7 +1170,7 @@
           "native": "info",
           "line": 29,
           "circuit": "publishMessageHashWithSeparator",
-          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(\u2026 secretMessage() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.",
+          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(… secretMessage() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
           "quantity": null,
           "privacy": true
         },
@@ -1247,7 +1180,7 @@
           "native": "low",
           "line": 35,
           "circuit": "publishMessageWithSeparator",
-          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(\u2026 secretMessage() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `publishMessageHash`, `publishMessageWithSeparator`, `publishMessageHashWithOwner`, so those transactions can be tied to one person.",
+          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(… secretMessage() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `publishMessageWithSeparator`, `publishMessageHashWithOwner`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1257,7 +1190,7 @@
           "native": "low",
           "line": 83,
           "circuit": "publishMessageHashWithOwner",
-          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(\u2026 secretMessage() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `publishMessageHash`, `publishMessageWithSeparator`, `publishMessageHashWithOwner`, so those transactions can be tied to one person.",
+          "message": "secretMessage() is hidden, but leaves the same tag every time. `messageHash` write receives persistentHash(… secretMessage() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `publishMessageWithSeparator`, `publishMessageHashWithOwner`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         }
@@ -1272,7 +1205,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 101,
+          "line": 144,
           "circuit": "mint",
           "message": "argument `amount` is published in the clear. `kernel` mintShielded receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1306,6 +1239,16 @@
           "circuit": "mint",
           "message": "argument `amount` is published in the clear. `return` value receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "branch",
+          "severity": "info",
+          "native": "info",
+          "line": 101,
+          "circuit": "burn",
+          "message": "how many of the 2 entries of argument `coin` are in use shows on chain. Each entry of argument `coin` is checked with its own condition, and ledger operations (kernel.claimZswapCoinSpend, kernel.claimZswapCoinReceive, kernel.claimZswapNullifier) run only for some of them. The public transcript counts the operations, so observers learn how many entries were in use, and in which positions.",
+          "quantity": "2 bits",
           "privacy": true
         },
         {
@@ -1352,7 +1295,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 297,
+          "line": 144,
           "circuit": "mintToTreasury",
           "message": "argument `amount` is published in the clear. `kernel` mintShielded receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1417,6 +1360,56 @@
           "message": "argument `amount` is published in the clear. `_treasury` insertCoin receives argument `amount` (Uint<128>, 128 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "128 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 76,
+          "circuit": "constructor",
+          "message": "argument `name_` is published in the clear. `_name` write receives argument `name_` (Opaque<\"string\">, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 77,
+          "circuit": "constructor",
+          "message": "argument `symbol_` is published in the clear. `_symbol` write receives argument `symbol_` (Opaque<\"string\">, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 78,
+          "circuit": "constructor",
+          "message": "argument `decimals_` is published in the clear. `_decimals` write receives argument `decimals_` (Uint<8>, 8 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "8 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 79,
+          "circuit": "constructor",
+          "message": "argument `domain_` is published in the clear. `_domain` write receives argument `domain_` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 82,
+          "circuit": "constructor",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `theHouse` write receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
         }
       ]
     },
@@ -1436,6 +1429,16 @@
           "privacy": true
         },
         {
+          "rule": "shielded-coin",
+          "severity": "low",
+          "native": "low",
+          "line": 142,
+          "circuit": "houseDeposit",
+          "message": "the value of this shielded coin can be recovered: its nonce is public. The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from argument `coin.nonce`, which is not secret, so anyone can recompute it. The value, argument `coin.value`, falls to a search of about 40 bits. The shielded output hides less than it appears to.",
+          "quantity": "40 bits",
+          "privacy": true
+        },
+        {
           "rule": "published",
           "severity": "info",
           "native": "info",
@@ -1451,7 +1454,7 @@
           "native": "low",
           "line": 177,
           "circuit": "betColor",
-          "message": "localSecretKey() is hidden, but leaves the same tag every time. `betCommits` member receives persistentHash(\u2026 localSecretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, so those transactions can be tied to one person.",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `betCommits` member receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1491,7 +1494,7 @@
           "native": "low",
           "line": 207,
           "circuit": "claimWinnings",
-          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bets` member receives persistentHash(\u2026 localSecretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, so those transactions can be tied to one person.",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bets` member receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1521,7 +1524,7 @@
           "native": "low",
           "line": 249,
           "circuit": "forfeit",
-          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bets` member receives persistentHash(\u2026 localSecretKey() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, so those transactions can be tied to one person.",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `bets` member receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1554,6 +1557,36 @@
           "message": "argument `matchKey` is published in the clear. `houseCoins` member receives argument `matchKey` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "shielded-coin",
+          "severity": "medium",
+          "native": "medium",
+          "line": 287,
+          "circuit": "houseClaimMatch",
+          "message": "who receives this shielded coin can be confirmed: its nonce is public. The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from public data only (ledger state, a counter or a constant), so anyone can recompute it. Then ownPublicKey().bytes, the recipient, can be tested against known wallet keys, one hash per candidate. The shielded output hides less than it appears to.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 110,
+          "circuit": "constructor",
+          "message": "localSecretKey() is hidden, but leaves the same tag every time. `theHouse` write receives persistentHash(… localSecretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `betColor`, `claimWinnings`, `forfeit`, `constructor`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 111,
+          "circuit": "constructor",
+          "message": "argument `allowedChipColor` is published in the clear. `chipColor` write receives argument `allowedChipColor` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
         }
       ]
     },
@@ -1568,7 +1601,7 @@
           "native": "low",
           "line": 90,
           "circuit": "bid",
-          "message": "localSk() is hidden, but leaves the same tag every time. `bidders` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `bid`, `claimWin`, so those transactions can be tied to one person.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `bidders` member receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `bid`, `claimWin`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1608,7 +1641,7 @@
           "native": "low",
           "line": 134,
           "circuit": "claimWin",
-          "message": "localSk() is hidden, but leaves the same tag every time. `bidders` member receives persistentHash(\u2026 localSk() \u2026). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. The same tag appears in `bid`, `claimWin`, so those transactions can be tied to one person.",
+          "message": "localSk() is hidden, but leaves the same tag every time. `bidders` member receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `bid`, `claimWin`, `constructor`, so those transactions can be tied to one person.",
           "quantity": null,
           "privacy": true
         },
@@ -1616,9 +1649,39 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 63,
+          "line": 149,
           "circuit": "claimWin",
           "message": "argument `winnerAddress` is published in the clear. `kernel` claimUnshieldedCoinSpend receives argument `winnerAddress` (UserAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 33,
+          "circuit": "constructor",
+          "message": "localSk() is hidden, but leaves the same tag every time. `auctionOrganizer` write receives persistentHash(… localSk() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `bid`, `claimWin`, `constructor`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 39,
+          "circuit": "constructor",
+          "message": "argument `maxBidCount` is published in the clear. `maxBids` write receives argument `maxBidCount` (Uint<16>, 16 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "16 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 42,
+          "circuit": "constructor",
+          "message": "argument `address` is published in the clear. `organizerAddress` write receives argument `address` (UserAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
         }
@@ -1633,7 +1696,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 12,
+          "line": 9,
           "circuit": "mintAndReceive",
           "message": "argument `amount` is published in the clear. `kernel` mintUnshielded receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1643,7 +1706,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 21,
+          "line": 23,
           "circuit": "sendToUser",
           "message": "argument `amount` is published in the clear. `kernel` incUnshieldedOutputs receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1653,7 +1716,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 21,
+          "line": 23,
           "circuit": "sendToUser",
           "message": "argument `user_addr` is published in the clear. `kernel` claimUnshieldedCoinSpend receives argument `user_addr` (UserAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
@@ -1663,7 +1726,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 32,
+          "line": 33,
           "circuit": "receiveTokens",
           "message": "argument `amount` is published in the clear. `kernel` incUnshieldedInputs receives argument `amount` (Uint<128>, 128 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "128 bits",
@@ -1673,7 +1736,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 12,
+          "line": 37,
           "circuit": "receiveNightTokens",
           "message": "argument `amount` is published in the clear. `kernel` incUnshieldedInputs receives argument `amount` (Uint<128>, 128 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "128 bits",
@@ -1683,7 +1746,7 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 12,
+          "line": 41,
           "circuit": "sendNightTokensToUser",
           "message": "argument `amount` is published in the clear. `kernel` incUnshieldedOutputs receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
@@ -1693,10 +1756,30 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 12,
+          "line": 41,
           "circuit": "sendNightTokensToUser",
           "message": "argument `user_addr` is published in the clear. `kernel` claimUnshieldedCoinSpend receives argument `user_addr` (UserAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "branch",
+          "severity": "info",
+          "native": "info",
+          "line": 12,
+          "circuit": "sendShieldedToUser",
+          "message": "whether `kernel` is touched depends on argument `input.value`. This claimZswapCoinSpend on `kernel` only happens on one side of a condition involving argument `input.value`. The public transcript shows which side ran, so observers learn the condition's outcome.",
+          "quantity": "1 bits",
+          "privacy": true
+        },
+        {
+          "rule": "branch",
+          "severity": "info",
+          "native": "info",
+          "line": 12,
+          "circuit": "sendShieldedToUser",
+          "message": "whether `kernel` is touched depends on argument `value`. This claimZswapCoinSpend on `kernel` only happens on one side of a condition involving argument `value`. The public transcript shows which side ran, so observers learn the condition's outcome.",
+          "quantity": "1 bits",
           "privacy": true
         },
         {
@@ -1787,6 +1870,16 @@
           "circuit": "mintAndSendShielded",
           "message": "argument `mintValue` is published in the clear. `kernel` mintShielded receives argument `mintValue` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "branch",
+          "severity": "info",
+          "native": "info",
+          "line": 61,
+          "circuit": "mintAndSendShielded",
+          "message": "whether `kernel` is touched depends on argument `sendValue`. This claimZswapCoinSpend on `kernel` only happens on one side of a condition involving argument `sendValue`. The public transcript shows which side ran, so observers learn the condition's outcome.",
+          "quantity": "1 bits",
           "privacy": true
         },
         {
@@ -1945,6 +2038,16 @@
           "message": "argument `newAdmin` is published in the clear. `contractAdmin` write receives argument `newAdmin` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 77,
+          "circuit": "constructor",
+          "message": "getUserSecret() is hidden, but leaves the same tag every time. `contractAdmin` write receives persistentHash(… getUserSecret() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
         }
       ]
     },
@@ -1964,7 +2067,18 @@
       "id": "examples/experimental/q2-ledger9/contracts/caller/Proxy.compact",
       "status": "complete",
       "note": "compact 0.36.0",
-      "findings": []
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 21,
+          "circuit": "constructor",
+          "message": "argument `c` is published in the clear. `caller_handle` write receives argument `c` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        }
+      ]
     },
     {
       "id": "examples/experimental/q2-ledger9/contracts/eth-addr-secp/prove-eth-addr-secp.compact",
@@ -2032,6 +2146,36 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
+          "line": 54,
+          "circuit": "transfer",
+          "message": "argument `sender` is published in the clear. `event` UnshieldedSpend receives argument `sender` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 54,
+          "circuit": "transfer",
+          "message": "argument `amount` is published in the clear. `event` UnshieldedSpend receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 54,
+          "circuit": "transfer",
+          "message": "argument `to` is published in the clear. `event` UnshieldedReceive receives argument `to` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
           "line": 36,
           "circuit": "transfer",
           "message": "argument `amount` is published in the clear. `return` value receives argument `amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
@@ -2046,6 +2190,26 @@
           "circuit": "balance",
           "message": "argument `owner` is published in the clear. `balances` member receives argument `owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 29,
+          "circuit": "constructor",
+          "message": "argument `initial_owner` is published in the clear. `balances` insert receives argument `initial_owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 29,
+          "circuit": "constructor",
+          "message": "argument `initial_supply` is published in the clear. `balances` insert receives argument `initial_supply` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
           "privacy": true
         }
       ]
@@ -2174,6 +2338,26 @@
           "message": "argument `owner` is published in the clear. `balances` member receives argument `owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "constructor",
+          "message": "argument `initial_owner` is published in the clear. `balances` insert receives argument `initial_owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "constructor",
+          "message": "argument `initial_supply` is published in the clear. `balances` insert receives argument `initial_supply` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
         }
       ]
     },
@@ -2183,12 +2367,22 @@
       "note": "compact 0.36.0",
       "findings": [
         {
+          "rule": "branch",
+          "severity": "info",
+          "native": "info",
+          "line": 60,
+          "circuit": "swap",
+          "message": "whether `token_a` is touched depends on argument `a_for_b`. This read on `token_a` only happens on one side of a condition involving argument `a_for_b`. The public transcript shows which side ran, so observers learn the condition's outcome.",
+          "quantity": "1 bits",
+          "privacy": true
+        },
+        {
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 40,
+          "line": 49,
           "circuit": "swap",
-          "message": "argument `trader` is published in the clear. `return` value receives argument `trader` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "message": "argument `trader` is published in the clear. `token_a` transfer receives argument `trader` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
           "quantity": "256 bits",
           "privacy": true
         },
@@ -2196,9 +2390,69 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 40,
+          "line": 49,
           "circuit": "swap",
-          "message": "argument `amount_in` is published in the clear. `return` value receives argument `amount_in` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "message": "argument `amount_in` is published in the clear. `token_a` transfer receives argument `amount_in` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 59,
+          "circuit": "swap",
+          "message": "argument `trader` is published in the clear. `token_b` multi_transfer receives argument `trader` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 59,
+          "circuit": "swap",
+          "message": "argument `amount_out` is published in the clear. `token_b` multi_transfer receives argument `amount_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 59,
+          "circuit": "swap",
+          "message": "argument `fee_amount` is published in the clear. `token_b` multi_transfer receives argument `fee_amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 59,
+          "circuit": "swap",
+          "message": "argument `amount_in` is published in the clear. `token_b` transfer receives argument `amount_in` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 60,
+          "circuit": "swap",
+          "message": "argument `amount_out` is published in the clear. `token_a` multi_transfer receives argument `amount_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 60,
+          "circuit": "swap",
+          "message": "argument `fee_amount` is published in the clear. `token_a` multi_transfer receives argument `fee_amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
           "quantity": "64 bits",
           "privacy": true
         },
@@ -2216,9 +2470,9 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 40,
-          "circuit": "swap",
-          "message": "argument `amount_out` is published in the clear. `return` value receives argument `amount_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "line": 35,
+          "circuit": "constructor",
+          "message": "argument `a` is published in the clear. `token_a` write receives argument `a` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
           "privacy": true
         },
@@ -2226,10 +2480,20 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
-          "line": 40,
-          "circuit": "swap",
-          "message": "argument `fee_amount` is published in the clear. `return` value receives argument `fee_amount` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "line": 36,
+          "circuit": "constructor",
+          "message": "argument `b` is published in the clear. `token_b` write receives argument `b` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 37,
+          "circuit": "constructor",
+          "message": "argument `fee` is published in the clear. `fee_address` write receives argument `fee` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
           "privacy": true
         }
       ]
@@ -2358,6 +2622,26 @@
           "message": "argument `owner` is published in the clear. `balances` member receives argument `owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 23,
+          "circuit": "constructor",
+          "message": "argument `initial_owner` is published in the clear. `balances` insert receives argument `initial_owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 23,
+          "circuit": "constructor",
+          "message": "argument `initial_supply` is published in the clear. `balances` insert receives argument `initial_supply` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
         }
       ]
     },
@@ -2382,6 +2666,46 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
+          "line": 57,
+          "circuit": "swap",
+          "message": "argument `recipient` is published in the clear. `token_a` transfer receives argument `recipient` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 59,
+          "circuit": "swap",
+          "message": "argument `amount_a_out` is published in the clear. `token_a` transfer receives argument `amount_a_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 58,
+          "circuit": "swap",
+          "message": "argument `recipient` is published in the clear. `token_b` transfer receives argument `recipient` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 60,
+          "circuit": "swap",
+          "message": "argument `amount_b_out` is published in the clear. `token_b` transfer receives argument `amount_b_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
           "line": 48,
           "circuit": "swap",
           "message": "argument `amount_a_out` is published in the clear. `return` value receives argument `amount_a_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
@@ -2395,6 +2719,46 @@
           "line": 48,
           "circuit": "swap",
           "message": "argument `amount_b_out` is published in the clear. `return` value receives argument `amount_b_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 34,
+          "circuit": "constructor",
+          "message": "argument `initial_a` is published in the clear. `reserve_a` write receives argument `initial_a` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 35,
+          "circuit": "constructor",
+          "message": "argument `initial_b` is published in the clear. `reserve_b` write receives argument `initial_b` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 36,
+          "circuit": "constructor",
+          "message": "argument `a` is published in the clear. `token_a` write receives argument `a` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 37,
+          "circuit": "constructor",
+          "message": "argument `b` is published in the clear. `token_b` write receives argument `b` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
           "privacy": true
         }
@@ -2459,6 +2823,16 @@
           "rule": "published",
           "severity": "info",
           "native": "info",
+          "line": 49,
+          "circuit": "sellForUSDC",
+          "message": "argument `dex` is published in the clear. `contract` getReserves receives argument `dex` (tcontract, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
           "line": 59,
           "circuit": "sellForUSDC",
           "message": "argument `caller` is published in the clear. `balances` lookup receives argument `caller` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
@@ -2481,7 +2855,47 @@
           "native": "info",
           "line": 49,
           "circuit": "sellForUSDC",
+          "message": "argument `amount_out` is published in the clear. `contract` swap receives argument `amount_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 49,
+          "circuit": "sellForUSDC",
+          "message": "argument `caller` is published in the clear. `contract` swap receives argument `caller` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not. This is a call into another contract: Compact requires its arguments to be disclosed, because the callee receives them and its own transcript and state may publish them.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 49,
+          "circuit": "sellForUSDC",
           "message": "argument `amount_out` is published in the clear. `return` value receives argument `amount_out` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 26,
+          "circuit": "constructor",
+          "message": "argument `owner` is published in the clear. `balances` insert receives argument `owner` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 26,
+          "circuit": "constructor",
+          "message": "argument `initial_supply` is published in the clear. `balances` insert receives argument `initial_supply` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "64 bits",
           "privacy": true
         }
@@ -2541,6 +2955,26 @@
           "message": "argument `owner` is published in the clear. `balances` lookup receives argument `owner` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "256 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 16,
+          "circuit": "constructor",
+          "message": "argument `owner` is published in the clear. `balances` insert receives argument `owner` (ContractAddress, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 16,
+          "circuit": "constructor",
+          "message": "argument `initial_supply` is published in the clear. `balances` insert receives argument `initial_supply` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
         }
       ]
     },
@@ -2588,6 +3022,26 @@
           "message": "mintAmount() is published in the clear. `mintEvents` insert receives mintAmount() (Uint<128>, 128 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
           "quantity": "128 bits",
           "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 54,
+          "circuit": "constructor",
+          "message": "argument `attester0X_arg` is published in the clear. `attester0X` write receives argument `attester0X_arg` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 55,
+          "circuit": "constructor",
+          "message": "argument `attester1X_arg` is published in the clear. `attester1X` write receives argument `attester1X_arg` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
         }
       ]
     },
@@ -2596,9 +3050,538 @@
       "status": "complete",
       "note": "compact 0.36.0",
       "findings": []
+    },
+    {
+      "id": "zoo/ballot-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 28,
+          "circuit": "register",
+          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` insert receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 33,
+          "circuit": "vote",
+          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` member receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/ballot-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 27,
+          "circuit": "register",
+          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` insert receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 32,
+          "circuit": "vote",
+          "message": "voterKey() is hidden, but leaves the same tag every time. `voters` member receives persistentHash(… voterKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `register`, `vote`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "guessable-hash",
+          "severity": "critical",
+          "native": "critical",
+          "line": 36,
+          "circuit": "vote",
+          "message": "choice() is hidden behind a persistentHash anyone can reverse. `ballots` receives persistentHash(… choice() …), but the only unknown input is choice() (Uint<8>), about 2 bits. Anyone reading the chain can try every value (at most 4 tries) and recover it.",
+          "quantity": "2 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 26,
+          "circuit": "join",
+          "message": "argument `leaf` is published in the clear. `members` insert receives argument `leaf` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 38,
+          "circuit": "post",
+          "message": "argument `text` is published in the clear. `posts` insert receives argument `text` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 25,
+          "circuit": "join",
+          "message": "memberKey() is hidden, but leaves the same tag every time. `members` insert receives persistentHash(… memberKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "low",
+          "native": "low",
+          "line": 30,
+          "circuit": "post",
+          "message": "memberKey() is hidden, but leaves the same tag every time. `members` member receives persistentHash(… memberKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag. The same tag appears in `join`, `post`, so those transactions can be tied to one person.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 32,
+          "circuit": "post",
+          "message": "argument `text` is published in the clear. `posts` insert receives argument `text` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "attributable",
+          "severity": "medium",
+          "native": "medium",
+          "line": 33,
+          "circuit": "post",
+          "message": "every `post` stores the same tag derived from memberKey(). `authors` insert stores persistentHash(… memberKey() …) as data on each call. The value is the same every time for the same holder, so all of one holder's `post` actions line up, and identifying one identifies all of them.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/club-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 26,
+          "circuit": "join",
+          "message": "argument `leaf` is published in the clear. `members` insert receives argument `leaf` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 37,
+          "circuit": "claim",
+          "message": "memberKey() is hidden, but leaves the same tag every time. `spent` member receives persistentHash(… memberKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "join",
+          "message": "argument `leaf` is published in the clear. `members` insert receives argument `leaf` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "medium",
+          "native": "medium",
+          "line": 28,
+          "circuit": "claim",
+          "message": "which member made each `claim` call shows on chain. `claim` looks up persistentHash(… memberKey() …) in `members`, and the key of a lookup is part of the public transcript. The tag is the same on every call and equals the caller's registered entry, so each call is tied to that member, and all of one member's calls line up. Proving membership this way is not anonymous.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 34,
+          "circuit": "bid",
+          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(… bidderKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 22,
+          "circuit": "constructor",
+          "message": "argument `maxBid` is published in the clear. `ceiling` write receives argument `maxBid` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 28,
+          "circuit": "bid",
+          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(… bidderKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "medium",
+          "native": "medium",
+          "line": 29,
+          "circuit": "bid",
+          "message": "bidAmount(), a private value, becomes a public token amount. `kernel.incUnshieldedInputs` moves or mints tokens in the clear, and bidAmount() (Uint<64>) from private state is part of it. Unshielded amounts are public, so the value is on chain once this runs, while elsewhere this contract keeps it behind a hash or commitment.",
+          "quantity": "40 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "shielded-coin",
+          "severity": "medium",
+          "native": "medium",
+          "line": 27,
+          "circuit": "claim",
+          "message": "who receives this shielded coin can be confirmed: its nonce is public. The coin commitment in this transaction is a hash of the coin's nonce, color, value and recipient. The nonce comes from public data only (ledger state, a counter or a constant), so anyone can recompute it. Then ownPublicKey().bytes, the recipient, can be tested against known wallet keys, one hash per candidate. The shielded output hides less than it appears to.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 27,
+          "circuit": "register",
+          "message": "seed() is hidden, but leaves the same tag every time. `accounts` insert receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 27,
+          "circuit": "register",
+          "message": "seed() is hidden, but leaves the same tag every time. `accounts` insert receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "register",
+          "message": "seed() is hidden, but leaves the same tag every time. `accounts` insert receives persistentHash(… seed() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "derivable-secret",
+          "severity": "critical",
+          "native": "critical",
+          "line": 24,
+          "circuit": "register",
+          "message": "the private key of this public key is on the ledger. `accounts` insert receives ecMulGenerator(k), a public key whose private key is k. Here k is computed only from a value this contract also publishes (a hash of seed()), with nothing secret mixed in, so anyone who reads the ledger can compute k: decrypt what is encrypted to this key, or sign as it.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/payband-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 33,
+          "circuit": "file",
+          "message": "argument `employee` is published in the clear. `records` insert receives argument `employee` (Uint<32>, 32 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "32 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 22,
+          "circuit": "constructor",
+          "message": "argument `owner` is published in the clear. `employer` write receives argument `owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/payband-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 36,
+          "circuit": "file",
+          "message": "argument `employee` is published in the clear. `records` insert receives argument `employee` (Uint<32>, 32 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "32 bits",
+          "privacy": true
+        },
+        {
+          "rule": "guessable-hash",
+          "severity": "critical",
+          "native": "critical",
+          "line": 36,
+          "circuit": "file",
+          "message": "salary() is hidden behind a persistentHash anyone can reverse. `records` receives persistentHash(… salary() …), but the only unknown input is salary() (Uint<32>), about 32 bits. Anyone reading the chain can try every value (at most 2^32 tries) and recover it.",
+          "quantity": "32 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 21,
+          "circuit": "constructor",
+          "message": "argument `owner` is published in the clear. `employer` write receives argument `owner` (Bytes<32>, 256 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "256 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 34,
+          "circuit": "reveal",
+          "message": "argument `n` is published in the clear. `drawn` write receives argument `n` (Uint<16>, 16 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "16 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 34,
+          "circuit": "reveal",
+          "message": "argument `n` is published in the clear. `drawn` write receives argument `n` (Uint<16>, 16 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "16 bits",
+          "privacy": true
+        },
+        {
+          "rule": "guessable-hash",
+          "severity": "critical",
+          "native": "critical",
+          "line": 27,
+          "circuit": "constructor",
+          "message": "winningNumber() is hidden behind a persistentHash anyone can reverse. `sealedDraw` receives persistentHash(… winningNumber() …), but the only unknown input is winningNumber() (Uint<16>), about 14 bits. Anyone reading the chain can try every value (at most 16,384 tries) and recover it.",
+          "quantity": "14 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/reserve-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 33,
+          "circuit": "bid",
+          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(… bidderKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 21,
+          "circuit": "constructor",
+          "message": "argument `r` is published in the clear. `reserve` write receives argument `r` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/reserve-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 35,
+          "circuit": "bid",
+          "message": "bidderKey() is hidden, but leaves the same tag every time. `bids` member receives persistentHash(… bidderKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        },
+        {
+          "rule": "branch",
+          "severity": "medium",
+          "native": "medium",
+          "line": 37,
+          "circuit": "bid",
+          "message": "whether `qualified` is touched depends on amount(). This insert on `qualified` only happens on one side of a condition involving amount(). The public transcript shows which side ran, so observers learn the condition's outcome.",
+          "quantity": "1 bits",
+          "privacy": true
+        },
+        {
+          "rule": "published",
+          "severity": "info",
+          "native": "info",
+          "line": 24,
+          "circuit": "constructor",
+          "message": "argument `r` is published in the clear. `reserve` write receives argument `r` (Uint<64>, 64 bits) as a readable value. Fine if it is meant to be public; a leak if not.",
+          "quantity": "64 bits",
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/vault-fixed.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "linkable",
+          "severity": "info",
+          "native": "info",
+          "line": 23,
+          "circuit": "claim",
+          "message": "secretKey() is hidden, but leaves the same tag every time. `owner` write receives persistentHash(… secretKey() …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder. It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.",
+          "quantity": null,
+          "privacy": true
+        }
+      ]
+    },
+    {
+      "id": "zoo/vault-leaky.compact",
+      "status": "complete",
+      "note": "compact 0.31.1",
+      "findings": [
+        {
+          "rule": "secret-published",
+          "severity": "critical",
+          "native": "critical",
+          "line": 19,
+          "circuit": "claim",
+          "message": "secretKey() looks like a secret key, and it is published. `owner` write receives secretKey() (Bytes<32>) in a form anyone can read back. Anyone who sees this transaction can act as its owner.",
+          "quantity": "256 bits",
+          "privacy": true
+        }
+      ]
     }
   ],
-  "seconds": 594,
+  "seconds": 675,
   "corpus": {
     "sets": [
       "zoo",

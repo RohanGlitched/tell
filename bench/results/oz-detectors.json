@@ -384,6 +384,54 @@
       "findings": []
     },
     {
+      "id": "zoo/club-fixed.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Unhandled node kind: ERROR\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
       "id": "zoo/payband-fixed.compact",
       "status": "complete",
       "note": "",
@@ -391,6 +439,18 @@
     },
     {
       "id": "zoo/payband-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
       "status": "complete",
       "note": "",
       "findings": []
@@ -420,7 +480,7 @@
       "findings": []
     }
   ],
-  "seconds": 1,
+  "seconds": 0,
   "corpus": {
     "sets": [
       "zoo",

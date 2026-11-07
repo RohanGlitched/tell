@@ -56,7 +56,9 @@ describe('tell --fix stops every zoo attack', () => {
     for (const name of NAMES) {
       const { plan } = patched[name];
       expect(plan.combined!.verification).toMatchObject({ ok: true, compiles: true, gone: true, newFindings: [] });
-      expect(['A', 'B']).toContain(plan.combined!.verification.gradeAfter);
+      // board's fix gives each post a one-time tag; its membership check still looks the member's
+      // tag up, which Tell reports (medium) and the zoo's Merkle version (board-fixed) removes
+      expect(name === 'board' ? ['C'] : ['A', 'B']).toContain(plan.combined!.verification.gradeAfter);
     }
   });
 
