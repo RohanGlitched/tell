@@ -54,7 +54,7 @@ describe('raffle: the constructor seals the winner with a guessable hash', () =>
 describe('faucet: a shielded mint with a nonce from public state', () => {
   type PS = { seed: Uint8Array };
   const w = { nonceSeed: ({ privateState }: { privateState: PS }) => [privateState, privateState.seed] };
-  const domain = Buffer.from('faucet:token'.padEnd(32, '\0')).toString('hex');
+  const domain = new Uint8Array(Buffer.from('faucet:token'.padEnd(32, '\0')));
   // Wallet keys the attacker already knows (they appear in other transactions and address books).
   const wallets = Array.from({ length: 8 }, () => sampleCoinPublicKey());
   const claimers = [wallets[2], wallets[5], wallets[2], wallets[7]];
