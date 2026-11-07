@@ -45,13 +45,14 @@ export type Substitute = { name: string; what: string; answer: string; status: S
 
 export type Wave3 = {
   updatedAt: string;
-  wave2: { reviewedOn: string; reviewer: string; points: number; prize: string; scores: Record<CriterionId, number> };
+  wave2: { reviewedOn: string; reviewer: string; points: number; prize: string; resultsUrl?: string; scores: Record<CriterionId, number> };
   highlights: { title: string; text: string; href: string; status: Status }[]; // the home-page band
   summary: string;
   feedback: FeedbackRow[];
   criteria: Criterion[];
   substitutes: Substitute[];
-  learned: { title: string; text: string }[];
+  // basis: observed (from our own work), practice (how we work), assumption (not yet tested with users)
+  learned: { title: string; text: string; basis?: 'observed' | 'practice' | 'assumption' }[];
   ask: { title: string; text: string }[];
 };
 
@@ -107,7 +108,18 @@ export type Adoption = {
   fetchedAt: string | null;
   authenticated: boolean;
   repo: { name: string; stars: number | null; forks: number | null; watchers: number | null; openIssues: number | null };
-  traffic: { views14d: number | null; uniqueVisitors14d: number | null; clones14d: number | null; uniqueCloners14d: number | null } | null;
+  traffic: {
+    views14d: number | null;
+    uniqueVisitors14d: number | null;
+    clones14d: number | null;
+    uniqueCloners14d: number | null;
+    // kept across runs by scripts/adoption.mjs (GitHub itself keeps 14 days)
+    since?: string | null;
+    viewsSince?: number;
+    clonesSince?: number;
+    referrers?: { site: string; views: number; unique: number }[] | null;
+    daily?: { date: string; views: number; uniqueVisitors: number; clones: number; uniqueCloners: number }[];
+  } | null;
   action: { counted: boolean; reason: string | null; repositories: number | null; ownRepositories: number | null; officialRepositories: number | null; otherRepositories: number | null };
   outreach: OutreachRow[]; // Midnight's own repositories only
   teams: { contacted: number; replied: number; fixed: number; open: number }; // totals only, never rows
@@ -132,8 +144,7 @@ export type LedgerField = { name: string; type: string; holds: string; who: stri
 export type Desk = {
   status: Status;
   network: string;
-  address: string | null; // null until deployed (the lead fills it)
-  deployTx: string | null;
+  // the address and transactions live in data/desk-deployment.json only
   contractPath: string;
   fieldsConfirmed: boolean; // false: the fields below are the design, not yet checked against desk/
   publicLedger: LedgerField[];

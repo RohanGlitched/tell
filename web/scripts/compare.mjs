@@ -45,6 +45,11 @@ fs.writeFileSync(
       source: 'bench/RESULTS.md',
       generatedFrom: 'bench/results/scores.json',
       runAt: stat.mtime.toISOString().slice(0, 10),
+      // which Tell engine produced the numbers (set by hand when the benchmark is re-run)
+      engine: process.env.TELL_BENCH_ENGINE ?? 'Wave 2 engine (d3a9104)',
+      engineNote:
+        process.env.TELL_BENCH_ENGINE_NOTE ??
+        "Tell's numbers come from the Wave 2 engine; a re-run with the Wave 3 engine (constructors, Ledger 9, token rules) is in progress and will replace them.",
       caveat:
         "Tell's author wrote this benchmark, the leak zoo is Tell's own development set, and the 30 cases were written knowing what Tell looks for. Read the labelled numbers as 'does each tool handle these patterns', not as a population accuracy. Most of the other tools also check things this benchmark does not measure.",
       corpus: '69 Compact files: the Wave 2 leak zoo (10: 5 leaky, 5 fixed), 30 cases written for the benchmark (16 leaky, 13 safe, 1 non-privacy bug), 29 contracts from Midnight’s official examples',

@@ -46,15 +46,19 @@ export default function DeskPage() {
           team can answer and fix it without announcing an open bug, and anyone can check the report once it is revealed. It also holds Tell’s privacy
           grades, keyed by code hash, for wallets to read.
         </p>
-        <div className="flex flex-wrap items-center gap-3 pt-2 text-[14px]">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-[14px]">
           <StatusPill status={address ? 'live' : 'in progress'} label={address ? `live on ${net.label}` : `deploying to ${net.label}`} />
           {address && (
-            <a href={`${net.explorer}/contracts/${address}`} className="mono">
+            <a href={`${net.explorer}/contracts/${address}`} className="mono whitespace-nowrap">
               {address.slice(0, 10)}…{address.slice(-8)}
             </a>
           )}
-          <a href={`https://github.com/RohanGlitched/tell/blob/main/${d.contractPath}`}>Contract source</a>
-          <a href="https://github.com/RohanGlitched/tell/tree/main/desk">README and tests</a>
+          <a href={`https://github.com/RohanGlitched/tell/blob/main/${d.contractPath}`} className="whitespace-nowrap">
+            Contract source
+          </a>
+          <a href="https://github.com/RohanGlitched/tell/tree/main/desk" className="whitespace-nowrap">
+            README and tests
+          </a>
         </div>
       </PageHead>
 

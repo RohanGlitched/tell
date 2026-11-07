@@ -1,37 +1,120 @@
 {
-  "_readme": "Tell Desk as the site explains it, taken from desk/README.md (keep them in step). The live address comes from data/desk-deployment.json, copied from chain/desk-<network>.json by scripts/contracts.mjs; status flips to live once it has an address.",
-  "status": "in progress",
+  "_readme": "Tell Desk as the site explains it, taken from desk/README.md and desk/contracts/desk.compact (keep them in step). The live address and transactions come only from data/desk-deployment.json, copied from chain/desk-<network>.json by scripts/contracts.mjs; the page shows live once that file has an address.",
+  "status": "live",
   "network": "preprod",
-  "address": null,
-  "deployTx": null,
   "contractPath": "desk/contracts/desk.compact",
   "fieldsConfirmed": true,
   "publicLedger": [
-    { "name": "reports", "type": "Map<Bytes<32>, Report>", "holds": "Each report's id, persistentCommit({digest, project}, nonce): a hiding, binding commitment that proves priority. Also its seal time, last change and status", "who": "Anyone; says a report exists, not what or about whom" },
-    { "name": "tag", "type": "Bytes<32> per report", "holds": "persistentHash(\"tell-desk:researcher\", secret, id): lets the researcher prove a report is theirs, different for every report", "who": "Anyone; unlinkable across reports" },
-    { "name": "maintainers", "type": "MerkleTree<Bytes<32>>", "holds": "Credential leaves, persistentHash(\"tell-desk:maintainer\", secret, project), registered once by Tell. Proofs disclose only the root", "who": "Anyone; hides the secret and the project" },
-    { "name": "openings", "type": "Map<Bytes<32>, Opening>", "holds": "Digest, project and nonce of a report, only after it is fixed or its embargo passes: the reveal step of a commit-reveal", "who": "Anyone, after the reveal" },
-    { "name": "grades", "type": "Map<Bytes<32>, Grade>", "holds": "Code hash → grade, rules version and scan, attested by Tell. Self-reported grades live in selfGrades, flagged and kept apart", "who": "Anyone: wallets read it" },
-    { "name": "attester", "type": "Bytes<32>", "holds": "persistentHash(\"tell-desk:attester\", secret): the officer key that attests grades and registers maintainers", "who": "Anyone" }
+    {
+      "name": "reports",
+      "type": "Map<Bytes<32>, Report>",
+      "holds": "Each report's id, persistentCommit({digest, project}, nonce): a hiding, binding commitment that proves priority. Also its seal time, last change and status",
+      "who": "Anyone; says a report exists, not what or about whom"
+    },
+    {
+      "name": "tag",
+      "type": "Bytes<32> per report",
+      "holds": "persistentHash(\"tell-desk:researcher\", secret, id): lets the researcher prove a report is theirs, different for every report",
+      "who": "Anyone; unlinkable across reports"
+    },
+    {
+      "name": "maintainers",
+      "type": "HistoricMerkleTree<10, Bytes<32>>",
+      "holds": "Credential leaves, persistentHash(\"tell-desk:maintainer\", secret, project), registered by Tell. A historic tree keeps past roots valid, so a proof made against an older root still checks. Proofs disclose only the root",
+      "who": "Anyone; hides the secret and the project"
+    },
+    {
+      "name": "openings",
+      "type": "Map<Bytes<32>, Opening>",
+      "holds": "Digest, project and nonce of a report, only after it is fixed or its embargo passes: the reveal step of a commit-reveal",
+      "who": "Anyone, after the reveal"
+    },
+    {
+      "name": "grades",
+      "type": "Map<Bytes<32>, Grade>",
+      "holds": "Code hash → grade, rules version and scan, attested by Tell. Self-reported grades live in selfGrades, flagged and kept apart",
+      "who": "Anyone: wallets read it"
+    },
+    {
+      "name": "attester",
+      "type": "Bytes<32>",
+      "holds": "persistentHash(\"tell-desk:attester\", secret): the officer key that attests grades and registers maintainers",
+      "who": "Anyone"
+    }
   ],
   "privateState": [
-    { "name": "report text", "type": "off chain", "holds": "What was found. Only its SHA-256 ever reaches the chain, and only after the reveal", "who": "Researcher and maintainer" },
-    { "name": "digest, project, nonce", "type": "Opening", "holds": "The opening of the seal: SHA-256 of the text, SHA-256 of the canonical repository URL, 32 random bytes", "who": "Researcher and maintainer, until the reveal" },
-    { "name": "researcher secret", "type": "Bytes<32>", "holds": "Authorship. Used inside the proof to make and check tags; never leaves the device", "who": "The researcher" },
-    { "name": "maintainer secret", "type": "Bytes<32>", "holds": "The credential behind a leaf, plus the Merkle path to it built from the public tree", "who": "The maintainer" }
+    {
+      "name": "report text",
+      "type": "off chain",
+      "holds": "What was found. Only its SHA-256 ever reaches the chain, and only after the reveal",
+      "who": "Researcher and maintainer"
+    },
+    {
+      "name": "digest, project, nonce",
+      "type": "Opening",
+      "holds": "The opening of the seal: SHA-256 of the text, SHA-256 of the canonical repository URL, 32 random bytes",
+      "who": "Researcher and maintainer, until the reveal"
+    },
+    {
+      "name": "researcher secret",
+      "type": "Bytes<32>",
+      "holds": "Authorship. Used inside the proof to make and check tags; never leaves the device",
+      "who": "The researcher"
+    },
+    {
+      "name": "maintainer secret",
+      "type": "Bytes<32>",
+      "holds": "The credential behind a leaf, plus the Merkle path to it built from the public tree",
+      "who": "The maintainer"
+    }
   ],
   "circuits": [
-    { "name": "seal", "does": "Records a new report: id, tag, seal time, status pending", "discloses": "The commitment and a per-report tag; the text, project and nonce stay private" },
-    { "name": "acknowledge, markFixed", "does": "A maintainer proves they hold the opening and a credential for the project it commits to", "discloses": "Which report (already public) and a tree root every maintainer shares; not the credential, not the project" },
-    { "name": "reveal", "does": "Publishes the opening of a fixed report, or of any report after the 90-day embargo", "discloses": "Digest, project and nonce: the point of the reveal" },
-    { "name": "retract", "does": "The researcher withdraws a report before it is acknowledged", "discloses": "Which report; the proof shows the tag is theirs without naming them" },
-    { "name": "attest, selfGrade", "does": "Tell records a grade for a code hash; a registered maintainer may self-report one, flagged", "discloses": "The grade, rules version and scan; a self-report names its project" }
+    {
+      "name": "seal",
+      "does": "Records a new report: id, tag, seal time, status pending",
+      "discloses": "The commitment and a per-report tag; the text, project and nonce stay private"
+    },
+    {
+      "name": "acknowledge, markFixed",
+      "does": "A maintainer proves they hold the opening and a credential for the project it commits to",
+      "discloses": "Which report (already public) and a tree root every maintainer shares; not the credential, not the project"
+    },
+    {
+      "name": "reveal",
+      "does": "Publishes the opening of a fixed report, or of any report after the 90-day embargo",
+      "discloses": "Digest, project and nonce: the point of the reveal"
+    },
+    {
+      "name": "retract",
+      "does": "The researcher withdraws a report before it is acknowledged",
+      "discloses": "Which report; the proof shows the tag is theirs without naming them"
+    },
+    {
+      "name": "attest, selfGrade",
+      "does": "Tell records a grade for a code hash; a registered maintainer may self-report one, flagged",
+      "discloses": "The grade, rules version and scan; a self-report names its project"
+    }
   ],
   "flow": [
-    { "step": "Seal", "text": "The researcher seals the report. The ledger stores a commitment, a per-report tag, the time and status pending. The text goes to the team off chain." },
-    { "step": "Acknowledge", "text": "The maintainer proves in zero knowledge that they hold the opening and a credential for that project. Status: acknowledged." },
-    { "step": "Fix", "text": "Same proof again once the fix is out. Status: fixed. The chain never said which project it was." },
-    { "step": "Reveal", "text": "After the fix, or after the 90-day embargo, the opening is published. Anyone with the text can check it against the seal." },
-    { "step": "Grade", "text": "Tell attests the contract's grade against its code hash. A wallet computes the code hash from any address and looks it up." }
+    {
+      "step": "Seal",
+      "text": "The researcher seals the report. The ledger stores a commitment, a per-report tag, the time and status pending. The text goes to the team off chain."
+    },
+    {
+      "step": "Acknowledge",
+      "text": "The maintainer proves in zero knowledge that they hold the opening and a credential for that project. Status: acknowledged."
+    },
+    {
+      "step": "Fix",
+      "text": "Same proof again once the fix is out. Status: fixed. The chain never said which project it was."
+    },
+    {
+      "step": "Reveal",
+      "text": "After the fix, or after the 90-day embargo, the opening is published. Anyone with the text can check it against the seal."
+    },
+    {
+      "step": "Grade",
+      "text": "Tell attests the contract's grade against its code hash. A wallet computes the code hash from any address and looks it up."
+    }
   ]
 }

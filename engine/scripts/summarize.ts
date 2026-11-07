@@ -107,7 +107,8 @@ const out = {
   kinds,
   linkableProjects,
   publishedValues: publishedBits,
-  cases,
+  // no per-project contract counts: a severity plus a contract count could identify a team
+  cases: cases.map(({ count: _count, ...c }) => c),
   // One entry per analyzed project, anonymized: grade, contracts, and its worst finding.
   projects: order.map((r) => {
     const live = r.contracts.filter((c) => c.ok);

@@ -95,10 +95,17 @@ export default function AdoptionPage() {
       <Section id="repository" tone="mist" note="GitHub" noteText="Public counts, plus traffic when the token can read it." title="The repository">
         <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Stat n={a.repo.watchers ?? '–'} label="watching" />
-          <Stat n={a.repo.openIssues ?? '–'} label="open issues and pull requests" />
+          <Stat n={a.repo.openIssues ?? '–'} label={`open issues and pull requests on ${fmtDate(a.fetchedAt)}`} />
           <Stat n={a.traffic?.uniqueVisitors14d ?? '–'} label="unique visitors, last 14 days" note={a.traffic ? undefined : 'Traffic needs a token with push access.'} />
           <Stat n={a.traffic?.uniqueCloners14d ?? '–'} label="unique cloners, last 14 days" note={a.traffic ? undefined : 'Traffic needs a token with push access.'} />
         </dl>
+        {a.traffic?.since && (
+          <p className="mt-6 max-w-[70ch] text-[14.5px] text-[var(--graphite)]" data-testid="traffic-since">
+            Since {fmtDate(a.traffic.since)}: {a.traffic.viewsSince ?? 0} repository views and {a.traffic.clonesSince ?? 0} clones, kept day by day across runs of the
+            script because GitHub keeps only 14 days.
+            {a.traffic.referrers && a.traffic.referrers.length > 0 && <> Top referring sites: {a.traffic.referrers.slice(0, 5).map((r) => `${r.site} (${r.views})`).join(', ')}.</>}
+          </p>
+        )}
       </Section>
 
       <Section id="method" note="Method" noteText="Run the script yourself; the page renders its output." title="How these numbers are made">

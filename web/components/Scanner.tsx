@@ -331,7 +331,7 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
         </ul>
       </Card>
       <Card title="Private by design">
-        <p className="text-[13px] text-[var(--graphite)]">Your contract is compiled in a temporary folder and deleted after the scan. A share link carries the contract inside the link itself.</p>
+        <p className="text-[13px] text-[var(--graphite)]">Your contract is compiled in a temporary folder and deleted after the scan. A share link carries the contract inside the link itself. Page views are counted by Vercel Web Analytics, without cookies, and the part of a link that holds a contract is removed before anything is counted.</p>
       </Card>
     </>
   );

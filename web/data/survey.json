@@ -62,120 +62,105 @@
       "severity": "critical",
       "kind": "guessable-hash",
       "title": "A private value sits behind a hash with too few possible inputs; brute force recovers it",
-      "bits": 40,
-      "count": 4
+      "bits": 40
     },
     {
       "project": "Project 12",
       "severity": "medium",
       "kind": "branch",
       "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
-      "bits": 16,
-      "count": 2
+      "bits": 16
     },
     {
       "project": "Project 17",
       "severity": "medium",
       "kind": "published",
       "title": "A private value is written to the ledger in readable form",
-      "bits": 256,
-      "count": 1
+      "bits": 256
     },
     {
       "project": "Project 33",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 2
+      "bits": 0
     },
     {
       "project": "Project 37",
       "severity": "medium",
       "kind": "branch",
       "title": "Which ledger operations run depends on private data (a branch or a count shows on chain)",
-      "bits": 8,
-      "count": 1
+      "bits": 8
     },
     {
       "project": "Project 45",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 53",
       "severity": "medium",
       "kind": "published",
       "title": "A private value is written to the ledger in readable form",
-      "bits": 256,
-      "count": 2
+      "bits": 256
     },
     {
       "project": "Project 58",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 61",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 65",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 72",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 82",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 2
+      "bits": 0
     },
     {
       "project": "Project 84",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 91",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 1
+      "bits": 0
     },
     {
       "project": "Project 92",
       "severity": "medium",
       "kind": "attributable",
       "title": "Every repeated action stores the same tag derived from a key, so one user’s actions line up",
-      "bits": 0,
-      "count": 7
+      "bits": 0
     }
   ],
   "projects": [

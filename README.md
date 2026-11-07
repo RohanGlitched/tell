@@ -31,24 +31,26 @@ Built for the [Midnight Buildathon](https://app.akindo.io/wave-hacks/jaMZjqPOBsL
 
 ## Wave 3: you said, we did
 
-Every point from the Wave 2 review (jkato, October 30) and the recap sent to all teams, what we changed, and where to check it. Status is as of November 7, 2026; the same list, kept current, is at [/wave3](https://tell-midnight.vercel.app/wave3).
+Every point from the Wave 2 review (jkato, October 30) and the recap sent to all teams, what we changed, and where to check it. Status is as of November 7, 2026. [/wave3](https://tell-midnight.vercel.app/wave3) has the same points with the same statuses, kept current.
 
 | You said | What we did | Evidence | Status |
 |---|---|---|---|
 | "Deploy to testnet and add the contract address to your README" | The leaky and fixed ballots are on Midnight Preprod with six real votes each, and the new Tell Desk contract is deployed there too. Every address and transaction is in this README. | [Live contracts](#live-contracts-on-midnight-preprod), [/live](https://tell-midnight.vercel.app/live) | done |
-| "genuine private state with implemented witnesses and a commitment/hash" | A second contract where private state carries the design: Tell Desk seals a finding as a commitment, maintainers answer with a zero-knowledge Merkle membership proof, and nothing about the report, the project or either party is public until the reveal. Every `disclose()` is justified in a table. | [Tell Desk](#tell-desk-disclosure-and-grades-on-midnight), [`desk/`](desk) | deployed; demo lifecycle partly run |
-| "Genuinely interesting ecosystem tool, but as a business it is small." | We researched who pays and why now, wrote it down with sources, and started pilots: requests to two audit firms (sent November 7), notes to 11 teams and one issue on Midnight's own examples. No revenue yet. | [Who it's for and who pays](#who-its-for-and-who-pays), [/teams](https://tell-midnight.vercel.app/teams) | in progress |
+| "genuine private state with implemented witnesses and a commitment/hash" | A second contract where private state carries the design: Tell Desk seals a finding as a commitment, maintainers answer with a zero-knowledge Merkle membership proof, and nothing about the report, the project or either party is public until the reveal. Every `disclose()` is justified in a table. | [Tell Desk](#tell-desk-disclosure-and-grades-on-midnight), [`desk/`](desk) | in progress (deployed; demo lifecycle partly run) |
+| "Genuinely interesting ecosystem tool, but as a business it is small." | We researched who pays and why now, wrote it down with sources, asked two audit firms for pilot talks (November 7), and opened public issues for 11 teams and one on Midnight's own examples. No revenue yet. | [Who it's for and who pays](#who-its-for-and-who-pays), [/teams](https://tell-midnight.vercel.app/teams) | in progress |
 | "Your real substitutes are the Compact compiler itself and manual review by security firms" | The compiler answers *whether*, Tell *how much*, from the compiler's own output. Audit firms are buyers, not rivals: Tell's per-circuit map is the first day of a privacy review. We also measured Tell against every other Compact analyzer we could find. | [How Tell compares](#how-tell-compares), [`bench/RESULTS.md`](bench/RESULTS.md) | done |
 | "the closest Web2 analogues (Slither, Semgrep, Snyk) are free or sold per developer seat" | Free like them, but not sold per seat: Midnight has about 150 active developers a month, too few for seats. The analyzer stays free and open source; money comes from audit-firm licenses and an ecosystem grant first, and later from hosted checks priced per private repository. None of them parses Compact ([Semgrep's supported languages](https://docs.semgrep.dev/supported-languages) list Solidity, Cairo, Circom and Move, not Compact). | [/teams#offers](https://tell-midnight.vercel.app/teams#offers) | done |
 | "the buyer pool here is the few dozen teams building on Midnight" | Right for paying production teams today, and we say so. The buyers that matter are audit firms (each serves many teams), the Foundation, and teams who need a privacy report as evidence. Users also reach Tell through coding agents (MCP), VS Code and the on-chain grade registry. | [Honest size](#honest-size) | in progress |
+| "tools like this help enhance the ecosystem's apps" | We took Tell to the apps: 11 teams whose contracts showed a clear finding in the survey were each sent a public GitHub issue naming the file, the line and the kind of finding, and asking where to send the details. One more issue on Midnight's own examples. | [/adoption](https://tell-midnight.vercel.app/adoption) | in progress |
 | "please consider applying to our technical fellowship program" | The Aliit application is drafted; it is not submitted yet. | — | in progress |
 | "if you already have a live product, active users, or revenue, we'd love to hear from you, even if [...] the numbers are small" | Tell is live (site, CLI, Action, badge). The numbers are small and shown as they are, read from GitHub's API by a script: 0 stars and 0 outside repositories using the Action on November 7; 12 issues opened, 0 replies so far. | [/adoption](https://tell-midnight.vercel.app/adoption) | in progress |
-| "what you've learned from bringing a product to market [...] and how the Midnight ecosystem might help" | Written up: a finding needs a verified patch to be acted on; grades need to be visible to users; teams are approached privately first; compiler churn is the main maintenance cost. And three asks of the ecosystem. | [What we learned](#what-we-learned-and-how-midnight-can-help) | done |
-| UX 7/10 (the rubric asks for a frontend that connects to the contract end to end) | The scanner gained share links (the contract travels in the link, never stored), a fix view with the verified patch and a re-scan, a README badge and downloads in JSON, SARIF and Markdown. A `/desk` page reads Tell Desk from the indexer. Browser tests in Playwright. | [/scan](https://tell-midnight.vercel.app/scan), [`web/e2e`](web/e2e) | done |
+| "what you've learned from bringing a product to market [...] and how the Midnight ecosystem might help" | Written up, each item labelled by what it rests on: compiler churn is the main maintenance cost (observed); teams hear about a finding on their own repository before anyone else (how we work); verified patches get findings acted on and grades users can see give teams a reason to care (design assumptions, not yet tested: no team has replied). And three asks of the ecosystem. | [What we learned](#what-we-learned-and-how-midnight-can-help) | done |
+| "manufacturing, supply chains, gaming" | Tell reads any Compact contract, whatever the industry. Worked examples from those sectors are being added to the zoo: a supply-chain record behind a guessable hash, and a game whose hidden move has few values. | [Leak zoo](https://tell-midnight.vercel.app/zoo) | in progress |
+| UX 7/10 (the rubric asks for a frontend that connects to the contract end to end) | The scanner gained share links (the contract travels in the link, never stored), a fix view with the verified patch and a re-scan, a README badge and downloads in JSON, SARIF and Markdown. On the contract side the read path is live in the browser: /live reads both ballots from the indexer and runs the attack, and /desk reads Tell Desk and looks up a grade by address. The write path (seal, acknowledge, reveal) runs from the Desk command-line client; a Lace wallet flow is not built yet. Browser tests in Playwright. | [/scan](https://tell-midnight.vercel.app/scan), [/desk](https://tell-midnight.vercel.app/desk), [`web/e2e`](web/e2e) | in progress |
 
 ## What changed since Wave 2
 
-Compared with the Wave 2 submission (tag [`v1`](https://github.com/RohanGlitched/tell/tree/v1), October 12) and the README fix after the review ([`d3a9104`](https://github.com/RohanGlitched/tell/commit/d3a9104), October 30):
+Compared with the Wave 2 submission (tag [`v1.0.0`](https://github.com/RohanGlitched/tell/tree/v1.0.0), October 12) and the README fix after the review ([`d3a9104`](https://github.com/RohanGlitched/tell/commit/d3a9104), October 30):
 
 1. **Engine: Compact 0.36 and Ledger 9.** Events (`emit`) and cross-contract call arguments are public sinks; a branch that picks the callee is a secret-dependent branch. Contracts that need Ledger 9 go to compiler 0.36.0; everything else still prefers 0.31.1. CI checks the whole zoo under 0.30, 0.31.1, 0.34, 0.35 and 0.36.
 2. **Engine: constructors.** What a constructor writes is the contract's initial public state; Tell now analyses it (taken from the compiler's `drop-safe-casts` pass, since constructors are not proved).
@@ -61,7 +63,7 @@ Compared with the Wave 2 submission (tag [`v1`](https://github.com/RohanGlitched
 9. **Leak zoo: 5 pairs to 9** (raffle with a constructor leak, faucet with a public coin nonce, deposit paid in the clear, a Ledger 9 poll that emits its vote hash), with 18 attack tests, up from 10.
 10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 69 files ([`bench/`](bench)).
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
-12. **Outreach**: 11 teams sent an issue naming the file and the kind of finding, with the details offered privately; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot requests to two audit firms.
+12. **Outreach**: 11 teams were each sent a public GitHub issue naming the file, the line and the kind of finding, and asking where to send the details; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot talks requested with two audit firms.
 
 Tests went from 97 in two workspaces (87 engine, 10 zoo) to 337 in six ([Setup and tests](#setup-and-tests)).
 
@@ -83,7 +85,7 @@ npx tsx engine/src/cli.ts path/to/contracts --fix-dry-run        # verified fixe
 npx tsx engine/src/cli.ts path/to/contracts --fix                # apply them and scan again
 ```
 
-On the leaky ballot from the zoo, `--fix` replaces `persistentHash(choice)` with a salted `persistentCommit` and the grade goes from F to B; the vault goes from F to A (checked in [`engine/test/fix.test.ts`](engine/test/fix.test.ts)). Each of the five original leaky zoo contracts gets a verified fix, and the zoo's attacks recover nothing from the patched contracts ([`zoo/test/autofix.test.ts`](zoo/test/autofix.test.ts)). Where no rewrite is safe (a wallet key used as an identity, a token amount), Tell says so and gives the manual fix.
+On the leaky ballot from the zoo, `--fix` wraps the stored hash in a `persistentCommit` with a fresh nonce from a new witness (`persistentCommit(choiceHash(c), ballotsNonce())`) and the grade goes from F to B; the vault goes from F to A (checked in [`engine/test/fix.test.ts`](engine/test/fix.test.ts)). Each of the five original leaky zoo contracts gets a verified fix, and the zoo's attacks recover nothing from the patched contracts ([`zoo/test/autofix.test.ts`](zoo/test/autofix.test.ts)). Where no rewrite is safe (a wallet key used as an identity, a token amount), Tell says so and gives the manual fix.
 
 ### In CI, with pull-request review
 
@@ -98,13 +100,14 @@ steps:
     with:
       path: contract
       fail-on: high
+      # compact-version: '0.36.0'   # for Ledger 9 contracts (events, contract calls); 0.31.1 by default
 ```
 
-Findings go to GitHub code scanning on the line that leaks. On a pull request, Tell comments on the changed lines with what is revealed in bits and, when the patch fits inside the diff, a **Commit suggestion** button for the verified fix. Re-runs edit their own comments instead of piling up new ones. Inputs, permissions, fork behaviour and a workflow to copy: [docs/action.md](docs/action.md), [`examples/tell-pr-review.yml`](examples/tell-pr-review.yml).
+Findings go to GitHub code scanning on the line that leaks. On a pull request, Tell comments on the changed lines with what is revealed in bits and, when the patch fits inside the diff, a **Commit suggestion** button for the verified fix. Re-runs edit their own comments instead of piling up new ones. See it on a real pull request: [#1](https://github.com/RohanGlitched/tell/pull/1) adds a ballot that stores a hash of each vote, and Tell's review is on it. Inputs, permissions, fork behaviour and a workflow to copy: [docs/action.md](docs/action.md), [`examples/tell-pr-review.yml`](examples/tell-pr-review.yml).
 
 ### In VS Code
 
-The [extension](vscode) marks leaking lines on open and save, shows the fix on hover and in a quick fix, and puts the grade in the status bar. `npm run package -w vscode` builds `vscode/dist/tell-vscode.vsix`; on Windows, install it in a WSL window, next to the compiler. Not on the Marketplace yet.
+The [extension](vscode) marks leaking lines on open and save, shows the fix on hover and in a quick fix, and puts the grade in the status bar. Download [`tell-vscode.vsix`](https://github.com/RohanGlitched/tell/releases/download/v1.1.0/tell-vscode.vsix) from the [v1.1.0 release](https://github.com/RohanGlitched/tell/releases/tag/v1.1.0), or build it with `npm run package -w vscode` (`vscode/dist/tell-vscode.vsix`); on Windows, install it in a WSL window, next to the compiler. Not on the Marketplace yet.
 
 ### In a coding agent (MCP)
 
@@ -301,8 +304,8 @@ Every ballot register and vote transaction is in [`chain/deployments-preprod.jso
 
 ### Why now
 
-- **Nobody reviews privacy before deploy any more.** Mainnet deployment needed a reviewed pull request scored on a rubric whose first dimension is Privacy-at-Risk ([rubric](https://github.com/midnightntwrk/midnight-improvement-proposals/blob/main/deployments/contract-deployment-rubric.md)). Since October 9, 2026 deployment is permissionless and the Foundation does not review contracts; the rubric is kept as optional self-assessment ([issue #361](https://github.com/midnightntwrk/midnight-improvement-proposals/issues/361), [PR #375](https://github.com/midnightntwrk/midnight-improvement-proposals/pull/375)). Tell can be that self-assessment, automated.
-- **The Foundation's own problem statement describes the gap.** [MPS-0036](https://github.com/midnightntwrk/midnight-improvement-proposals/blob/main/mps/mps-0036-security-evidence-for-compact.md) (Proposed) says the compiler's outputs "include no stable privacy-flow account for successful releases". Tell's JSON is a per-release, per-circuit privacy-flow account, and Desk's registry binds a grade to the verifier keys at an address ([Tell and MPS-0036](#tell-and-mps-0036)). The Foundation's own improvement process names this gap, which makes the Foundation a natural sponsor of the maintenance grant below.
+- **Nobody reviews privacy before deploy any more.** Mainnet deployment needed a reviewed pull request scored on a rubric whose first dimension is Privacy-at-Risk ([rubric](https://github.com/midnightntwrk/midnight-improvement-proposals/blob/main/deployments/contract-deployment-rubric.md)). The deploy guards were lifted in the week before October 4, 2026, and on October 9 the review process was retired: deployment is permissionless and the Foundation does not review contracts; the rubric is kept as optional self-assessment ([issue #361](https://github.com/midnightntwrk/midnight-improvement-proposals/issues/361), [PR #375](https://github.com/midnightntwrk/midnight-improvement-proposals/pull/375)). Tell can be that self-assessment, automated.
+- **A problem statement in Midnight's own improvement-proposal repository describes the gap.** [MPS-0036](https://github.com/midnightntwrk/midnight-improvement-proposals/blob/main/mps/mps-0036-security-evidence-for-compact.md) (Proposed) says the compiler's outputs "include no stable privacy-flow account for successful releases". Tell's JSON is a per-release, per-circuit privacy-flow account, and Desk's registry binds a grade to the verifier keys at an address ([Tell and MPS-0036](#tell-and-mps-0036)). MPS-0036 has an individual author, but it is published in Midnight's improvement-proposal process, which makes the Foundation a natural sponsor of the maintenance grant below.
 - **Regulators now say unsalted hashes are not enough.** The EDPB's final [Guidelines 02/2025 on blockchain](https://www.edpb.europa.eu/documents/guideline/guidelines-on-processing-of-personal-data-through-blockchain-technologies_en) (July 7, 2026), paragraph 52: unsalted or unkeyed hashes "should, in general, not be considered sufficient" for personal data on a public chain. That is Tell's guessable-hash finding. A Tell report is evidence for a data-protection impact assessment, not a legal opinion.
 - **New leak surface.** [Ledger 9](https://midnight.network/blog/ledger-9-upgrade-on-mainnet) (mainnet, November 6, 2026) added events and cross-contract calls, both public. Tell covers them.
 
@@ -311,16 +314,16 @@ Every ballot register and vote transaction is in [`chain/deployments-preprod.jso
 | Stream | Who | Price we will test | Status |
 |---|---|---|---|
 | Open-source core | everyone | free: CLI, Action, rules, zoo, web scanner, public repositories | live |
-| Audit-firm license | firms reviewing Compact | first engagement free, then per engagement or $3,000–6,000 a year per firm | pilot requests sent to 2 firms on November 7; no reply yet |
+| Audit-firm license | firms reviewing Compact | first engagement free, then per engagement or $3,000–6,000 a year per firm | in progress: pilot talks requested with 2 firms on November 7; no reply yet |
 | Ecosystem maintenance grant | Midnight Foundation | $30,000–60,000 for 12 months of compiler and ledger tracking, all output open source | planned |
 | Release privacy report | teams handling personal data | per release, tied to the compiled artifacts | planned |
 | Hosted pull-request checks for private repositories | production teams | $49 per private repository a month, not per seat | planned |
 
-The anchor for audit work: ZK circuit audits already cost 80–120% more than Solidity audits ([Sherlock, 2026](https://www.sherlock.xyz/post/smart-contract-audit-pricing-a-market-reference-for-2026)); a privacy map that saves an auditor a day is worth more than the license. Free analyzers elsewhere are paid for by audit work and grants (Slither, Aderyn); hosted-only analysis has the weakest record ([MythX](https://mythx.io/sunset/) shut down, [OpenZeppelin Defender](https://www.openzeppelin.com/news/doubling-down-on-open-source-and-phasing-out-defender) retired).
+The anchor for audit work: ZK circuit audits already cost 80–120% more than audits of EVM (Solidity) contracts ([Sherlock, 2026](https://www.sherlock.xyz/post/smart-contract-audit-pricing-a-market-reference-for-2026)); a privacy map that saves an auditor a day is worth more than the license. Free analyzers elsewhere are paid for by audit work and grants (Slither, Aderyn); hosted-only analysis has the weakest record ([MythX](https://mythx.io/sunset/) shut down, [OpenZeppelin Defender](https://www.openzeppelin.com/news/doubling-down-on-open-source-and-phasing-out-defender) retired).
 
 ### Honest size
 
-Today only a few dozen teams run production contracts on Midnight: about 19 projects went through the mainnet deploy review in six months ([archived records](https://github.com/midnightntwrk/midnight-improvement-proposals/tree/main/deployments)). The developer base is larger and growing: about 150 monthly active developers in 2026 ([Electric Capital via Midnight](https://midnight.network/blog/electric-capital-report)), active contributors up 325% in a year ([Midnight, August 2026](https://midnight.network/blog/developer-activity-surges)). Seats cannot carry Tell: at Semgrep's $30 a seat ([pricing](https://semgrep.dev/pricing)), all 150 paying would be $54,000 a year, and most of them work on public code that stays free. So Tell does not sell seats.
+Today only a few dozen teams run production contracts on Midnight: about 14 projects went through the mainnet deploy review in six months (19 review records, some of them Midnight's own) ([archived records](https://github.com/midnightntwrk/midnight-improvement-proposals/tree/main/deployments)). The developer base is larger and growing: about 150 monthly active developers in 2026 ([Electric Capital via Midnight](https://midnight.network/blog/electric-capital-report)), active contributors up 325% in a year ([Midnight, August 2026](https://midnight.network/blog/developer-activity-surges)). Seats cannot carry Tell: at Semgrep's $30 a seat ([pricing](https://semgrep.dev/pricing)), all 150 paying would be $54,000 a year, and most of them work on public code that stays free. So Tell does not sell seats.
 
 Counted from the bottom, with sourced counts and the prices above (hypotheses, nothing sold):
 
@@ -328,31 +331,31 @@ Counted from the bottom, with sourced counts and the prices above (hypotheses, n
 |---|---|---|---|
 | Audit-firm licenses | 5 firms with Compact or Midnight work we can point to, or named in the Wave 2 review | $3,000–6,000 each | $15,000–30,000 |
 | Ecosystem maintenance grant | 1 | $30,000–60,000 for 12 months | $30,000–60,000 |
-| Private-repository checks, later | ~19 production teams, one repository each | $49 a month | ≈ $11,000 |
-| **Ceiling today, if every one paid** | | | **$56,000–101,000** |
+| Private-repository checks, later | ~14 production teams, one repository each | $49 a month | ≈ $8,000 |
+| **Ceiling today, if every one paid** | | | **$53,000–98,000** |
 
 The realistic funding path is an ecosystem grant plus audit-firm licenses, with the Aliit fellowship for reach (it pays no stipend); hosted checks on private repositories come later. Our year-one target is below the ceiling: $15,000–40,000, mostly grant and services. The same table is at [/teams#market](https://tell-midnight.vercel.app/teams#market). The path is audit firms (each serves many teams), the Foundation, and later the same leak class on other ZK chains (Aztec's docs list the same channels: [privacy considerations](https://docs.aztec.network/developers/docs/resources/considerations/privacy_considerations)).
 
-Money for tooling is thin right now: Catalyst's Midnight category was paused ([CryptoSlate](https://cryptoslate.com/?p=521853)) and the Aliit fellowship pays no stipend ([Midnight blog](https://midnight.network/blog/aliit-fellowship-now-accepting-cohort-2-applications)).
+Money for tooling is thin right now: Project Catalyst paused its funding rounds in February 2026 ([CryptoSlate](https://cryptoslate.com/?p=521853)), and its "Midnight: Compact DApps" category lists no funded proposal ([category](https://projectcatalyst.io/funds/15/midnight-compact-dapps)), and the Aliit fellowship pays no stipend ([Midnight blog](https://midnight.network/blog/aliit-fellowship-now-accepting-cohort-2-applications)).
 
 ### Competition
 
-The compiler (whether, not how much); [Nightshade](https://forum.midnight.network/t/1377) (launched October 29, 96 rules, flags small-domain hashes by type, broader on non-privacy bugs); compact-guard and compact-lint (smaller, see the benchmark); OpenZeppelin's detector SDK (2 detectors, no privacy checks); Midnight's own [`/audit-compact`](https://github.com/midnightntwrk/midnight-expert) (LLM review, not repeatable numbers). What only Tell does: bits per circuit from the compiler's own output, verified fixes, attack tests that read the secret back, and a live Preprod demo.
+The compiler (whether, not how much); [Nightshade](https://forum.midnight.network/t/1377) (launched October 29, 96 rules, flags small-domain hashes by type, broader on non-privacy bugs); compact-guard and compact-lint (smaller, see the benchmark); OpenZeppelin's Compact Security Detectors SDK (2 detectors, no privacy checks); Midnight's own [`/audit-compact`](https://github.com/midnightntwrk/midnight-expert) (LLM review, not repeatable numbers). What only Tell does: bits per circuit from the compiler's own output, verified fixes, attack tests that read the secret back, and a live Preprod demo.
 
 ### Pilot status (November 7, 2026)
 
-- **Audit firms:** pilot requests sent to two firms. No replies yet.
-- **Teams:** 11 buildathon teams whose contracts showed a real finding were sent a GitHub issue asking where to send the details (file and category only; no team is named here). One public issue on Midnight's examples: [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90). No replies or fixes yet.
+- **Audit firms:** pilot talks requested with two firms on November 7. No replies yet.
+- **Teams:** 11 buildathon teams whose contracts showed a real finding were each sent a public GitHub issue on their own repository, naming the file, the line and the kind of finding, and asking where to send the details. No team is named here; the site shows totals only. One public issue on Midnight's examples: [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90). No replies or fixes yet.
 - **Usage:** 0 stars; 0 repositories outside ours use the Action (GitHub code search, which covers default branches only).
 
 Live counts, refreshed from GitHub's API by a script: [/adoption](https://tell-midnight.vercel.app/adoption).
 
 ### What we learned, and how Midnight can help
 
-- **A finding needs a fix.** The next question after a finding is always "how do I fix it". A verified patch is easy to accept; a rule name is extra work. That is why `--fix` and the pull-request suggestion exist.
-- **Grades need to be seen.** A grade only on the developer's screen changes little; one a wallet can read from the chain gives teams a reason to earn a good one. That is Tell Desk's registry.
-- **Approach teams privately first.** A leak in a public contract is the team's to fix, not ours to announce.
-- **The compiler moves fast.** Several compiler releases in one buildathon, 0.36.0 and Ledger 9 among them, and the circuit form Tell reads changed shape more than once; keeping up is the main maintenance cost.
+- **A finding needs a fix** (design assumption; no team has replied yet). We expect the next question after a finding to be "how do I fix it": a verified patch is easy to accept, a rule name is extra work. That is why `--fix` and the pull-request suggestion exist.
+- **Grades need to be seen** (design assumption, not yet tested with users). A grade only on the developer's screen changes little; one a wallet can read from the chain gives teams a reason to earn a good one. That is Tell Desk's registry.
+- **Tell the team before anyone else** (how we work). Each team gets a public issue on its own repository naming the file, the line and the kind of finding; the details go wherever the team asks. A leak in a public contract is the team's to fix, not ours to announce.
+- **The compiler moves fast** (observed). Several compiler releases in one buildathon, 0.36.0 and Ledger 9 among them, and the circuit form Tell reads changed shape more than once; keeping up is the main maintenance cost.
 
 What would help: a Tell check in `create-mn-app` and Midnight's example repositories; a documented, versioned form of the compiler's `reduce-to-circuit` output (or the privacy-flow output MPS-0036 asks for); introductions to audit firms reviewing Compact and wallet teams that could show a grade before users sign.
 

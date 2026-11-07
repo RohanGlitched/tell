@@ -125,7 +125,7 @@ export default function ZooPage() {
         <p>
           {numberWord(zooCounts.pairs, true)} pairs of small contracts ({zooCounts.contracts} in all, {zooCounts.ledger8} pairs on Ledger 8 and {zooCounts.ledger9} on Ledger 9), each a leak
           a careful developer could ship and its fix: votes, salaries, bids, keys, tags, a constructor, shielded and unshielded tokens, and a Ledger 9 event.
-          For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public state. 18 attack tests, and auto-fix tests that patch each leaky contract and scan it again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+          For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public state. 18 attack tests, and auto-fix tests that apply Tell’s verified patches to the five original leaky contracts and run the attacks again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
         </p>
       </PageHead>
     <div className="wrap pb-16 pt-12 sm:pt-14">

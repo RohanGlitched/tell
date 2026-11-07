@@ -8,7 +8,7 @@ Written by Tell's author. That is a conflict of interest, so everything needed t
 
 | Tool | Version run | Source | How it was run |
 |---|---|---|---|
-| [Tell](https://github.com/RohanGlitched/tell) | 0.1.0 at this commit | this repository | `npx tsx engine/src/cli.ts <file> --json` (runs the Compact compiler its pragma asks for) |
+| [Tell](https://github.com/RohanGlitched/tell) | 0.1.0, the Wave 2 engine (commit [`d3a9104`](https://github.com/RohanGlitched/tell/commit/d3a9104), Oct 30, 2026); a re-run with the Wave 3 engine is pending | this repository | `npx tsx engine/src/cli.ts <file> --json` (runs the Compact compiler its pragma asks for) |
 | [Nightshade](https://github.com/DicksonWu654/nightshade) | 0.1.1 | release tarball `nightshade-compact-0.1.1.tgz` (sha256 `fee7af6c…a3d6`) | three configurations, below |
 | [compact-guard](https://github.com/KAMEVETRICS/compact-guard) | 0.1.0, commit `152b05d` (Oct 19, 2026) | source build (no releases) | `compact-guard --format json --fail-on none <file>`, all eight rules |
 | [compact-lint](https://github.com/wbaxterh/compact-lint) | 0.1.0, commit `812a6cc` (Oct 1, 2026) | source (no dependencies) | `compact-lint --json <file>` |
