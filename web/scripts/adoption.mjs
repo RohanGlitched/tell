@@ -141,7 +141,7 @@ for (const base of outreachFile.entries ?? []) {
       row.state = issue.json.state;
       // replies: comments from anyone other than the person who opened it
       const comments = await gh(`${base}/comments?per_page=100`);
-      if (comments.ok) row.replies = comments.json.filter((c) => c.user?.login !== issue.json.user?.login).length;
+      if (comments.ok) row.replies = comments.json.filter((c) => c.user?.login !== issue.json.user?.login && c.user?.type !== 'Bot' && !/bot|claassistant/i.test(c.user?.login ?? '')).length;
       else row.replies = issue.json.comments;
       if (ref.pr) {
         const pr = await gh(`/repos/${ref.owner}/${ref.name}/pulls/${ref.number}`);
@@ -166,7 +166,16 @@ const totals = {
   open: outreach.filter((o) => o.state === 'open').length,
 };
 
-const out = { fetchedAt: new Date().toISOString(), authenticated: Boolean(TOKEN), repo, traffic, action, outreach, totals, errors };
+// Team rows are published only as totals: per-row order, dates, sectors or topics could be joined
+// with the public issues to say which team has which finding. Midnight's own examples keep a row.
+const teamRows = outreach.filter((o) => !o.official);
+const teams = {
+  contacted: teamRows.filter((o) => o.state !== 'pending').length,
+  replied: teamRows.filter((o) => (o.replies ?? 0) > 0).length,
+  fixed: teamRows.filter((o) => o.fixed).length,
+  open: teamRows.filter((o) => o.state === 'open').length,
+};
+const out = { fetchedAt: new Date().toISOString(), authenticated: Boolean(TOKEN), repo, traffic, action, outreach: outreach.filter((o) => o.official), teams, totals, errors };
 fs.writeFileSync(path.join(DATA, 'adoption.json'), JSON.stringify(out, null, 2) + '\n');
 console.log(
   `adoption.json written: ${repo.stars ?? '?'} stars, ${repo.forks ?? '?'} forks; Action ${action.counted ? `${action.repositories} repositories` : 'not counted (no token)'}; outreach ${totals.contacted} contacted, ${totals.replied} replied, ${totals.fixed} fixed${errors.length ? `; ${errors.length} problem(s): ${errors.join('; ')}` : ''}`,

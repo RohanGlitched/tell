@@ -109,7 +109,8 @@ export type Adoption = {
   repo: { name: string; stars: number | null; forks: number | null; watchers: number | null; openIssues: number | null };
   traffic: { views14d: number | null; uniqueVisitors14d: number | null; clones14d: number | null; uniqueCloners14d: number | null } | null;
   action: { counted: boolean; reason: string | null; repositories: number | null; ownRepositories: number | null; officialRepositories: number | null; otherRepositories: number | null };
-  outreach: OutreachRow[];
+  outreach: OutreachRow[]; // Midnight's own repositories only
+  teams: { contacted: number; replied: number; fixed: number; open: number }; // totals only, never rows
   totals: { contacted: number; replied: number; fixed: number; open: number };
   errors: string[];
 };

@@ -1,12 +1,12 @@
 {
-  "fetchedAt": "2026-11-07T05:38:03.936Z",
+  "fetchedAt": "2026-11-07T08:24:33.486Z",
   "authenticated": true,
   "repo": {
     "name": "RohanGlitched/tell",
     "stars": 0,
     "forks": 0,
     "watchers": 0,
-    "openIssues": 0
+    "openIssues": 1
   },
   "traffic": {
     "views14d": 15,
@@ -24,160 +24,6 @@
   },
   "outreach": [
     {
-      "id": "a",
-      "label": "Project A (supply chain)",
-      "sector": "supply chain",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:55Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "guessable hash"
-    },
-    {
-      "id": "b",
-      "label": "Project B (lending)",
-      "sector": "lending",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:56Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "transcript shape reveals a count"
-    },
-    {
-      "id": "c",
-      "label": "Project C (gaming)",
-      "sector": "gaming",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:57Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "d",
-      "label": "Project D (invoicing)",
-      "sector": "invoicing",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:26:14Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "e",
-      "label": "Project E (trading)",
-      "sector": "trading",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:58Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "f",
-      "label": "Project F (supply-chain finance)",
-      "sector": "supply-chain finance",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:58Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "g",
-      "label": "Project G (identity)",
-      "sector": "identity",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:25:59Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "wallet key in public state"
-    },
-    {
-      "id": "h",
-      "label": "Project H (commerce)",
-      "sector": "commerce",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:33:09Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "i",
-      "label": "Project I (trading)",
-      "sector": "trading",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:26:00Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "j",
-      "label": "Project J (marketplace)",
-      "sector": "marketplace",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:26:00Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
-      "id": "k",
-      "label": "Project K (lending)",
-      "sector": "lending",
-      "kind": "issue",
-      "official": false,
-      "url": null,
-      "openedAt": "2026-11-07T04:33:10Z",
-      "state": "open",
-      "replies": 0,
-      "fixed": false,
-      "fixUrl": null,
-      "topic": "same tag on every action"
-    },
-    {
       "id": "mn-election",
       "label": "example-election",
       "sector": "governance",
@@ -190,13 +36,33 @@
       "fixed": false,
       "fixUrl": null,
       "topic": "each revealed vote tied to the voter's registration key"
+    },
+    {
+      "id": "mn-election-pr",
+      "label": "example-election (fix)",
+      "sector": "governance",
+      "kind": "pr",
+      "official": true,
+      "url": "https://github.com/midnightntwrk/midnight-examples/pull/92",
+      "openedAt": "2026-11-07T08:17:49Z",
+      "state": "open",
+      "replies": 0,
+      "fixed": false,
+      "fixUrl": null,
+      "topic": "README: say that revealed votes are tied to registration keys"
     }
   ],
-  "totals": {
-    "contacted": 12,
+  "teams": {
+    "contacted": 11,
     "replied": 0,
     "fixed": 0,
-    "open": 12
+    "open": 11
+  },
+  "totals": {
+    "contacted": 13,
+    "replied": 0,
+    "fixed": 0,
+    "open": 13
   },
   "errors": []
 }

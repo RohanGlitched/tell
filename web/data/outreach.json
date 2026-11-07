@@ -120,6 +120,16 @@
       "sentAt": "2026-11-07",
       "fixCommit": null,
       "topic": "each revealed vote tied to the voter's registration key"
+    },
+    {
+      "id": "mn-election-pr",
+      "label": "example-election (fix)",
+      "sector": "governance",
+      "kind": "pr",
+      "url": "https://github.com/midnightntwrk/midnight-examples/pull/92",
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "README: say that revealed votes are tied to registration keys"
     }
   ]
 }
