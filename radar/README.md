@@ -14,6 +14,7 @@ The acceptance test is Tell's own pair of ballots on Preprod. From chain data al
 export RADAR_BLOCKFROST_FILE=../chain/secrets/blockfrost-preprod   # or BLOCKFROST_PROJECT_ID
 export RADAR_HOME=~/mn/work/radar                                     # cache, tables, private notes
 
+npx tsx src/cli.ts tables                                              # numeric hash tables, once (400 MB on disk)
 npx tsx src/cli.ts crawl    --network preprod --days 14 --budget 4100  # which contracts acted, newest blocks first
 npx tsx src/cli.ts discover --network preprod --dir path/to/repos      # 64-hex strings in files that are Preprod contracts
 npx tsx src/cli.ts scan     --network preprod [--addresses file] [--max N] [--actions 100] [--budget N] [--deep]

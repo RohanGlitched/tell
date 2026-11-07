@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Rohan Borade
 // SPDX-License-Identifier: Apache-2.0
 //
+// radar tables   (build the numeric hash tables once)
 // radar crawl    --network preprod [--from H] [--to H] [--days N] [--budget N]
 // radar discover --network preprod --dir DIR [--budget N]
 // radar scan     --network preprod [--addresses FILE] [--max N] [--actions N] [--budget N] [--deep] [--offline]
@@ -17,6 +18,8 @@ import { analyze, digest, type Digested } from './analyze.js';
 import { BLOCKS_PER_REQUEST, crawl, fetchContract, harvestCandidates, loadCrawl, tip, verifyAddresses } from './chain.js';
 import { BudgetExceeded, Indexer, type Network } from './indexer.js';
 import { aggregate, details, type Own } from './report.js';
+import { loadTable } from './table.js';
+import { numericTables } from './tables.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HOME = process.env.RADAR_HOME ?? path.join(os.homedir(), '.cache', 'tell-radar');
@@ -58,7 +61,11 @@ async function main() {
   const crawlFile = path.join(HOME, `crawl-${network}.json`);
   const discoveredFile = path.join(HOME, `discovered-${network}.txt`);
   try {
-    if (cmd === 'crawl') {
+    if (cmd === 'tables') {
+      // Builds the numeric tables ahead of a scan (about 400 MB on disk), one at a time.
+      for (const f of numericTables(1 << 24)) await loadTable(f, path.join(HOME, 'tables'), { log });
+      log(`tables ready in ${path.join(HOME, 'tables')}`);
+    } else if (cmd === 'crawl') {
       const top = typeof flags.to === 'string' ? Number(flags.to) : await tip(ix);
       const from = typeof flags.from === 'string' ? Number(flags.from) : Math.max(0, top - num(flags.days, 7) * 14_400);
       log(`crawling ${network} blocks ${from}..${top} (${Math.ceil((top - from + 1) / BLOCKS_PER_REQUEST)} requests at most, budget ${ix.budget})`);

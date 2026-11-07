@@ -15,6 +15,7 @@ import type { ContractRecord } from './chain.js';
 import { describe, type Family, familyName, familySize } from './families.js';
 import { type Atom, decodeCalls, decodeState, type DecodedState, isOpaque32 } from './state.js';
 import { loadTable } from './table.js';
+import { numericTables } from './tables.js';
 import { pairPrefixes, singlePrefixes, vocabulary } from './words.js';
 
 export type Options = {
@@ -87,10 +88,7 @@ function familiesFor(entryPoints: Set<string>, o: Options): { tables: Family[]; 
     { kind: 'taggedWord', prefixes: singles, words },
   ];
   if (o.deep) streamed.push({ kind: 'taggedWord', prefixes: pairs, words });
-  for (const width of [4, 8, 16, 32] as const) {
-    const f: Family = { kind: 'uint', width, count: width === 16 ? Math.min(uintMax, 1 << 20) : uintMax };
-    (o.tableDir ? tables : streamed).push(f);
-  }
+  for (const f of numericTables(uintMax)) (o.tableDir ? tables : streamed).push(f);
   return { tables, streamed };
 }
 
