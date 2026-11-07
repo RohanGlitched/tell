@@ -22,6 +22,10 @@ for (const width of WIDTHS)
       if (p === '/scan') {
         await page.getByRole('button', { name: 'Scan this contract' }).click();
         await expect(page.getByLabel('Grade F').first()).toBeVisible();
+        // let the scroll to the report finish, then check the sticky header sits at the top
+        await page.waitForTimeout(1500);
+        const top = await page.locator('header.site-header').evaluate((e) => e.getBoundingClientRect().top);
+        expect(top).toBe(0);
       }
       await page.waitForLoadState('networkidle').catch(() => {});
       const name = `${p === '/' ? 'home' : p.slice(1)}-${width}`;

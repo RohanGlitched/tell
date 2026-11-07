@@ -89,7 +89,7 @@ export default function ReportView({
         <div className="no-print">{input}</div>
         <div aria-live="polite">{status}</div>
         {result && !busy && contracts.length === 0 && (
-          <article className="report-page rounded-md bg-white p-8 shadow-[0_1px_0_var(--rule)]">
+          <article className="report-page scroll-mt-24 rounded-md bg-white p-8 shadow-[0_1px_0_var(--rule)]">
             <p className="text-[var(--graphite)]">No Compact contracts in this repository. Tell looks for .compact files with a pragma and an exported circuit.</p>
           </article>
         )}
@@ -167,7 +167,7 @@ function ContractReport({ c, ci, list, result, source, onFix }: { c: ContractRes
   const [showInfo, setShowInfo] = useState(false);
   if (!c.ok)
     return (
-      <article className="report-page rounded-md bg-white shadow-[0_1px_0_var(--rule),0_24px_60px_-40px_rgba(26,20,70,.45)]" id={`c${ci}-summary`}>
+      <article className="report-page scroll-mt-24 rounded-md bg-white shadow-[0_1px_0_var(--rule),0_24px_60px_-40px_rgba(26,20,70,.45)]" id={`c${ci}-summary`}>
         <header className="border-b-2 border-[var(--indigo)] px-5 py-6 sm:px-11 sm:py-8">
           <p className="text-[13px] text-[var(--faint)]">Privacy report for</p>
           <h2 className="mono mt-1 break-all text-[20px]">{c.file}</h2>
@@ -186,7 +186,7 @@ function ContractReport({ c, ci, list, result, source, onFix }: { c: ContractRes
   const firstPatch = major.map((f) => fixOf(f).patch).find((p) => p?.verified && p.gradeAfter);
 
   return (
-    <article className="report-page rounded-md bg-white shadow-[0_1px_0_var(--rule),0_24px_60px_-40px_rgba(26,20,70,.45)]" data-testid="report-page">
+    <article className="report-page scroll-mt-24 rounded-md bg-white shadow-[0_1px_0_var(--rule),0_24px_60px_-40px_rgba(26,20,70,.45)]" data-testid="report-page">
       <header id={`c${ci}-summary`} className="grid scroll-mt-24 grid-cols-[1fr_auto] items-start gap-6 border-b-2 border-[var(--indigo)] px-5 py-6 max-sm:grid-cols-1 sm:px-11 sm:pb-7 sm:pt-9">
         <div className="max-sm:order-2">
           <p className="text-[13px] text-[var(--faint)]">Privacy report for</p>
