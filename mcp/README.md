@@ -8,8 +8,8 @@ It runs the real Compact compiler and Tell's engine on your machine. Nothing is 
 
 | Tool | Input | Returns |
 |---|---|---|
-| `tell_scan` | `source` (contract text) and/or `path` (a `.compact` file or a directory), optional `compiler` version, optional `includeInfo` | Per contract: grade A to F, counts per severity, each finding (rule, severity, circuit, line, what is revealed, bits, detail, fix, the public transcript line it shows up in) and each circuit's private inputs and public transcript. |
-| `tell_check_fix` | `original` and `revised` source, optional `path` and `compiler` | Grade before and after, which findings are resolved, which remain (with any severity change) and which are new, and a one-line verdict. An agent calls it after each edit until the grade is A, or only findings it has confirmed are intended remain. |
+| `tell_scan` | `source` (contract text) and/or `path` (a `.compact` file or a directory), optional `compiler` version, optional `includeInfo`, optional `policy` (the JSON a `tell.json` holds; by default the nearest `tell.json` above `path` applies) | Per contract: grade A to F, counts per severity, each finding (rule, severity, circuit, line, what is revealed, bits, detail, fix, the public transcript line it shows up in) and each circuit's private inputs and public transcript. |
+| `tell_check_fix` | `original` and `revised` source, optional `path`, `compiler` and `policy` | Grade before and after, which findings are resolved, which remain (with any severity change) and which are new, and a one-line verdict. An agent calls it after each edit until the grade is A, or only findings it has confirmed are intended remain. |
 | `tell_explain_rule` | `rule` (a finding's `rule`, e.g. `guessable-hash`, or a SARIF id like `tell/branch/medium`) | What the rule means, when it is quiet, and a leaking example with its fix, from Tell's leak zoo. |
 
 Also:

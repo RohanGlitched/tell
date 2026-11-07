@@ -1,25 +1,158 @@
-# Results: Compact privacy benchmark, November 7, 2026
+# Results: Compact privacy benchmark
 
-Seven configurations of five tools, run on 69 Compact files: Tell's leak zoo (10), 30 cases written for this benchmark, and 29 contracts from Midnight's official examples. How the corpus, the ground truth and the scoring work is in [README.md](README.md); every number below comes from `node bench/score.mjs` over the files in [`results/`](results), and the full per-file matrix is in [`results/scores.md`](results/scores.md).
+**Current run: November 7, 2026, Tell `d62e618`** (the engine after the work in [GAPS-FOR-TELL.md](GAPS-FOR-TELL.md)). The other tools are the same versions as in the first run; they were re-run on the zoo set because it gained five pairs. The first run (Tell `d3a9104`, earlier the same day) is kept unchanged under [History](#history-first-run-tell-d3a9104) at the end, with its raw results in [`results/history/`](results/history).
 
-**Read this first.** Tell's author wrote this benchmark, the zoo is Tell's own development set, and the 30 cases were written knowing what Tell looks for (one case class, L16, was taken from a Nightshade rule). Treat the labelled-set numbers as "does each tool handle these patterns", not as a population accuracy. The examples set has no planted leaks and is the less biased half. Each tool also covers things this benchmark does not measure: Nightshade has 96 rules, most of them about authorization, tokens, Merkle proofs and time, not privacy.
+Eight configurations of five tools on 79 Compact files: Tell's leak zoo (20), 30 cases written for this benchmark, and 29 contracts from Midnight's official examples. How the corpus, the ground truth and the scoring work is in [README.md](README.md); every number below comes from `node bench/score.mjs` over the files in [`results/`](results), and the per-file matrix is in [`results/scores.md`](results/scores.md). Tell was also run on Nightshade's own published regression corpus, [below](#tell-on-nightshades-published-corpus).
 
-## Tools
+**Read this first.** Tell's author wrote this benchmark, the zoo is Tell's own development set (and grew from 5 to 10 leaky contracts, all written by Tell's author: deposit, faucet and raffle for Wave 3, keyring and club for the gaps found here), and the 30 cases were written knowing what Tell looks for. Treat the labelled-set numbers as "does each tool handle these patterns", not as a population accuracy. Some rules were added *because* the first run showed Tell missing those cases (L11, L12, L16), so Tell's gain there is by construction; what is informative is whether the safe counterparts stayed quiet and what happened on code Tell's author did not write: Midnight's examples and Nightshade's corpus. Each tool also covers things this benchmark does not measure: Nightshade has 96 rules, most of them about authorization, tokens, Merkle proofs and time, not privacy.
 
-| Tool | Version | What it is |
-|---|---|---|
-| [Tell](https://github.com/RohanGlitched/tell) | 0.1.0 (`d3a9104`) | privacy scanner over the compiler's `reduce-to-circuit` output; counts bits |
-| [Nightshade](https://github.com/DicksonWu654/nightshade) | 0.1.1 (release tarball) | offline static analyzer, 96 rules, several about disclosure; run three ways: default, every rule that needs no policy, and default plus a secrets policy |
-| [compact-guard](https://github.com/KAMEVETRICS/compact-guard) | 0.1.0, `152b05d` | tree-sitter analyzer with provenance tracking, rules CG001–CG008 |
-| [compact-lint](https://github.com/wbaxterh/compact-lint) | 0.1.0, `812a6cc` | one rule: a witness Merkle path not bound to its leaf |
-| [OpenZeppelin Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) | `compact-scanner` v0.0.3 binary | two detectors: loop array bounds, verbose assertion messages |
-| [midnight-expert `/audit-compact`](https://github.com/midnightntwrk/midnight-expert) | `212d7c2` | not run (needs a paid model), see below |
+## What changed since the first run
 
-Run time over all 69 files, one file at a time on a shared WSL machine: Tell 594 s (it compiles every file with the Compact compiler), Nightshade 71–116 s, compact-guard 13 s, compact-lint 3 s, OpenZeppelin 1 s.
+- **Ground truth.** `cases/L09-secret-returned` was relabelled from `leak` to `not-public`: an exported circuit's result is not on chain (a ledger `ContractCall` carries only a randomized commitment to the call's inputs and outputs; see [GAPS-FOR-TELL.md](GAPS-FOR-TELL.md) item 5). The case assumed the opposite, and Tell rated it critical. This removed a Tell true positive. Findings on it are labelled `real-other` (a value does leave the proof, to the DApp), for Tell (now low) and for Nightshade's policy run (high) alike.
+- **Corpus.** The zoo set now has 10 leaky and 10 fixed contracts (deposit, faucet and raffle from Wave 3; keyring and club from this pass, each with an attack test). Labelled set: 25 planted leaks, 23 safe files, 1 non-privacy bug (N01), 1 not-public value (L09).
+- **Tell.** Constructor analysis, token rules and Ledger 9 (Wave 3 engine), then: `derivable-secret` (a published hash used as a private key), membership shown by a `Set.member` lookup, cross-contract tags, returned values capped at low, branch findings that state their caller assumption, a declared-intent policy file, and precision fixes. A second configuration, `tell-policy`, adds `bench/policies/tell.json` (one line: S07's `enroll` runs once per device), written after the first run showed S07 as a false alarm.
 
-## Labelled set: 21 planted leaks, 18 safe files, 1 non-privacy bug
+Tools and versions: Tell 0.1.0 at `d62e618`, plain and with the policy file; everything else as in the first run (Nightshade 0.1.1 three ways, compact-guard `152b05d`, compact-lint `812a6cc`, OpenZeppelin `compact-scanner` v0.0.3; table under History). midnight-expert's `/audit-compact` is still not run: it needs a paid model.
+
+## Labelled set: 25 planted leaks, 25 files without one
 
 ### Medium and above
+
+| Tool | Leaks found | False alarms | Files without a leak, no false alarm | Leak quantified | Leak read back by a shipped attack test |
+|---|---|---|---|---|---|
+| Tell | **23 / 25** | 1 | 24 / 25 | 16 of 23 (bits) | 10 (zoo) |
+| Tell + policy file | **23 / 25** | **0** | **25 / 25** | 16 of 23 | 10 |
+| Nightshade, default | 3 / 25 | **0** | **25 / 25** | 1 of 3 (domain size) | 0 |
+| Nightshade, every rule | 3 / 25 | 0 | 25 / 25 | 1 of 3 | 0 |
+| Nightshade, secrets policy | 14 / 25 | 12 | 18 / 25 | 1 of 14 | 0 |
+| compact-guard | 5 / 25 | 1 | 24 / 25 | 5 of 5 (domain size) | 0 |
+| compact-lint | 0 / 25 | 0 | 25 / 25 | n/a | 0 |
+| OpenZeppelin detectors | 0 / 25 | 0 | 25 / 25 | n/a | 0 |
+
+"Files without a leak" are the 23 safe files, N01 (privacy-safe) and L09 (not public).
+
+### All severities
+
+| Tool | Leaks found | False alarms | Findings in total |
+|---|---|---|---|
+| Tell | 25 / 25 | 1 | 81 |
+| Tell + policy file | 25 / 25 | 0 | 81 |
+| Nightshade, default | 3 / 25 | 0 | 8 |
+| Nightshade, every rule | 4 / 25 | 0 | 27 |
+| Nightshade, secrets policy | 14 / 25 | 12 | 36 |
+| compact-guard | 8 / 25 | 1 | 15 |
+| compact-lint | 0 / 25 | 0 | 1 |
+| OpenZeppelin detectors | 0 / 25 | 0 | 0 |
+
+### Old engine against new, on the 20 leaks both runs share
+
+The first run had 21 planted leaks; without L09 (relabelled), 20 remain in both runs.
+
+| | Found at medium+ | Found at any severity | False alarms, medium+ | False alarms, any severity |
+|---|---|---|---|---|
+| Tell `d3a9104` (first run) | 15 / 20 | 18 / 20 | 1 (S07) | 2 (S07, S05) |
+| Tell `d62e618` | **18 / 20** | **20 / 20** | 1 (S07) | 1 (S07) |
+| Tell `d62e618` + policy file | 18 / 20 | 20 / 20 | 0 | 0 |
+
+Per case, where something changed:
+
+| Case | What leaks | Tell, first run | Tell now | Why |
+|---|---|---|---|---|
+| L09 | (relabelled: not public) | TP critical | low, `real-other` | a circuit's result is not on chain |
+| L11 | `Set.member(hash(key))` in an "anonymous" claim | info | **TP medium** | new: a lookup of the caller's own tag names the member |
+| L12 | constructor writes a secret | - | **TP critical** | constructor analysis (Wave 3 engine) |
+| L16 | published hash reused as a private scalar | - (info tag) | **TP critical** | new rule `derivable-secret` |
+| S05 | same operation on both branch sides | info FP | clean | a salted commitment on one side of a balanced branch is not a published fact |
+| S07 | one hashed key per device | FP medium | FP medium; clean with the policy | intent Tell cannot infer; declared with `once` |
+| S13 | separate hash domains for id and key | - | - | the L16 rule's safe counterpart stays quiet |
+| zoo keyring, club (new) | public id as private key; member lookup | | TP critical, TP medium | attack tests in `zoo/test/linking.test.ts` |
+| zoo deposit, faucet, raffle (new) | token amount, coin nonce, constructor hash | | TP medium, medium, critical | attack tests in `zoo/test/deploy-tokens.test.ts` |
+
+Still missed at medium: **L06 and L10** (branches when nothing identifies the caller), found at low, by decision: a Midnight transaction does not name its sender by itself (fees are shielded DUST), so Tell keeps these low and says why in the finding; `"caller": "identified"` in a policy file rates them medium. Nightshade's policy run reports both at high.
+
+### Per case, medium and above (current run)
+
+| Case | Tell | Tell + policy | NS default | NS policy | compact-guard |
+|---|---|---|---|---|---|
+| zoo ballot, payband, vault, raffle, keyring | TP critical | TP critical | - | TP high | ballot, raffle: TP medium |
+| zoo reserve, board, deposit, faucet, club | TP medium | TP medium | - | reserve: TP high | - |
+| L01–L05, L13–L15 | TP critical | TP critical | L04, L13, L15: TP medium | L04, L15: medium; L13: high | L02, L14, L15: TP medium |
+| L07, L08 | TP medium | TP medium | - | L08: TP high | - |
+| L06, L10 | low | low | - | TP high | - |
+| L11 | TP medium | TP medium | - | - | - |
+| L12, L16 | TP critical | TP critical | - | TP high | L16: low |
+| S07 | FP medium | clean | - | - | - |
+| S05, S10, S13, N01, zoo board-fixed, club-fixed, keyring-fixed | - | - | - | FP high (1–2 each) | - |
+| zoo ballot-fixed | - | - | - | - | FP medium (pure helper) |
+
+Other safe files have no false alarm at medium or above from any tool. Every label, with its reason, is in [labels/labelled-set.md](labels/labelled-set.md).
+
+## Midnight's examples: 29 contracts, hand-labelled
+
+| Tool | Analysis complete | Findings, medium+ | Real privacy leak | Intended disclosure | Real, not privacy | False alarm | Findings, all severities |
+|---|---|---|---|---|---|---|---|
+| Tell | 26 / 29 | 4 | 3 | 0 | 0 | 1 | 222 |
+| Nightshade, default | 19 / 29 | 0 | 0 | 0 | 0 | 0 | 7 |
+| Nightshade, every rule | 3 / 29 | 31 | 0 | 0 | 6 | 25 | 94 |
+| Nightshade, secrets policy | 19 / 29 | 59 | 2 | 51 | 0 | 6 | 66 |
+| compact-guard | 29 / 29 | 6 | 0 | 3 | 0 | 3 | 81 |
+| compact-lint | 29 / 29 | 0 | 0 | 0 | 0 | 0 | 0 |
+| OpenZeppelin detectors | 22 / 29 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+(Tell with the policy file is identical here: the policy only names a bench case.) The other tools' example results are unchanged from the first run.
+
+Three distinct real privacy findings at medium or above:
+
+- **election `revealVote`** ties each revealed vote to the voter's registered key (Tell branch medium; Nightshade policy run, high). As in the first run.
+- **private-tip-jar `withdraw`** and **roulette `houseClaimMatch`** (Tell, shielded-coin medium, from the Wave 3 token rules): the owner or the house sweeps a contract-held coin to `ownPublicKey()`. `sendShielded` derives the new coin's nonce from the stored coin's nonce, which is public ledger state, and the color and value are public, so anyone with a list of candidate wallet keys can confirm which wallet received the coin. Low impact (the recipient is the contract's own officer), but it ties that officer's shielded wallet to the contract, which shielding is meant to prevent.
+
+Tell's one false alarm at medium is unchanged (roulette `claimWinnings`, a branch inside `sendShielded` whose outcome is already public). Tell's all-severity count rose from 157 to 222: constructors are now analysed (deploy-time arguments published on purpose, at info), Ledger 9 contracts publish more operands, and a value returned to the DApp is no longer "known", so a few branches on arguments now show at info. The shielded-chips `mint` result (the coin's nonce, which the first run flagged as "worth a second look") is no longer reported: the result goes to the DApp, not the chain.
+
+Coverage is as in the first run: Compact 0.36.0 rejects three experimental contracts (AxelarGateway, recover-secp, SelfRecursion), and Tell only analyses what the compiler accepts.
+
+Run time, one file at a time on a shared WSL machine: Tell 675 s for the 79 files (it compiles each with the Compact compiler); the other tools as in the first run (Nightshade 71–116 s for 69 files, compact-guard 13 s, compact-lint 3 s, OpenZeppelin 1 s).
+
+## Tell on Nightshade's published corpus
+
+CORPUS_SECTION
+
+## Where Tell does better
+
+- **Small-domain hashes that are not small by type** (L01, L03, zoo payband): only Tell reads `assert` bounds and discounts inputs that are public in the same call.
+- **Hashes stored as Map values** (L02, L14, zoo ballot): Nightshade's `low-entropy-hash-disclosure` reports the same hash written to a Cell (L15) but not as a Map value; compact-guard handles both.
+- **A commitment whose nonce is public but not constant** (L05): Tell critical, compact-guard low, Nightshade not covered (as documented).
+- **The same tag on every action, and a lookup that names the member** (L07, L11, zoo board, club): only Tell.
+- **Constructors, token amounts and coin nonces** (L12, zoo raffle, deposit, faucet): Tell at medium or worse; Nightshade's policy run catches L12 and raffle.
+- **Numbers.** 16 of Tell's 23 detections at medium or worse state how much leaks, in bits.
+- **Shown, not only reported.** Ten zoo leaks are carried out by attack tests that read the secret back from public data, and the fixes stop them (`npm test -w zoo`: 28 tests pass).
+- **Few findings to read on real code.** On the examples Tell gives 4 findings at medium or above, 3 of them real.
+
+## Where the others do better
+
+- **Branches when nothing identifies the caller** (L06, L10). Tell keeps these at low on purpose and states its assumption in the finding; Nightshade's policy run reports both as high. If your callers are identified some other way, declare it and Tell rates them medium.
+- **Precision of the default configuration.** Nightshade's default selection raised no false alarm at medium or above on any file. Tell's default run has one (S07), which a one-line policy removes; Tell + policy then also has none.
+- **Things that are not privacy.** Nightshade reports that the leaked vault key and the L12 admin secret let anyone pass the owner check; compact-lint (error), compact-guard and Nightshade report N01's unbound Merkle path. Tell is silent on these by design.
+- **Running without a compiler.** Every other tool works from source text and takes about a second per file or less; Tell needs the Compact compiler the contract's pragma asks for, and cannot analyse code the compiler rejects.
+
+## Reproduce
+
+```bash
+npm ci && compact update 0.31.1 && compact update 0.36.0
+bash bench/install.sh
+node bench/run.mjs                 # all tools; --tools tell,tell-policy for Tell only
+node bench/score.mjs
+NIGHTSHADE_REPO=bench/.tools/nightshade-src node bench/nightshade-corpus.mjs   # Tell on Nightshade's own corpus
+```
+
+---
+
+## History: first run (Tell `d3a9104`)
+
+The first run, as published earlier on November 7, 2026, before the gaps work. Its raw results are in [`results/history/`](results/history) (`tell-d3a9104.json`, `scores-d3a9104.md`). Ground truth at the time: 21 planted leaks (L09 counted as a leak), 18 safe files, 1 non-privacy bug; zoo of 5 pairs. Tell `d3a9104` ran 594 s over 69 files.
+
+### Labelled set: 21 planted leaks, 18 safe files, 1 non-privacy bug
+
+#### Medium and above
 
 | Tool | Leaks found | False alarms | Safe files with no false alarm | Leak quantified | Leak read back by a shipped attack test |
 |---|---|---|---|---|---|
@@ -33,7 +166,7 @@ Run time over all 69 files, one file at a time on a shared WSL machine: Tell 594
 
 "Safe files" counts the 18 safe files plus N01, which is privacy-safe. compact-lint and the OpenZeppelin detectors are not privacy tools; they are here because they are the other Compact analyzers people use, and compact-lint is the only tool that reports N01 (its bug class) at error severity.
 
-### All severities (low and info included)
+#### All severities (low and info included)
 
 | Tool | Leaks found | False alarms | Findings in total |
 |---|---|---|---|
@@ -45,7 +178,7 @@ Run time over all 69 files, one file at a time on a shared WSL machine: Tell 594
 | compact-lint | 0 / 21 | 0 | 1 |
 | OpenZeppelin detectors | 0 / 21 | 0 | 0 |
 
-### Per case, medium and above
+#### Per case, medium and above
 
 `TP` = the planted leak found (with severity); `low`/`info` = found only below medium; `FP` = false alarm; `-` = nothing. NS = Nightshade.
 
@@ -81,7 +214,7 @@ Run time over all 69 files, one file at a time on a shared WSL machine: Tell 594
 
 Safe files not listed (S01–S04, S06, S08, S09, S11, S12 and the other fixed zoo contracts) have no false alarm at medium or above from any tool. Every label, with its reason, is in [labels/labelled-set.md](labels/labelled-set.md).
 
-## Midnight's examples: 29 contracts, hand-labelled
+### Midnight's examples: 29 contracts, hand-labelled
 
 | Tool | Analysis complete | Findings, medium+ | Real privacy leak | Intended disclosure | Real, not privacy | False alarm | Findings, all severities |
 |---|---|---|---|---|---|---|---|
@@ -103,7 +236,7 @@ Coverage notes:
 - The OpenZeppelin binary panics on 7 of 29 examples (unhandled `ERROR` nodes, `Opaque<"string">`, a binary-expression type mismatch); its grammar predates current Compact.
 - compact-guard and compact-lint complete everything (tree-sitter, no compiler).
 
-## Where Tell does better
+### Where Tell does better
 
 - **Small-domain hashes that are not small by type.** L01 (a Uint<64> asserted below 10), L03 and zoo payband (a public id hashed with a small secret) are found only by Tell, which reads `assert` bounds and discounts inputs that are public in the same call. Nightshade's `low-entropy-hash-disclosure` and compact-guard's CG002 use the declared type's domain (at most 65,536 values for both), do not read `assert` bounds, and do not count a circuit argument disclosed in the same call as known; Nightshade's rule also leaves hashes with more than one private input out of scope, as its documentation says.
 - **Hashes stored as Map values.** L02, L14 and zoo ballot write a small-domain hash with `Map.insert`. Nightshade's low-entropy rule reports `persistentHash<Uint<8>>(answer())` written to a Cell (L15) but not the identical hash written as a Map value (L02); the same happens with `persistentHash<Boolean>` (reported into a Cell in a separate probe, not into a Map value in L14). compact-guard handles both.
@@ -113,7 +246,7 @@ Coverage notes:
 - **Shown, not only reported.** The five zoo leaks are carried out by attack tests that read the secret back from public ledger state, and the fixes stop them: `npm test -w zoo` passes 10 of 10. No other tool ships exploit tests (Nightshade's generated testing checks the analyzer itself, "not an exploit generator").
 - **Few findings to read on real code.** On the examples Tell gives 2 findings at medium or above, one of them the only real leak found; 155 more are low or info (mostly "argument published on purpose" and tag notes).
 
-## Where the others do better
+### Where the others do better
 
 - **Constructors.** L12 (a constructor writing a secret) is found only by Nightshade with a secrets policy. Tell does not analyse constructors yet; its README says so.
 - **A published hash reused as a private key** (L16). Nightshade has a rule written for this class (`publicly-derivable-encryption-secret`, default-on, which did not fire on this case; its opt-in `published-digest-generator-scalar-review` did, at info) and its policy run reports it high. compact-guard's CG006 points at the missing domain separation (low). Tell reports nothing.
@@ -122,25 +255,18 @@ Coverage notes:
 - **Things that are not privacy.** Nightshade reports that the leaked vault key and the L12 admin secret let anyone pass the owner check (`spoofable-authorization`); compact-lint (error), compact-guard (CG005) and Nightshade (info) report N01's unbound Merkle path. Tell is silent on all of these, by design. On the examples, Nightshade's opt-in rules find 6 true non-privacy observations (unbounded mints in demo token contracts) among 31 findings.
 - **Running without a compiler.** Every other tool works from source text and takes about a second per file or less; Tell needs the Compact compiler the contract's pragma asks for, and cannot analyse code the compiler rejects.
 
-## What costs precision
+### What costs precision
 
 - **Nightshade with a secrets policy** finds the most planted leaks after Tell (13 of 21) and is the only tool to catch L12, but a generic policy ("every witness is secret; hashes and commitments are allowed") produces 9 false alarms on the labelled set (Merkle `checkRoot` membership, a balanced branch, a public key derived from a separate hash domain) and 51 findings on the examples that are disclosures the contracts make on purpose. Policies written per contract would cut both; that is the trade-off Nightshade documents.
 - **Nightshade with every rule** adds review rules aimed at nullifiers, access-control conventions, time and mint caps. On the examples, 25 of its 31 medium findings are false alarms (blacklist and game checks read as nullifiers, a bid amount read as a time, a burn address read as a default recipient).
 - **compact-guard** has 3 false alarms in 6 medium findings on the examples (an `ownPublicKey()` refund address read as authorization; a PIN hash that is hashed again with a 256-bit secret) and one on the labelled set (an exported pure helper that is never called on chain).
 
-## Not run: midnight-expert `/compact-core:audit-compact`
+### Not run: midnight-expert `/compact-core:audit-compact`
 
 Midnight's official `midnight-expert` repository ships `/compact-core:audit-compact`, an LLM command: it compiles the contract with `compact compile --skip-zk`, dispatches one `security-reviewer` agent that walks a threat catalog (privacy leakage among its categories) and a witness trust-boundary reference, then confirms Critical and High findings mechanically with its `midnight-verify` step. It needs a paid model to run, so it is not scored here. Its answers vary between runs and models, which is what deterministic tools avoid; on the other hand it can reason about intent ("this disclosure is the documented reveal step"), which is where every static tool here, Tell included, loses precision.
 
-## One thing worth a second look
+### One thing worth a second look
 
 Tell (info) and Nightshade with every rule (`exported-shielded-descriptor`, info) both show that `shielded-chips/chips.compact`'s exported `mint` returns the minted coin's `ShieldedCoinInfo`, nonce included, while the source says the nonce "is never published, which is what keeps the recipient private". Whether that return value is public depends on how exported results are exposed, which the two tools model differently. Unconfirmed; details in [labels/examples.md](labels/examples.md).
 
-## Reproduce
-
-```bash
-npm ci && compact update 0.31.1 && compact update 0.36.0
-bash bench/install.sh
-node bench/run.mjs
-node bench/score.mjs
-```
+Resolved since: a ContractCall carries only a communication commitment to the inputs and outputs, so the result is not on chain and the nonce stays private, as the source says. Nightshade's model was the right one; see GAPS-FOR-TELL.md item 5.
