@@ -311,7 +311,9 @@ function analyzeCircuit(
   const val = (x: SExpr): Val => {
     if (isVar(x)) return env.get(x.v) ?? empty();
     if (isList(x)) return isTypeForm(x) ? empty() : evalExpr(x);
-    return domLit(x) ? { label: new Map(), dom: true } : empty();
+    // A literal keeps its text, so a domain separator bound to a temporary (a helper's argument,
+    // inlined) still tells two hashes of the same secret apart.
+    return { label: new Map(), dom: domLit(x) || undefined, lits: [litKey(x)] };
   };
 
   // Unknown bits an attacker must guess to invert a one-way function of `l`.
@@ -435,7 +437,8 @@ function analyzeCircuit(
           return { label: new Map([[key, { flow: 'reveal' }]]) };
         }
         if (CASTS.has(name)) return { label: union(...args), parts: args.length === 1 ? args[0].parts : undefined, varying: anyVarying(args), self: anySelf(args) };
-        const lits = [...args.flatMap((a) => a.lits ?? []), ...x.slice(2).filter((a) => !isList(a) && !isVar(a)).map(litKey)];
+        // literals among the arguments carry their own text (see val), inline or bound to a temporary
+        const lits = args.flatMap((a) => a.lits ?? []);
         // A coin commitment keeps track of what went into it, so the claim can be checked below.
         const dom = anyDom(args) || x.slice(2).some(domLit);
         const scoped = anySelf(args);
@@ -454,7 +457,7 @@ function analyzeCircuit(
       case 'vector':
       case 'tuple': {
         const parts = x.slice(1).map(val);
-        const lits = [...x.slice(1).filter((a) => !isList(a) && !isVar(a)).map(litKey), ...parts.flatMap((v) => v.lits ?? [])];
+        const lits = parts.flatMap((v) => v.lits ?? []);
         return { label: new Map(), parts, varying: anyVarying(parts), lits, dom: anyDom(parts) || x.slice(1).some(domLit), self: anySelf(parts) };
       }
       case 'new': {
@@ -950,7 +953,9 @@ function analyzeCircuit(
       const field = p.ledger.get(fid)?.name ?? baseName(fid);
       const op = isSym(l[3]) ? l[3].v : 'op';
       // Ledger results are public, and may differ from call to call.
-      env.set(target, { label: new Map(), varying: mutated.has(fid) || field === 'kernel', self: field === 'kernel' && op === 'self' });
+      // The contract's own address is the same on every call: a hash of it and a key is still one tag.
+      const self = field === 'kernel' && op === 'self';
+      env.set(target, { label: new Map(), varying: !self && (mutated.has(fid) || field === 'kernel'), self });
       if (field === 'kernel' && SHIELDED_KERNEL_OPS.has(op)) {
         // The coin itself is private, but whether a receive or spend happened at all is public.
         if (op !== 'self') {

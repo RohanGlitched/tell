@@ -54,6 +54,10 @@ Compiled only by 0.33 and later (language 0.25+), so 0.31.1 rejects them: `emit`
 - `scripts/zoo-check.ts --compiler 0.36.0`: all 18 zoo contracts pass (every leaky one has a medium-or-worse finding, every fix none).
 - Survey sample (48 contracts from 36 repositories, chosen for constructors and token operations, compiled once and analysed by the old and new engine): no crashes; 2 new findings at medium or worse, both read by hand and both real (a shielded mint whose nonce is `evolveNonce(counter, contract address)`, and an invoice amount the contract hides in a commitment but settles as an unshielded deposit); 5 new low shielded-coin findings (contract-held coins paid to an argument recipient); constructors add 84 info and 4 low findings (an officer's `ownPublicKey()` stored at deploy) and 9 linkable tags.
 
+## After the benchmark (gaps branch)
+
+Already in the top-level README in this branch: the "What it finds" rows (public value used as a private key, membership shown by a lookup, cross-contract tags, returned values), a "Declared intent (`tell.json`)" section, and two evidence-backed assumptions under Limits (a circuit's result is not on chain; a transaction does not name its sender). The zoo now has ten pairs on Ledger 8 plus the Ledger 9 poll: keyring (a published account id that is also an encryption key's private scalar) and club (an "anonymous" claim that looks the member's leaf up in a Set), each with an attack test in `zoo/test/linking.test.ts`. Benchmark status per gap: `bench/GAPS-FOR-TELL.md`.
+
 ## Roadmap row
 
 `Wave 3 | … constructor analysis; shielded token and DUST patterns in the zoo` is done except DUST: no DUST-specific leak was found that the IR exposes (DUST is spent by the wallet for fees, outside contract code).

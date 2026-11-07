@@ -94,7 +94,7 @@ npx tsx engine/src/cli.ts path/to/contracts --fix-dry-run        # verified fixe
 npx tsx engine/src/cli.ts path/to/contracts --fix                # apply them
 ```
 
-A fix is only offered after Tell has compiled the patched contract with the same compiler and scanned it again: it must compile, the finding must be gone, and nothing new at medium or worse may appear. Every leaky contract in the zoo gets one, and the zoo's attacks recover nothing from the patched contracts ([`zoo/test/autofix.test.ts`](zoo/test/autofix.test.ts)). For the board, the fix stops posts grouping by author on the ledger and says that the membership check still links them; the zoo's Merkle-proof version is the full fix.
+A fix is only offered after Tell has compiled the patched contract with the same compiler and scanned it again: it must compile, the finding must be gone, and nothing new at medium or worse may appear. Every leaky contract in the zoo gets one, and the zoo's attacks recover nothing from the patched contracts ([`zoo/test/autofix.test.ts`](zoo/test/autofix.test.ts)). For the board, the fix stops posts grouping by author on the ledger and says that the membership check still links them; Tell then reports that lookup on its own (medium, grade C), and the zoo's Merkle-proof version is the full fix.
 
 ### In CI
 
