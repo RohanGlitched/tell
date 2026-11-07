@@ -1,0 +1,30 @@
+// Tell benchmark case L06-branch-unbalanced: branch on a secret with a different ledger operation on each side
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: branch
+// circuit: check
+// line: 25
+// why: the transcript shows which counter moved, so every check reveals whether the hidden balance is above the limit (1 bit per call).
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger above: Counter;
+export ledger below: Counter;
+export ledger limit: Uint<64>;
+
+witness balance(): Uint<64>;
+
+constructor(l: Uint<64>) {
+  limit = disclose(l);
+}
+
+export circuit check(): [] {
+  if (disclose(balance() > limit)) { // LEAK
+    above.increment(1);
+  } else {
+    below.increment(1);
+  }
+}

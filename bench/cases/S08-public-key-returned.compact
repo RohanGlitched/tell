@@ -1,0 +1,21 @@
+// Tell benchmark case S08-public-key-returned: a hashed public key returned from an exported circuit
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: secret-published
+// circuit: myId
+// line: none
+// why: returns the domain-separated hash of the key (the usual public key), not the key.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger lookups: Counter;
+
+witness recoverySecret(): Bytes<32>;
+
+export circuit myId(): Bytes<32> {
+  lookups.increment(1);
+  return disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "id:pk"), recoverySecret()]));
+}

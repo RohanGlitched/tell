@@ -1,0 +1,25 @@
+// Tell benchmark case L05-commit-public-nonce: commitment whose randomness is public ledger state
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: pick_
+// line: 23
+// why: the randomness is the public round counter, readable by anyone; with the pick asserted below 3, three guesses per round recover it. The nonce is not a constant, so a constant-only check does not see it.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger picks: Map<Uint<64>, Bytes<32>>;
+export ledger round: Counter;
+
+witness pick(): Uint<8>;
+
+export circuit pick_(): [] {
+  const p = pick();
+  assert(p < 3, "rock, paper or scissors");
+  const n = round.read();
+  picks.insert(n, disclose(persistentCommit<Uint<8>>(p, (n as Field) as Bytes<32>))); // LEAK
+  round.increment(1);
+}

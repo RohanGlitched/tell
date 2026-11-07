@@ -1,0 +1,22 @@
+// Tell benchmark case L04-commit-constant-nonce: commitment whose randomness is a constant
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: pick_
+// line: 21
+// why: persistentCommit with pad(32, "nonce") as randomness is a plain hash; the pick is asserted below 3, so three guesses recover it.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger picks: Map<Bytes<32>, Bytes<32>>;
+
+witness pick(): Uint<8>;
+
+export circuit pick_(round: Bytes<32>): [] {
+  const p = pick();
+  assert(p < 3, "rock, paper or scissors");
+  picks.insert(disclose(round), disclose(persistentCommit<Uint<8>>(p, pad(32, "nonce")))); // LEAK
+}

@@ -1,0 +1,30 @@
+// Tell benchmark case S11-constructor-hash: the constructor stores a hash of the secret
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: secret-published
+// circuit: constructor
+// line: none
+// why: the constructor and the check use a domain-separated hash of the secret.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger admin: Bytes<32>;
+export ledger actions: Counter;
+
+witness adminSecret(): Bytes<32>;
+
+circuit adminTag(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "admin:pk"), sk]);
+}
+
+constructor() {
+  admin = disclose(adminTag(adminSecret()));
+}
+
+export circuit act(): [] {
+  assert(admin == adminTag(adminSecret()), "admin only");
+  actions.increment(1);
+}

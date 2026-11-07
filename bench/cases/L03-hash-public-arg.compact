@@ -1,0 +1,22 @@
+// Tell benchmark case L03-hash-public-arg: hash of a public id together with a small secret
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: record
+// line: 21
+// why: hash(id, income): id is a disclosed argument written in the same call, income is asserted below 1,000,000 (20 bits); about a million hashes per record recover it. Two inputs, only one unknown.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger incomes: Map<Uint<32>, Bytes<32>>;
+
+witness income(): Uint<32>;
+
+export circuit record(id: Uint<32>): [] {
+  const v = income();
+  assert(v < 1000000, "monthly income below one million");
+  incomes.insert(disclose(id), disclose(persistentHash<Vector<2, Field>>([id as Field, v as Field]))); // LEAK
+}

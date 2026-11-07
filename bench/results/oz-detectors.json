@@ -1,0 +1,432 @@
+{
+  "tool": "oz-detectors",
+  "version": "compact-scanner 0.0.2 (release v0.0.3 binary)",
+  "repo": "https://github.com/OpenZeppelin/compact-security-detectors-sdk",
+  "configuration": "all detectors (array-loop-bound-check, assertion-error-message-verbose)",
+  "command": "compact-scanner scan <file>",
+  "files": [
+    {
+      "id": "cases/L01-assert-bound-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L02-type-width-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L03-hash-public-arg.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L04-commit-constant-nonce.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L05-commit-public-nonce.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L06-branch-unbalanced.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L07-same-tag-every-action.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L08-cast-not-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L09-secret-returned.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L10-count-in-loop.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L11-set-member.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L12-constructor-leak.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L13-preimage-published.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L14-boolean-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L15-cell-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/L16-public-digest-as-key.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/N01-merkle-unbound-path.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S01-assert-bound-commit.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S02-type-width-commit.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S03-hash-public-arg-salted.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S04-commit-random-nonce.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S05-branch-balanced.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S06-per-action-tag.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S07-key-hashed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S08-public-key-returned.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S09-count-committed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S10-merkle-checkroot.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S11-constructor-hash.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S12-public-fact.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "cases/S13-separate-key-domain.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/battleship/contract/battleship.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Unhandled node kind: ERROR\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/calculator/contract/calculator.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/election/contract/election.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Missing 'str' field in Opaque type: Ok(\"Opaque<\\\"string\\\">\")\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/hello-world/contract/hello-world.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Missing 'str' field in Opaque type: Ok(\"Opaque<\\\"string\\\">\")\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/private-bid/contract/private-bid.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/private-party/contract/private-party.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/symbol_table.rs:359:25:\nError: type mismatch in the binary expression\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/private-tip-jar/contract/private-tip-jar.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/private-tip-jar/contract/tip-token.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/secret-message/contract/secret-message.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/shielded-chips/contract/chips.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Missing 'str' field in Opaque type: Ok(\"Opaque<\\\"string\\\">\")\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/shielded-chips/contract/roulette.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/silent-auction/contract/silent-auction.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Invalid root node kind: ERROR\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/token-transfers/contract/token-transfers.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/examples/zk-loan/contract/zk-loan.compact",
+      "status": "error",
+      "note": "\nthread 'main' panicked at sdk/src/codebase.rs:141:60:\ncalled `Result::unwrap()` on an `Err` value: Unhandled node kind: ERROR\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/axelar-gateway/AxelarGateway.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/caller/Caller.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/caller/Proxy.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/eth-addr-secp/prove-eth-addr-secp.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/events/Events.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/fungible-token/FungibleToken.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/no-witness-dex/DEX.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/no-witness-dex/FungibleToken.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/recover-secp/recover-secp.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/self-recursion/SelfRecursion.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/DEX.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/MyToken.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/uniswap/USDC.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/usdcx/bridged-usdc-mint.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "examples/experimental/q2-ledger9/contracts/verify-sequential-secp/verify-sequential-secp.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/ballot-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/ballot-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/board-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/board-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    }
+  ],
+  "seconds": 1,
+  "corpus": {
+    "sets": [
+      "zoo",
+      "cases",
+      "examples"
+    ],
+    "examplesCommit": "377495c5efbd5b1f3123f5aee2776c3694b05eda"
+  }
+}

@@ -1,0 +1,27 @@
+// Tell benchmark case L11-set-member: membership shown by looking up the caller's tag
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: linkable-tag
+// circuit: claim
+// line: 25
+// why: the claim discloses hash(key) to test Set.member, so the transcript names which member claimed, and every claim by that member carries the same tag. An anonymous claim needs a Merkle proof.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: Set<Bytes<32>>;
+export ledger claims: Counter;
+
+witness memberKey(): Bytes<32>;
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit claim(): [] {
+  const tag = persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), memberKey()]);
+  assert(members.member(disclose(tag)), "members only"); // LEAK
+  claims.increment(1);
+}

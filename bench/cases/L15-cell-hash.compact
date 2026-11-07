@@ -1,0 +1,20 @@
+// Tell benchmark case L15-cell-hash: small-domain hash written to a Cell
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: guessable-hash
+// circuit: answer_
+// line: 19
+// why: the same Uint<8> hash as L02, written to a plain ledger cell instead of a map value: 256 guesses.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger lastAnswer: Bytes<32>;
+
+witness answer(): Uint<8>;
+
+export circuit answer_(): [] {
+  lastAnswer = disclose(persistentHash<Uint<8>>(answer())); // LEAK
+}

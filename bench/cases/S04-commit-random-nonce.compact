@@ -1,0 +1,26 @@
+// Tell benchmark case S04-commit-random-nonce: commitment with fresh private randomness
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: safe
+// class: guessable-hash
+// circuit: pick_
+// line: none
+// why: same pick, randomness from a witness.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger picks: Map<Uint<64>, Bytes<32>>;
+export ledger round: Counter;
+
+witness pick(): Uint<8>;
+witness pickSalt(): Bytes<32>;
+
+export circuit pick_(): [] {
+  const p = pick();
+  assert(p < 3, "rock, paper or scissors");
+  const n = round.read();
+  picks.insert(n, disclose(persistentCommit<Uint<8>>(p, pickSalt())));
+  round.increment(1);
+}

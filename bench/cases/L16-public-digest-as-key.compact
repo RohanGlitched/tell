@@ -1,0 +1,23 @@
+// Tell benchmark case L16-public-digest-as-key: a published hash reused as a private scalar
+// SPDX-License-Identifier: Apache-2.0
+//
+// truth: leak
+// class: secret-published
+// circuit: register
+// line: 22
+// why: the account id is hash(seed) and is public; the encryption key pair uses the same hash as its private scalar, so anyone holding the account id holds the private key. (Class taken from Nightshade rule publicly-derivable-encryption-secret.)
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger accountId: Bytes<32>;
+export ledger encKey: JubjubPoint;
+
+witness seed(): Bytes<32>;
+
+export circuit register(): [] {
+  const id = persistentHash<Vector<1, Bytes<32>>>([seed()]);
+  accountId = disclose(id);
+  encKey = disclose(ecMulGenerator(degradeToTransient(id))); // LEAK
+}
