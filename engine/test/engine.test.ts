@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { analyzeIr, gradeOf, pragmaAccepts, isContractFile, constructorForm, isTypeForm, type Finding } from '../src/index.js';
+import { analyzeIr, gradeOf, pragmaAccepts, isContractFile, constructorForm, isTypeForm, scanFile, type Finding } from '../src/index.js';
 import { parseAll } from '../src/sexpr.js';
 import { declaredPublic as declaredPublicForTest } from '../src/analyze.js';
 import { toSarif } from '../src/sarif.js';
@@ -294,11 +294,17 @@ describe('Ledger 9: events and contract calls', () => {
     expect(f).toMatchObject({ severity: 'medium', sources: [{ name: 'choice' }] });
     expect(f.fields).toEqual(expect.arrayContaining(['reg.record', 'other.record']));
   });
-  it('the same call on both paths is not a branch', () => {
-    expect(by('balanced').filter((f) => f.kind === 'branch')).toEqual([]);
+  it('the same call on both paths is not a branch; different arguments show the path', () => {
+    expect(r().findings.filter((f) => f.circuit === 'balanced')).toEqual([]);
+    // both paths read the same handle, but the call's argument differs: the branch shows
+    const [f] = r().findings.filter((f) => f.circuit === 'unbalanced');
+    expect(f).toMatchObject({ kind: 'branch', sources: [{ name: 'choice' }] });
+    expect(f.fields).toContain('reg.record');
   });
-  it('a private amount in a token event is medium; an argument in an event is info', () => {
+  it('a private amount in a token event is medium; a witness the contract never hides is low; an argument is info', () => {
+    // the contract commits to the bonus elsewhere, so it treats it as private
     expect(by('announce')).toMatchObject([{ kind: 'published', severity: 'medium', field: 'event', op: 'UnshieldedMint', sources: [{ name: 'bonus' }] }]);
+    expect(by('quote')).toMatchObject([{ kind: 'published', severity: 'low', sources: [{ name: 'price' }] }]);
     expect(by('spend')).toEqual([]);
     expect(r().findings.find((f) => f.circuit === 'spend')).toMatchObject({ field: 'event', op: 'ShieldedSpend', severity: 'info' });
   });
@@ -402,6 +408,20 @@ describe('command line', () => {
   // Needs the Compact compiler (CI installs 0.31.1).
   const cli = (args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { encoding: 'utf8', cwd: path.join(dir, '..', '..') });
   const has = findCompilersSync().length > 0;
+  // A contract that uses events under a loose pragma: 0.31.1 accepts the pragma but not `emit`,
+  // so Tell falls back to the next compiler that builds it.
+  const has036 = findCompilersSync().some((d) => d.includes('0.36.0'));
+  it.runIf(has036)('falls back from 0.31.1 to 0.36.0 for Ledger 9 code under a loose pragma', async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-fallback-'));
+    const file = path.join(tmp, 'events.compact');
+    fs.writeFileSync(
+      file,
+      `pragma language_version >= 0.20;\nimport CompactStandardLibrary;\nwitness amount(): Uint<64>;\nexport circuit tell(): [] {\n  emit(UnshieldedMint { domainSep: pad(32, "d"), tokenType: pad(32, "t"), amount: disclose(amount()) as Uint<128> });\n}\n`,
+    );
+    const r = await scanFile(file);
+    expect(r.compiler).toBe('0.36.0');
+    expect(r.report!.findings).toMatchObject([{ kind: 'published', field: 'event', op: 'UnshieldedMint', line: 5 }]);
+  }, 300_000);
   it.runIf(has)('exits 1 when a finding reaches --fail-on, 0 otherwise', () => {
     expect(cli(['../zoo/contracts/ballot-leaky.compact', '--fail-on', 'high']).status).toBe(1);
     expect(cli(['../zoo/contracts/ballot-fixed.compact', '--fail-on', 'medium']).status).toBe(0);

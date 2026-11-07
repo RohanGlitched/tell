@@ -213,11 +213,13 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
   const keyed = new Set<string>();
   // Hashes and commitments some circuit publishes (by fingerprint): their values are on the chain,
   // so inside a bigger hash they hide nothing. hash(tag, vote) with tag public is a hash of the vote.
-  const publishedTags = new Set<string>();
-  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set(), publishedTags, new Set()));
+  // Also the private values some circuit takes care to hide (inside a published hash or commitment):
+  // the contract treats those as private, so paying one out in the clear is a leak, not a design.
+  const seen: Shared = { tags: new Set(), hidden: new Set() };
+  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set(), seen, { tags: new Set(), hidden: new Set() }));
   p.circuits.forEach((c, i) => {
     const known = new Set(firsts[i].findings.filter((f) => f.kind === 'published' || f.kind === 'secret-published').flatMap((f) => f.sources.map((s) => s.name)));
-    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed, new Set(), publishedTags));
+    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed, { tags: new Set(), hidden: new Set() }, seen));
   });
   const findings = circuits.flatMap((c) => c.findings);
   if (opts.sourceText) {
@@ -228,6 +230,8 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
   return { circuits, findings, unknownForms: [...unknown].sort() };
 }
 
+type Shared = { tags: Set<string>; hidden: Set<string> };
+
 function analyzeCircuit(
   p: Program,
   c: Circuit,
@@ -236,8 +240,8 @@ function analyzeCircuit(
   mutated: Set<string>,
   keyed: Set<string>,
   hiddenElsewhere: Set<string>,
-  publishing: Set<string>,
-  publicTags: Set<string>,
+  collect: Shared,
+  prior: Shared,
 ): CircuitReport {
   const env = new Map<string, Val>();
   const sources = new Map<string, Source>();
@@ -247,7 +251,7 @@ function analyzeCircuit(
   const ops: TranscriptOp[] = [];
   // `handle.circuit` labels of cross-contract calls made here.
   const calls = new Set<string>();
-  const isPublicTag = (f: Fact) => f.flow === 'hidden' && !!f.fp && publicTags.has(f.fp);
+  const isPublicTag = (f: Fact) => f.flow === 'hidden' && !!f.fp && prior.tags.has(f.fp);
   // field|op -> each guarded run of it: the private sources guarding it, and its public operands
   // (private operands count as '*': a hidden commitment looks the same on either path).
   const guarded = new Map<string, { keys: Set<string>; sig: string }[]>();
@@ -312,7 +316,12 @@ function analyzeCircuit(
     // differs from room to room, so it is not one identity across actions.
     if ([...all].some(([k, f]) => f.flow === 'reveal' && sources.get(k)!.kind === 'argument')) varying = true;
     for (const [k, f] of all) {
-      if (known.has(sources.get(k)!.name) || isPublicTag(f)) continue; // already public
+      if (known.has(sources.get(k)!.name)) continue; // already public in this call
+      // A published tag inside: its value is known, but it still carries its holder's identity.
+      if (isPublicTag(f)) {
+        out.set(k, f);
+        continue;
+      }
       if (f.flow === 'hidden') out.set(k, { ...f, idTag: f.idTag && idTag, fp: f.fp ?? fp });
       else if (secure) {
         out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp });
@@ -496,7 +505,11 @@ function analyzeCircuit(
   // role 'value': the operand is stored as data (a map value, a cell); 'key': looked up or registered.
   const sink = (field: string, op: string, operand: Val, guard: Label, role: 'key' | 'value' = 'key', perAction = false) => {
     const l = flat(operand);
-    for (const [, f] of l) if (f.flow === 'hidden' && f.fp) publishing.add(f.fp);
+    for (const [k, f] of l)
+      if (f.flow === 'hidden') {
+        if (f.fp) collect.tags.add(f.fp);
+        collect.hidden.add(sources.get(k)!.name);
+      }
     for (const [k, f] of l) {
       const s = sources.get(k)!;
       const src = [describe(k)];
@@ -557,9 +570,10 @@ function analyzeCircuit(
             detail: `\`${field}\` ${op} receives ownPublicKey(), the caller's Zswap coin public key. Every call that does this ties the contract activity to the same wallet. ownPublicKey() is also supplied by the prover, so it does not authenticate the caller by itself.`,
             fix: `Identify users by persistentHash([domain, secret]) from private state; never authorise on ownPublicKey() alone.`,
           });
-        else if (s.kind === 'witness' && isWalletKey(k))
+        else if (s.kind === 'witness' && isWalletKey(k) && field !== 'kernel')
           // A wallet key the prover supplies from private state (a payee, a counterparty): publishing it
-          // names that wallet, which is what a shielded payment is meant to keep quiet.
+          // names that wallet, which is what a shielded payment is meant to keep quiet. (An unshielded
+          // transfer names its recipient by design; that is the kernel case, left to the rules below.)
           report({
             circuit: c.name,
             kind: 'published',
@@ -572,7 +586,18 @@ function analyzeCircuit(
             detail: `\`${field}\` ${op} receives ${who} (${typeText(s.type)}), a wallet's public key taken from private state. Once written, everyone can see which wallet this transaction concerns, and tie it to every other transaction that names it.`,
             fix: `Keep the key in private state. If the contract must recognise the wallet later, store persistentCommit(key, salt) or a hash with a secret, not the key.`,
           });
-        else if (s.kind === 'witness' && ((field === 'kernel' && PUBLIC_AMOUNT_OPS.has(op)) || (field === 'event' && AMOUNT_EVENTS.has(op))) && !looksSecret && !hiddenElsewhere.has(s.name))
+        else if (
+          s.kind === 'witness' &&
+          ((field === 'kernel' && PUBLIC_AMOUNT_OPS.has(op)) || (field === 'event' && AMOUNT_EVENTS.has(op))) &&
+          !looksSecret &&
+          !hiddenElsewhere.has(s.name) &&
+          !isWalletKey(k) &&
+          !isHint(s.name) &&
+          !isPositional(s.name) &&
+          // Witnesses also fetch public data and arithmetic hints. A value counts as private when the
+          // contract hides it somewhere (a commitment, a hash), or when its name says it is personal.
+          (prior.hidden.has(s.name) || prior.hidden.has(rootName(s.name)) || isSensitive(ownName(s.name)))
+        )
           // Unshielded transfers and mints carry their amounts in the clear: a private number used as one is public.
           report({
             circuit: c.name,
@@ -586,7 +611,8 @@ function analyzeCircuit(
             detail:
               field === 'event'
                 ? `The ${op} event carries ${who} (${typeText(s.type)}) from private state. Events are part of the public transaction, so the value is on chain once this runs.`
-                : `\`kernel.${op}\` moves or mints tokens in the clear, and ${who} (${typeText(s.type)}) from private state is part of it. Unshielded amounts${op === 'mintShielded' ? ' and minted amounts' : ''} are public, so the value is on chain once this runs.`,
+                : `\`kernel.${op}\` moves or mints tokens in the clear, and ${who} (${typeText(s.type)}) from private state is part of it. Unshielded amounts${op === 'mintShielded' ? ' and minted amounts' : ''} are public, so the value is on chain once this runs` +
+                  (prior.hidden.has(s.name) || prior.hidden.has(rootName(s.name)) ? `, while elsewhere this contract keeps it behind a hash or commitment.` : '.'),
             fix: `Use a public amount (a fixed bond, a price the contract sets), or move the value as a shielded coin with a nonce from private state.`,
           });
         else if (looksSecret || hiddenElsewhere.has(s.name))
@@ -874,10 +900,15 @@ function analyzeCircuit(
   }
   // A branch that runs the same operation on the same field on both paths shows nothing:
   // the transcript looks the same either way.
+  // Every operation the branch touches must look the same both ways, not just the first one
+  // (two calls that read the same handle but pass different arguments still show the path).
   const balanced = (f: Finding) => {
     const keys = f.sources.map((x) => `${x.kind === 'witness' ? 'w' : 'a'}:${x.name}`);
-    const runs = (guarded.get(`${f.field}|${f.op}`) ?? []).filter((r) => keys.some((k) => r.keys.has(k)));
-    return runs.length >= 2 && runs.every((r) => r.sig === runs[0].sig);
+    return (f.fields ?? [`${f.field}.${f.op}`]).every((label) => {
+      const dot = label.indexOf('.');
+      const runs = (guarded.get(`${label.slice(0, dot)}|${label.slice(dot + 1)}`) ?? []).filter((r) => keys.some((k) => r.keys.has(k)));
+      return runs.length >= 2 && runs.every((r) => r.sig === runs[0].sig);
+    });
   };
   for (const [id, f] of findings) if (f.kind === 'branch' && balanced(f)) findings.delete(id);
   const list = [...findings.values()];

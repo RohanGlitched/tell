@@ -9,10 +9,13 @@ contract Registry {
 
 export ledger reg: Registry;
 export ledger other: Registry;
+export ledger bonuses: Map<Bytes<32>, Bytes<32>>;
 
 witness secretKey(): Bytes<32>;
 witness choice(): Uint<8>;
 witness bonus(): Uint<64>;
+witness bonusSalt(): Bytes<32>;
+witness price(): Uint<64>;
 
 constructor(r: Registry, o: Registry) {
   reg = disclose(r);
@@ -41,13 +44,29 @@ export circuit balanced(): [] {
   if (disclose(choice() > 1)) {
     reg.record(pad(32, "a"), 1);
   } else {
+    reg.record(pad(32, "a"), 1);
+  }
+}
+
+// The same call with different public arguments: the argument shows which path ran. Reported.
+export circuit unbalanced(): [] {
+  if (disclose(choice() > 1)) {
+    reg.record(pad(32, "a"), 1);
+  } else {
     reg.record(pad(32, "a"), 2);
   }
 }
 
-// A private amount in a standard event.
-export circuit announce(): [] {
-  emit(UnshieldedMint { domainSep: pad(32, "case:d"), tokenType: pad(32, "case:t"), amount: disclose(bonus()) as Uint<128> });
+// A private amount in a standard event: the contract commits to the bonus, then emits it.
+export circuit announce(slot: Bytes<32>): [] {
+  const b = bonus();
+  bonuses.insert(disclose(slot), disclose(persistentCommit<Uint<64>>(b, bonusSalt())));
+  emit(UnshieldedMint { domainSep: pad(32, "case:d"), tokenType: pad(32, "case:t"), amount: disclose(b) as Uint<128> });
+}
+
+// A witness that fetches a price the contract never hides: a helper, not a secret. Low.
+export circuit quote(): [] {
+  emit(UnshieldedMint { domainSep: pad(32, "case:d"), tokenType: pad(32, "case:t"), amount: disclose(price()) as Uint<128> });
 }
 
 // An argument in an event: published on purpose. Info only.
