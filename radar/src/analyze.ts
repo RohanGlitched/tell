@@ -45,6 +45,8 @@ export type ContractResult = {
   calls: number;
   recoveries: Recovery[];
   repeated: RepeatedMap[];
+  /** Every map whose values are single 32-byte digests: size and distinct values. */
+  valueMaps: { path: string; entries: number; distinct: number }[];
   clusters: Cluster[];
 };
 export type FamilyRun = { family: string; size: number; ms: number; hits: number };
@@ -224,6 +226,7 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
     const mine = [...recoveries.values()].filter((rec) => rec.locations.some((l) => l.address === r.address));
     // 2. Repeated hidden values.
     const repeated: RepeatedMap[] = [];
+    const valueMaps = (s.state?.maps ?? []).filter((m) => m.valueDigests.length).map((m) => ({ path: m.path, entries: m.valueDigests.length, distinct: new Set(m.valueDigests).size }));
     for (const m of s.state?.maps ?? []) {
       if (m.valueDigests.length < 3) continue;
       const distinct = new Set(m.valueDigests).size;
@@ -255,6 +258,7 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
       calls: txs.size,
       recoveries: mine,
       repeated,
+      valueMaps,
       clusters,
     });
   }

@@ -16,7 +16,13 @@ export type Aggregate = {
   source: Record<string, unknown>;
   contracts: { scanned: number; decoded: number; withCells: number; withCalls: number; cells: number; opaqueValues: number; calls: number; merkleTrees: number };
   guessableHashes: { valuesRecovered: number; contracts: number; byType: Record<string, number>; byDomain: Record<string, number>; inState: number; inCallsOnly: number };
-  repeatedHiddenValues: { contracts: number; maps: number; entries: number };
+  repeatedHiddenValues: {
+    mapsOfDigests: number;
+    contracts: number;
+    maps: number;
+    entries: number;
+    byKind: Record<'oneValue' | 'fewValues' | 'manyValues', { maps: number; contracts: number }>;
+  };
   linkableTags: { contracts: number; clusters: number; constantClusters: number; largestCluster: number; contractsAllCallsLinked: number };
   crossContract: { values: number; contractsInvolved: number };
   bruteForce: { families: { family: string; size: number; seconds: number; hits: number }[]; hashed: number; distinctTargets: number };
@@ -27,9 +33,9 @@ export type OwnResult = { address: string; entries: number; recovered: number; v
 
 function ownResult(c: ContractResult): OwnResult {
   // The largest map of 32-byte values is the one a ballot keeps its votes in.
-  const rep = c.repeated[0] ?? null;
+  const biggest = [...c.valueMaps].sort((a, b) => b.entries - a.entries)[0];
+  const rep = c.repeated.find((r) => r.path === biggest?.path) ?? null;
   const values: Record<string, number> = {};
-  let entries = 0;
   let recovered = 0;
   for (const r of c.recoveries) {
     const inState = r.locations.filter((l) => l.address === c.address && l.where === 'state' && l.role === 'value').length;
@@ -37,8 +43,14 @@ function ownResult(c: ContractResult): OwnResult {
     values[r.value] = (values[r.value] ?? 0) + inState;
     recovered += inState;
   }
-  entries = Math.max(rep?.entries ?? 0, recovered);
-  return { address: c.address, entries, recovered, values, repeated: rep ? { entries: rep.entries, distinct: rep.distinct } : null, clusters: c.clusters.length };
+  return { address: c.address, entries: biggest?.entries ?? 0, recovered, values, repeated: rep ? { entries: rep.entries, distinct: rep.distinct } : null, clusters: c.clusters.length };
+}
+
+// A map whose values repeat: one value everywhere is usually a key or constant reused
+// (linkable, but not a small domain); a few distinct values is the small-domain sign.
+function repeatedKind(r: { entries: number; distinct: number }): 'oneValue' | 'fewValues' | 'manyValues' {
+  if (r.distinct === 1) return 'oneValue';
+  return r.distinct <= 16 ? 'fewValues' : 'manyValues';
 }
 
 export function aggregate(a: Analysis, network: string, source: Record<string, unknown>, own: Own): Aggregate {
@@ -77,9 +89,14 @@ export function aggregate(a: Analysis, network: string, source: Record<string, u
       inCallsOnly: [...recovered.values()].filter((r) => !r.state).length,
     },
     repeatedHiddenValues: {
+      mapsOfDigests: cs.reduce((n, c) => n + c.valueMaps.length, 0),
       contracts: cs.filter((c) => c.repeated.length > 0).length,
       maps: cs.reduce((n, c) => n + c.repeated.length, 0),
       entries: cs.reduce((n, c) => n + c.repeated.reduce((m, r) => m + r.entries, 0), 0),
+      byKind: Object.fromEntries((['oneValue', 'fewValues', 'manyValues'] as const).map((k) => [k, {
+        maps: cs.reduce((n, c) => n + c.repeated.filter((r) => repeatedKind(r) === k).length, 0),
+        contracts: cs.filter((c) => c.repeated.some((r) => repeatedKind(r) === k)).length,
+      }])) as Aggregate['repeatedHiddenValues']['byKind'],
     },
     linkableTags: {
       contracts: withClusters.length,

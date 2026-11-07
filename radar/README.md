@@ -8,6 +8,26 @@ Tell reads source code. Radar reads only the chain. It takes every contract it c
 
 The acceptance test is Tell's own pair of ballots on Preprod. From chain data alone, Radar reads all six votes off the leaky ballot and nothing off the fixed one (`test/ballot.test.ts`, on a cached snapshot, no network).
 
+## First scan of Preprod (7 November 2026)
+
+Counts only; [`out/report.json`](out/report.json) has the rest. No contract except Tell's two ballots is named.
+
+| | |
+|---|---|
+| Contracts scanned | 329 after overlaps: every contract that acted in the last 14 days (258), Preprod contracts named in buildathon repositories (70) and Tell's two ballots |
+| Decoded | 329 of 329 states; 178,098 state cells; 5,014 calls' transcripts |
+| 32-byte values matched | 146,059 distinct, against 320 million hashed candidates |
+| Guessable hashes | 4 values recovered, all in Tell's leaky ballot: the four candidates, `persistentHash<Vector<2, Bytes<32>>>([pad(32, "ballot:choice"), n as Field as Bytes<32>])`. Nothing in any other contract |
+| Repeated hidden values | 31 maps in 27 contracts out of 178 maps of digests: 17 hold one value in every entry (a reused key or constant), 11 hold between 2 and 16 values (a small-set sign), 3 hold more |
+| Linkable tags | 173 of the 229 contracts with calls reuse a 32-byte value across calls (5,306 clusters, the largest 72 calls); in 84, one value appears in every call |
+| Shared between contracts | 207 values appear in more than one contract (132 contracts involved) |
+
+Tell's ballots, the acceptance test on live data: the leaky ballot gives 6 of 6 votes (candidate 0 once, 1 once, 2 three times, 3 once, which is Asha, Bilal, Chen ×3, Dara); the fixed ballot gives 0 of 6 and no repeated values. Both still link each voter's `register` call to their `vote` call by the voter tag (6 clusters each), which Tell reports as a low finding.
+
+Reading it honestly: the brute force found nothing outside Tell's own leaky contract, so small-domain hashing is not common among the contracts live on Preprod, or it uses separators and shapes Radar does not yet try. The repeated-value and linkability counts are signs, not proofs; each needs reading against the contract before anyone is told about it.
+
+Cost: about 3,850 indexer requests for the 14-day crawl, 87 for checking 3,445 candidate addresses, and about 260 for the contracts (each a state and its last 100 calls). Decoding the 329 contracts took about 20 minutes once; the hashing takes under 4 minutes on 3 threads at about 1.15 GB peak memory.
+
 ## Run it
 
 ```bash

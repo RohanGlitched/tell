@@ -1,0 +1,189 @@
+{
+  "network": "preprod",
+  "generatedAt": "2026-11-07T06:02:28.667Z",
+  "source": {
+    "own": 2,
+    "crawl": {
+      "contracts": 258,
+      "blocks": 201601,
+      "ranges": [
+        [
+          3113486,
+          3315086
+        ]
+      ]
+    },
+    "discovered": 70,
+    "requestsThisRun": 0,
+    "notFound": 0
+  },
+  "contracts": {
+    "scanned": 329,
+    "decoded": 329,
+    "withCells": 324,
+    "withCalls": 229,
+    "cells": 178098,
+    "opaqueValues": 214036,
+    "calls": 5014,
+    "merkleTrees": 35
+  },
+  "guessableHashes": {
+    "valuesRecovered": 4,
+    "contracts": 1,
+    "byType": {
+      "Vector<2, Bytes<32>>": 4
+    },
+    "byDomain": {
+      "prefixed Field": 4
+    },
+    "inState": 4,
+    "inCallsOnly": 0
+  },
+  "repeatedHiddenValues": {
+    "mapsOfDigests": 178,
+    "contracts": 27,
+    "maps": 31,
+    "entries": 1565,
+    "byKind": {
+      "oneValue": {
+        "maps": 17,
+        "contracts": 16
+      },
+      "fewValues": {
+        "maps": 11,
+        "contracts": 11
+      },
+      "manyValues": {
+        "maps": 3,
+        "contracts": 2
+      }
+    }
+  },
+  "linkableTags": {
+    "contracts": 173,
+    "clusters": 5306,
+    "constantClusters": 239,
+    "largestCluster": 72,
+    "contractsAllCallsLinked": 84
+  },
+  "crossContract": {
+    "values": 207,
+    "contractsInvolved": 132
+  },
+  "bruteForce": {
+    "families": [
+      {
+        "family": "uint8<256",
+        "size": 256,
+        "seconds": 0.1,
+        "hits": 0
+      },
+      {
+        "family": "uint16<65536",
+        "size": 65536,
+        "seconds": 0.3,
+        "hits": 0
+      },
+      {
+        "family": "word(4587)",
+        "size": 4587,
+        "seconds": 0.1,
+        "hits": 0
+      },
+      {
+        "family": "tagged256(4587x1024)",
+        "size": 4697088,
+        "seconds": 4.8,
+        "hits": 0
+      },
+      {
+        "family": "tagged8(4587x256)",
+        "size": 1174272,
+        "seconds": 1,
+        "hits": 0
+      },
+      {
+        "family": "tagged64(4587x1024)",
+        "size": 4697088,
+        "seconds": 4.2,
+        "hits": 0
+      },
+      {
+        "family": "taggedWord(4587x2296)",
+        "size": 10531752,
+        "seconds": 10.1,
+        "hits": 0
+      },
+      {
+        "family": "pairWord(7514460 prefixes)",
+        "size": 7514460,
+        "seconds": 12.9,
+        "hits": 0
+      },
+      {
+        "family": "pairTagged256x16(7514460 prefixes)",
+        "size": 120231360,
+        "seconds": 86.7,
+        "hits": 4
+      },
+      {
+        "family": "pairTagged8x16(7514460 prefixes)",
+        "size": 120231360,
+        "seconds": 84.6,
+        "hits": 0
+      },
+      {
+        "family": "uint32<16777216",
+        "size": 16777216,
+        "seconds": 1.3,
+        "hits": 0
+      },
+      {
+        "family": "uint64<16777216",
+        "size": 16777216,
+        "seconds": 1.1,
+        "hits": 0
+      },
+      {
+        "family": "uint128<1048576",
+        "size": 1048576,
+        "seconds": 0.3,
+        "hits": 0
+      },
+      {
+        "family": "uint256<16777216",
+        "size": 16777216,
+        "seconds": 1.1,
+        "hits": 0
+      }
+    ],
+    "hashed": 320527983,
+    "distinctTargets": 146059
+  },
+  "own": {
+    "tell-ballot-leaky": {
+      "address": "817fd9366be8778cbf4d7d0d501582abd94c79275855ba35fafd3fbd741ed0ae",
+      "entries": 6,
+      "recovered": 6,
+      "values": {
+        "0": 1,
+        "1": 1,
+        "2": 3,
+        "3": 1
+      },
+      "repeated": {
+        "entries": 6,
+        "distinct": 4
+      },
+      "clusters": 6
+    },
+    "tell-ballot-fixed": {
+      "address": "df593aea56bf44c6aead1e085d784cde8fe3f2a09348c997fff3bd173dc673b2",
+      "entries": 6,
+      "recovered": 0,
+      "values": {},
+      "repeated": null,
+      "clusters": 6
+    }
+  }
+}

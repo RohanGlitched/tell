@@ -85,7 +85,8 @@ describe('ballot acceptance', () => {
   it('publishes counts only, plus the named own contracts', () => {
     const agg = aggregate(a, 'preprod', {}, { [leaky.address]: 'tell-ballot-leaky', [fixed.address]: 'tell-ballot-fixed' });
     expect(agg.own['tell-ballot-leaky']).toMatchObject({ entries: 6, recovered: 6, values: { '0': 1, '1': 1, '2': 3, '3': 1 } });
-    expect(agg.own['tell-ballot-fixed']).toMatchObject({ recovered: 0, repeated: null });
+    expect(agg.own['tell-ballot-fixed']).toMatchObject({ entries: 6, recovered: 0, repeated: null });
+    expect(agg.repeatedHiddenValues.byKind.fewValues).toEqual({ maps: 1, contracts: 1 });
     expect(agg.guessableHashes.valuesRecovered).toBe(4);
     const anon = aggregate(a, 'preprod', {}, {});
     const text = JSON.stringify(anon);
