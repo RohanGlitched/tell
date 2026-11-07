@@ -1,0 +1,34 @@
+﻿{
+  "name": "tell-compact-mcp",
+  "version": "0.1.0",
+  "description": "Tell as an MCP server: coding agents check what a Midnight Compact contract reveals before it ships.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Rohan Borade",
+  "homepage": "https://tell-midnight.vercel.app",
+  "repository": { "type": "git", "url": "git+https://github.com/RohanGlitched/tell.git", "directory": "mcp" },
+  "keywords": ["mcp", "model-context-protocol", "midnight", "compact", "privacy", "static-analysis", "zero-knowledge"],
+  "bin": { "tell-mcp": "./dist/server.js" },
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepack": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@tell/engine": "0.1.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.0"
+  }
+}

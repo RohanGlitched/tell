@@ -98,7 +98,16 @@ npx tsx engine/src/cli.ts . --sarif tell.sarif --fail-on high    # for CI
     fail-on: high
 ```
 
-Findings appear in GitHub code scanning on the line that leaks. Some disclosures are the point; mark them once and Tell stops reporting them:
+Findings appear in GitHub code scanning on the line that leaks.
+
+### In your editor and your coding agent
+
+- **Coding agents** (Claude Code, Claude Desktop, Cursor, VS Code agent mode): the [MCP server](mcp) lets an agent scan the contract it wrote, read why a line leaks, and confirm its fix until the grade is A. `npm run build -w mcp`, then `claude mcp add tell -- node /path/to/tell/mcp/dist/server.js`.
+- **VS Code**: the [extension](vscode) marks leaking lines on save, shows the fix on hover and the grade in the status bar. `npm run package -w vscode` builds the `.vsix`.
+
+### Marking intended disclosures
+
+Some disclosures are the point; mark them once and Tell stops reporting them:
 
 ```compact
 seeds.insert(slot, s); // tell:allow published
@@ -136,6 +145,8 @@ What exists today: the compiler checks *whether* data is disclosed; OpenZeppelin
 | [`zoo/`](zoo) | leaky and fixed contract pairs, attack tests |
 | [`web/`](web) | the website: scanner, survey, zoo, live demo (Next.js) |
 | [`chain/`](chain) | house wallet and deploy scripts for Midnight Preview and Preprod |
+| [`mcp/`](mcp) | MCP server: `tell_scan`, `tell_check_fix`, `tell_explain_rule` for coding agents |
+| [`vscode/`](vscode) | VS Code extension: diagnostics on save, fix on hover, grade in the status bar |
 | [`action.yml`](action.yml) | the GitHub Action |
 
 ## Limits
