@@ -21,6 +21,8 @@ npx tsx src/cli.ts scan     --network preprod [--addresses file] [--max N] [--ac
 npm test -w radar
 ```
 
+Radar is meant to run beside other work: it hashes on `RADAR_THREADS` threads (4 at most by default), keeps the numeric tables on disk and reads them in 8 MB slices, produces two-word prefixes 200,000 at a time, and stops itself if its memory passes `RADAR_MAX_RSS_MB` (1,500 by default). Decoded contracts are kept under `$RADAR_HOME/digest`, so only the first scan pays for decoding transactions.
+
 `scan` writes `radar/out/report.json` (counts only) and `$RADAR_HOME/private/details-preprod.json` (addresses, recovered values, linked transactions). Every indexer answer is cached under `$RADAR_HOME/gql`, so a second run sends nothing it already has; `--offline` sends nothing at all. `--budget` caps the requests one run may send (default 500).
 
 ## Method

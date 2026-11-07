@@ -125,6 +125,13 @@ function narrow(h: Hit): Hit {
   return h;
 }
 
+/** Stops the run before it crowds a shared machine: RADAR_MAX_RSS_MB, 1500 by default. */
+function guardMemory() {
+  const limit = Number(process.env.RADAR_MAX_RSS_MB) || 1500;
+  const rss = process.memoryUsage().rss / 1e6;
+  if (rss > limit) throw new Error(`memory use ${Math.round(rss)} MB is over RADAR_MAX_RSS_MB=${limit}; stopping`);
+}
+
 export async function analyze(records: Digested[], o: Options = {}): Promise<Analysis> {
   const log = o.log ?? (() => {});
   const seen = new Map<string, Digested>();
@@ -144,7 +151,7 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
     for (const c of state?.cells ?? []) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'state', path: c.path, role: c.role });
     for (const c of calls) for (const a of c.atoms) if (isOpaque32(a)) note(a.hex, { address: r.address, where: 'call', txHash: c.txHash, entryPoint: c.entryPoint });
   }
-  log(`${records.length} contracts, ${targets.size} distinct 32-byte values to match`);
+  log(`${records.length} contracts, ${targets.size} distinct 32-byte values to match (rss ${Math.round(process.memoryUsage().rss / 1e6)} MB)`);
 
   // 1. Guessable hashes.
   const { tables, streamed, pairChunks, count } = familiesFor(records, o);
@@ -157,6 +164,7 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
     hits.push(...r.hits.map(narrow));
     families.push({ family: familyName(f), size: r.hashed, ms: r.ms, hits: r.hits.length });
     log(`  ${familyName(f)}: ${r.hashed} hashed in ${(r.ms / 1000).toFixed(1)} s, ${r.hits.length} hits`);
+    guardMemory();
   }
   const pairRuns: Record<string, FamilyRun> = {};
   let prefixes = 0;
@@ -175,7 +183,8 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
       run.ms += r.ms;
       run.hits += r.hits.length;
     }
-    log(`  two-word prefixes: ${prefixes} so far`);
+    guardMemory();
+    log(`  two-word prefixes: ${prefixes} so far (rss ${Math.round(process.memoryUsage().rss / 1e6)} MB)`);
   }
   for (const run of Object.values(pairRuns)) {
     families.push({ ...run, family: `${run.family}(${prefixes} prefixes)` });
@@ -188,7 +197,8 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
     const found = lookupAll(f, file, all);
     for (const [d, i] of found) hits.push({ family: f, index: i, digest: d });
     families.push({ family: familyName(f), size: familySize(f), ms: Date.now() - t0, hits: found.length });
-    log(`  ${familyName(f)} (table): ${found.length} hits`);
+    guardMemory();
+    log(`  ${familyName(f)} (table): ${found.length} hits (rss ${Math.round(process.memoryUsage().rss / 1e6)} MB)`);
   }
   } finally {
     await pool.close();
