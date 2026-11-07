@@ -21,15 +21,15 @@ export default function TeamsPage() {
         </p>
       </PageHead>
 
-      <Section id="segments" title="Five kinds of user" intro="It starts with the teams writing Compact, but they are not the only ones who need to know what a contract gives away.">
+      <Section id="segments" note="Audience" noteText="Not just the few dozen teams writing Compact." title="Five kinds of user" intro="It starts with the teams writing Compact, but they are not the only ones who need to know what a contract gives away.">
         <ol className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {b.segments.map((s, i) => (
-            <li key={s.id} className="sheet flex flex-col rounded-sm p-5" data-testid="segment">
+            <li key={s.id} className="flex flex-col rounded-lg border border-[var(--rule)] bg-white p-5" data-testid="segment">
               <div className="flex items-center justify-between gap-2">
-                <span className="display text-[32px] font-extrabold leading-none text-[var(--faint)]">{i + 1}</span>
+                <span className="font-[family-name:var(--serif)] text-[34px] leading-none text-[var(--violet)]">{i + 1}</span>
                 <StatusPill status={s.status} />
               </div>
-              <h3 className="mt-3 text-[19px] font-bold">{s.name}</h3>
+              <h3 className="mt-3 font-[family-name:var(--serif)] text-[20px] font-medium">{s.name}</h3>
               <p className="mt-1 text-[14.5px] text-[var(--graphite)]">{s.who}</p>
               <dl className="mt-3 space-y-2 text-[14.5px]">
                 <div>
@@ -50,12 +50,12 @@ export default function TeamsPage() {
         </ol>
       </Section>
 
-      <Section id="offers" title="What is free, what is paid" intro="Prices appear here once they are set. Until then, an offer says what it includes and whether anyone can use it yet.">
+      <Section id="offers" tone="mist" note="Offers" noteText="Prices come from data/business.json and stay empty until set." title="What is free, what is paid" intro="Prices appear here once they are set. Until then, an offer says what it includes and whether anyone can use it yet.">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-[14.5px]" data-testid="offers-table">
+          <table className="w-full min-w-[720px] border-collapse bg-white text-[14.5px]" data-testid="offers-table">
             <thead>
-              <tr className="border-b-2 border-[var(--ink)] text-left align-bottom">
-                <th className="py-2 pr-4 font-semibold">Offer</th>
+              <tr className="border-b-2 border-[var(--indigo)] text-left align-bottom">
+                <th className="py-2 pl-4 pr-4 font-semibold">Offer</th>
                 <th className="py-2 pr-4 font-semibold">For</th>
                 <th className="py-2 pr-4 font-semibold">Includes</th>
                 <th className="py-2 pr-4 font-semibold">Status</th>
@@ -65,8 +65,8 @@ export default function TeamsPage() {
             <tbody>
               {b.offers.map((o) => (
                 <tr key={o.id} className="border-b border-[var(--rule)] align-top">
-                  <td className="py-3 pr-4">
-                    <span className="font-semibold">{o.name}</span>
+                  <td className="py-3 pl-4 pr-4">
+                    <span className="font-[family-name:var(--serif)] text-[17px] font-medium">{o.name}</span>
                     <p className="mt-1 max-w-[42ch] text-[var(--graphite)]">{o.what}</p>
                   </td>
                   <td className="py-3 pr-4 text-[var(--graphite)]">{o.for.map((id) => segName.get(id) ?? id).join(', ')}</td>
@@ -81,7 +81,7 @@ export default function TeamsPage() {
                     <StatusPill status={o.status} />
                   </td>
                   <td className="py-3">
-                    {o.price ? <span className="font-semibold">{o.price}</span> : <span className="text-[var(--faint)]">not priced yet</span>}
+                    {o.price ? <span className="font-[family-name:var(--serif)] text-[19px]">{o.price}</span> : <span className="text-[var(--faint)]">not priced yet</span>}
                     {o.priceNote && <p className="mt-1 text-[13px] text-[var(--graphite)]">{o.priceNote}</p>}
                   </td>
                 </tr>
@@ -91,11 +91,11 @@ export default function TeamsPage() {
         </div>
       </Section>
 
-      <Section id="principles" title="How we decide">
+      <Section id="principles" note="Principles" noteText="What stays free, and why." title="How we decide">
         <div className="grid gap-6 md:grid-cols-3">
           {b.principles.map((p) => (
             <div key={p.title} className="border-t border-[var(--rule)] pt-4">
-              <h3 className="text-[17px] font-bold">{p.title}</h3>
+              <h3 className="font-[family-name:var(--serif)] text-[19px] font-medium">{p.title}</h3>
               <p className="mt-1.5 text-[15px] text-[var(--graphite)]">{p.text}</p>
             </div>
           ))}
@@ -105,8 +105,8 @@ export default function TeamsPage() {
             {b.numbers
               .filter((n) => n.value)
               .map((n) => (
-                <div key={n.label} className="border-t-2 border-[var(--ink)] pt-3">
-                  <dt className="display num text-[40px] font-extrabold leading-none">{n.value}</dt>
+                <div key={n.label} className="border-t-2 border-[var(--indigo)] pt-3">
+                  <dt className="num font-[family-name:var(--serif)] text-[40px] font-medium leading-none">{n.value}</dt>
                   <dd className="mt-2 text-[14.5px] text-[var(--graphite)]">
                     {n.source ? n.source.startsWith('/') ? <Link href={n.source}>{n.label}</Link> : <a href={n.source}>{n.label}</a> : n.label}
                   </dd>
@@ -116,7 +116,7 @@ export default function TeamsPage() {
         )}
       </Section>
 
-      <Section id="interest" title="Tell us what you need" intro="A pilot, a license, a template integration, or just a question. This opens a GitHub issue you can edit before sending.">
+      <Section id="interest" tone="mist" note="Contact" noteText="A public GitHub issue you review before sending. Nothing stored here." title="Tell us what you need" intro="A pilot, a license, a template integration, or just a question. This opens a GitHub issue you can edit before sending.">
         <div className="max-w-[760px]">
           <InterestForm repo={b.contact.repo} label={b.contact.label} segments={b.segments.map(({ id, name }) => ({ id, name }))} offers={b.offers.map(({ id, name }) => ({ id, name }))} />
         </div>

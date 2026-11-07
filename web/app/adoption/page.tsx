@@ -34,7 +34,8 @@ export default function AdoptionPage() {
         </p>
       </PageHead>
 
-      <dl className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="adoption-figures">
+      <div className="wrap pt-12 sm:pt-16">
+      <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="adoption-figures">
         <Stat n={a.repo.stars ?? '–'} label="stars on RohanGlitched/tell" />
         <Stat n={a.repo.forks ?? '–'} label="forks" />
         <Stat
@@ -44,9 +45,12 @@ export default function AdoptionPage() {
         />
         <Stat n={`${a.totals.fixed} / ${a.totals.contacted}`} label="leaks fixed, of the teams and repositories contacted" />
       </dl>
+      </div>
 
       <Section
         id="outreach"
+        note="Outreach"
+        noteText="Teams are never named here. Findings are theirs to fix."
         title="Outreach to teams"
         intro="Teams whose contracts had a finding in the survey that we confirmed by hand get a private note: the line, what it gives away, and the fix. Here is where each note stands."
       >
@@ -56,12 +60,14 @@ export default function AdoptionPage() {
         </p>
       </Section>
 
-      <Section id="examples" title="Midnight’s own examples" intro="Findings in the official example repositories, filed as public issues.">
+      <Section id="examples" tone="mist" note="Upstream" noteText="Midnight's own examples may be named and linked." title="Midnight’s own examples" intro="Findings in the official example repositories, filed as public issues.">
         <OutreachTable rows={official} />
       </Section>
 
       <Section
         id="rerun"
+        note="Did anything change?"
+        noteText="The same scan, the same repositories, after the notes."
         title="The survey, before and after"
         intro={
           <>
@@ -84,7 +90,7 @@ export default function AdoptionPage() {
         </div>
       </Section>
 
-      <Section id="repository" title="The repository">
+      <Section id="repository" tone="mist" note="GitHub" noteText="Public counts, plus traffic when the token can read it." title="The repository">
         <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Stat n={a.repo.watchers ?? '–'} label="watching" />
           <Stat n={a.repo.openIssues ?? '–'} label="open issues and pull requests" />
@@ -93,14 +99,14 @@ export default function AdoptionPage() {
         </dl>
       </Section>
 
-      <Section id="method" title="How these numbers are made">
+      <Section id="method" note="Method" noteText="Run the script yourself; the page renders its output." title="How these numbers are made">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
           <div className="space-y-3 text-[15.5px]">
             <p>
               <code>web/scripts/adoption.mjs</code> calls GitHub’s REST API and writes <code>web/data/adoption.json</code>, which this page renders. Run it
               yourself:
             </p>
-            <pre className="mono overflow-x-auto rounded-sm bg-[var(--uv)] p-3 text-[12.5px] leading-[1.7] text-[#e9e6ff]">{`node web/scripts/adoption.mjs
+            <pre className="mono overflow-x-auto rounded-md bg-[var(--mist)] p-3.5 text-[12.5px] leading-[1.7]">{`node web/scripts/adoption.mjs
 # with a token, also counts repositories using the Action:
 GITHUB_TOKEN=… node web/scripts/adoption.mjs`}</pre>
             <p className="text-[var(--graphite)]">{a.action.reason}</p>
@@ -135,7 +141,7 @@ function OutreachTable({ rows }: { rows: OutreachRow[] }) {
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] border-collapse text-[14.5px]" data-testid="outreach-table">
         <thead>
-          <tr className="border-b-2 border-[var(--ink)] text-left">
+          <tr className="border-b-2 border-[var(--indigo)] text-left">
             <th className="py-2 pr-3 font-semibold">Who</th>
             <th className="py-2 pr-3 font-semibold">About</th>
             <th className="py-2 pr-3 font-semibold">How</th>
@@ -169,22 +175,22 @@ function OutreachTable({ rows }: { rows: OutreachRow[] }) {
 function Snapshot({ title, s }: { title: string; s: SurveySnapshot }) {
   const total = Object.values(s.grades).reduce((x, y) => x + y, 0);
   return (
-    <div className="sheet rounded-sm p-5">
+    <div className="rounded-lg border border-[var(--rule)] bg-white p-5">
       <p className="label">
         {title} · {fmtDate(s.date)}
       </p>
       <dl className="mt-3 grid grid-cols-3 gap-4">
         <div>
           <dt className="text-[13px] text-[var(--graphite)]">projects</dt>
-          <dd className="display num text-[30px] font-extrabold">{s.projectsAnalyzed}</dd>
+          <dd className="num font-[family-name:var(--serif)] text-[30px] font-medium">{s.projectsAnalyzed}</dd>
         </div>
         <div>
           <dt className="text-[13px] text-[var(--graphite)]">contracts</dt>
-          <dd className="display num text-[30px] font-extrabold">{s.contractsAnalyzed}</dd>
+          <dd className="num font-[family-name:var(--serif)] text-[30px] font-medium">{s.contractsAnalyzed}</dd>
         </div>
         <div>
           <dt className="text-[13px] text-[var(--graphite)]">medium or worse</dt>
-          <dd className="display num text-[30px] font-extrabold">{s.mediumOrWorse}</dd>
+          <dd className="num font-[family-name:var(--serif)] text-[30px] font-medium">{s.mediumOrWorse}</dd>
         </div>
       </dl>
       <p className="mono mt-3 text-[13px] text-[var(--graphite)]">

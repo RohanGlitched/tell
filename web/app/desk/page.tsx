@@ -22,22 +22,23 @@ export default function DeskPage() {
           fake. Tell Desk does both jobs: the grade goes on Midnight’s public ledger, the report stays in your private state, and a commitment on chain
           proves which report the grade came from.
         </p>
-      </PageHead>
-
-      <div className="mt-6 flex flex-wrap items-center gap-3 text-[14px]">
+        <div className="flex flex-wrap items-center gap-3 pt-2 text-[14px]">
         <StatusPill status={d.status} />
         {d.address ? (
           <a href={`${net.explorer}/contracts/${d.address}`} className="mono">
             {d.address.slice(0, 10)}…{d.address.slice(-8)}
           </a>
         ) : (
-          <span className="text-[var(--graphite)]">Contract address appears here once it is deployed to {net.label}.</span>
+          <span>Contract address appears here once it is deployed to {net.label}.</span>
         )}
         <a href={`https://github.com/RohanGlitched/tell/tree/main/${d.contractPath}`}>Contract source</a>
-      </div>
+        </div>
+      </PageHead>
 
       <Section
         id="ledgers"
+        note="Dual ledger"
+        noteText="Midnight's public ledger and each user's private state."
         title="Two ledgers, one contract"
         intro="Every Midnight contract splits its data in two. This is how Tell Desk splits it: the public side holds only what a reader needs to trust a grade, and the private side holds everything the grade is based on."
       >
@@ -48,23 +49,23 @@ export default function DeskPage() {
         />
       </Section>
 
-      <Section id="flow" title="Seal, file, read" intro="What happens from a scan to a grade a wallet can show.">
-        <ol className="grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2 lg:grid-cols-5">
+      <Section id="flow" tone="mist" note="The flow" noteText="One scan, one transaction, one lookup." title="Seal, file, read" intro="What happens from a scan to a grade a wallet can show.">
+        <ol className="grid gap-px overflow-hidden rounded-lg border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2 lg:grid-cols-5">
           {d.flow.map((f, i) => (
-            <li key={f.step} className="bg-[var(--sheet)] p-5">
-              <span className="mono text-[13px] text-[var(--graphite)]">{String(i + 1).padStart(2, '0')}</span>
-              <h3 className="mt-1 text-[18px] font-bold">{f.step}</h3>
+            <li key={f.step} className="bg-white p-5">
+              <span className="font-[family-name:var(--serif)] text-[30px] leading-none text-[var(--violet)]">{i + 1}</span>
+              <h3 className="mt-2 text-[17px] font-semibold">{f.step}</h3>
               <p className="mt-1.5 text-[14.5px] text-[var(--graphite)]">{f.text}</p>
             </li>
           ))}
         </ol>
       </Section>
 
-      <Section id="circuits" title="What each circuit discloses" intro="Tell scans its own contract the same way it scans yours. For each circuit, this is what reaches the public ledger.">
+      <Section id="circuits" note="Checked by Tell" noteText="The contract that stores grades is scanned like any other." title="What each circuit discloses" intro="Tell scans its own contract the same way it scans yours. For each circuit, this is what reaches the public ledger.">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse text-[14.5px]">
             <thead>
-              <tr className="border-b-2 border-[var(--ink)] text-left">
+              <tr className="border-b-2 border-[var(--indigo)] text-left">
                 <th className="py-2 pr-4 font-semibold">Circuit</th>
                 <th className="py-2 pr-4 font-semibold">Does</th>
                 <th className="py-2 font-semibold">Puts on the public ledger</th>
@@ -83,15 +84,15 @@ export default function DeskPage() {
         </div>
       </Section>
 
-      <Section id="try" title="File a grade" intro="Connect a Lace wallet on Preprod, seal a report from a scan you ran here, and file it.">
+      <Section id="try" tone="indigo" note="Wallet" noteText="Lace on Midnight Preprod." title="File a grade" intro="Connect a Lace wallet on Preprod, seal a report from a scan you ran here, and file it.">
         <DeskWalletSlot />
       </Section>
 
-      <Section id="registry" title="The registry, live" intro="Every grade filed so far, read from Midnight’s indexer, the same way the live ballot page reads its contracts.">
+      <Section id="registry" note="Indexer" noteText="Read the same way the live ballot page reads its contracts." title="The registry, live" intro="Every grade filed so far, read from Midnight’s indexer, the same way the live ballot page reads its contracts.">
         <DeskRegistry />
       </Section>
 
-      <Section id="why" title="Why a contract, not a database">
+      <Section id="why" tone="mist" note="Why on chain" noteText="Trust the ledger, not our server." title="Why a contract, not a database">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             ['Anyone can check it', 'A wallet reads the grade straight from the chain. It does not have to trust our server, or any server.'],
@@ -99,7 +100,7 @@ export default function DeskPage() {
             ['Grades can’t be swapped', 'Only the filer tag that filed a grade can replace it, and the scanner hash says which rules produced it.'],
           ].map(([t, x]) => (
             <div key={t} className="border-t border-[var(--rule)] pt-4">
-              <h3 className="text-[17px] font-bold">{t}</h3>
+              <h3 className="font-[family-name:var(--serif)] text-[19px] font-medium">{t}</h3>
               <p className="mt-1.5 text-[15px] text-[var(--graphite)]">{x}</p>
             </div>
           ))}

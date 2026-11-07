@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import survey from '@/data/survey.json';
 import { KIND_LABEL, type FindingKind, type Severity } from '@/lib/types';
+import { PageHead } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Buildathon survey',
@@ -19,12 +20,11 @@ export default function SurveyPage() {
   const notCompiled = s.contractsNotCompiled.reduce((a, b) => a + b.n, 0);
   const date = new Date(s.generatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   return (
-    <div className="mx-auto max-w-[1180px] px-4 pb-10 pt-10 sm:px-6">
-      <p className="text-[14px] font-medium text-[var(--graphite)]">Survey, {date}</p>
-      <h1 className="mt-2 max-w-[22ch] text-[34px] font-semibold leading-tight tracking-[-0.015em] sm:text-[46px]">
-        What {s.projectsAnalyzed} Midnight apps give away
-      </h1>
-      <p className="mt-4 max-w-[66ch] text-[17px] text-[var(--graphite)]">{s.method}</p>
+    <>
+      <PageHead kicker={`Survey, ${date}`} title={`What ${s.projectsAnalyzed} Midnight apps give away`}>
+        <p>{s.method}</p>
+      </PageHead>
+    <div className="wrap pb-16 pt-12 sm:pt-14">
 
       <dl className="mt-10 grid gap-6 sm:grid-cols-4">
         <Fig n={s.projectsAnalyzed} label={`projects analyzed, from ${s.repositoriesListed} repositories linked on AKINDO`} />
@@ -139,7 +139,7 @@ const tag = persistentHash([pad(32, "app:bet"), localSk(), roundId]);`}
         <ol className="mt-5 space-y-2">
           {s.cases.map((c, i) => (
             <li key={i} className="sheet flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-sm px-4 py-3">
-              <span className={`rounded-sm px-2 py-0.5 text-[12px] font-semibold uppercase ${c.severity === 'high' || c.severity === 'critical' ? 'bg-[var(--red)] text-white' : 'bg-[var(--hi)] text-[#151b2c]'}`}>
+              <span className="sev" data-sev={c.severity}>
                 {c.severity}
               </span>
               <span className="mono text-[14px] text-[var(--graphite)]">{c.project}</span>
@@ -181,6 +181,7 @@ npx tsx engine/scripts/summarize.ts survey/results.json web/data/survey.json`}
         </div>
       </section>
     </div>
+    </>
   );
 }
 

@@ -116,6 +116,16 @@
   }
 }
 
+/* Unlayered, so they win over utility classes left on older markup: headlines and display
+   figures are always Source Serif at 500, as the design sets them. */
+h1,
+h2,
+.display {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
 code,
 pre,
 .mono {

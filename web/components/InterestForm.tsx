@@ -31,7 +31,7 @@ export default function InterestForm({ repo, label, segments, offers }: { repo: 
   const url = issueUrl(repo, label, who, offer, note);
   return (
     <form
-      className="sheet rounded-sm p-5"
+      className="rounded-lg border border-[var(--rule)] bg-white p-5 sm:p-6"
       data-testid="interest-form"
       onSubmit={(e) => {
         e.preventDefault();
@@ -69,7 +69,7 @@ export default function InterestForm({ repo, label, segments, offers }: { repo: 
         />
       </label>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button className="min-h-[44px] rounded bg-[var(--ink)] px-5 font-medium text-[var(--paper)]">Open a GitHub issue</button>
+        <button className="btn btn-pri">Open a GitHub issue</button>
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-[14px]" data-testid="interest-link">
           or open the link directly
         </a>

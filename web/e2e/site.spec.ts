@@ -15,13 +15,18 @@ async function scanDefault(page: Page) {
   await page.goto('/scan');
   await expect(page.locator('#src')).toHaveValue(leaky.source);
   await page.getByRole('button', { name: 'Scan this contract' }).click();
-  await expect(page.getByLabel('Grade F')).toBeVisible();
+  await expect(page.getByLabel('Grade F').first()).toBeVisible();
 }
+
+// severity pills inside the report (the leak map and legend are not counted)
+const pills = (page: Page, sev: string) => page.locator(`[data-testid="report-page"] .sev[data-sev="${sev}"]`);
 
 test('home page loads with the Wave 3 band', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveTitle(/Tell/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Every contract has a tell.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Your contract hides the vote. The ledger still shows it.' })).toBeVisible();
+  // the hero ledger is the real Preprod deployment: six votes, each one showing through
+  await expect(page.locator('figure .bar.see')).toHaveCount(6);
   const band = page.getByTestId('wave3-band');
   await expect(band).toBeVisible();
   await expect(band.getByRole('link', { name: 'Read the whole list' })).toHaveAttribute('href', '/wave3');
@@ -29,21 +34,22 @@ test('home page loads with the Wave 3 band', async ({ page }) => {
 
 test('the default leaky ballot grades F with a critical finding', async ({ page }) => {
   await scanDefault(page);
-  await expect(page.locator('li', { hasText: 'Guessable hash' }).getByText('critical', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('[data-testid="finding"]', { hasText: 'Guessable hash' }).locator('.sev[data-sev="critical"]')).toBeVisible();
   await expect(page.getByTestId('fix-view').first()).toContainText('Fix:');
+  await expect(page.getByRole('heading', { name: /F-1|Findings/ }).first()).toBeVisible();
 });
 
 test('the fixed ballot grades B', async ({ page }) => {
   await page.goto('/scan');
   await page.getByRole('button', { name: 'Fixed ballot' }).click();
-  await expect(page.getByLabel('Grade B')).toBeVisible();
-  await expect(page.getByText('critical', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Grade B').first()).toBeVisible();
+  await expect(pills(page, 'critical')).toHaveCount(0);
 });
 
 test('a share link restores the contract and scans it again', async ({ page, context }) => {
   await page.goto('/scan');
   await page.getByRole('button', { name: 'Fixed ballot' }).click();
-  await expect(page.getByLabel('Grade B')).toBeVisible();
+  await expect(page.getByLabel('Grade B').first()).toBeVisible();
   // the address bar carries the share link; nothing about it is sent to the server
   await expect.poll(() => new URL(page.url()).hash).toMatch(/^#c=[A-Za-z0-9_-]+$/);
   const link = page.url();
@@ -53,14 +59,14 @@ test('a share link restores the contract and scans it again', async ({ page, con
   other.on('request', (r) => sent.push(r.url()));
   await other.goto(link);
   await expect(other.locator('#src')).toHaveValue(fixed.source);
-  await expect(other.getByLabel('Grade B')).toBeVisible();
+  await expect(other.getByLabel('Grade B').first()).toBeVisible();
   const fragment = new URL(link).hash.slice(1);
   expect(sent.some((u) => u.includes(fragment))).toBe(false);
 });
 
 test('a damaged share link says so', async ({ page }) => {
   await page.goto('/scan#c=not-a-real-link');
-  await expect(page.getByRole('alert')).toContainText('damaged');
+  await expect(page.getByRole('alert').filter({ hasText: 'damaged' })).toBeVisible();
 });
 
 test('a verified fix re-scans and shows the grade before and after', async ({ page }) => {
@@ -77,8 +83,8 @@ test('a verified fix re-scans and shows the grade before and after', async ({ pa
     await route.fulfill({ response: res, json });
   });
   await scanDefault(page);
-  await page.getByRole('button', { name: 'Show the patch' }).first().click();
-  await expect(page.getByLabel('Proposed patch, unified diff')).toContainText('persistentCommit');
+  await expect(page.getByRole('figure', { name: 'Proposed patch, unified diff' }).first()).toContainText('persistentCommit');
+  await expect(page.getByText('Finding gone').first()).toBeVisible();
   await page.getByTestId('rescan-with-fix').first().click();
   const compare = page.getByTestId('fix-compare');
   await expect(compare).toBeVisible();
@@ -86,7 +92,7 @@ test('a verified fix re-scans and shows the grade before and after', async ({ pa
   await expect(page.locator('#src')).toHaveValue(fixed.source);
   await compare.getByRole('button', { name: 'Undo the fix' }).click();
   await expect(page.locator('#src')).toHaveValue(leaky.source);
-  await expect(page.getByLabel('Grade F')).toBeVisible();
+  await expect(page.getByLabel('Grade F').first()).toBeVisible();
 });
 
 test('reports download as JSON, SARIF and Markdown', async ({ page }) => {
@@ -157,9 +163,13 @@ test('the badge grades a real repository', async ({ request }) => {
 test('phones get a menu with every page', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#mobile-nav');
-  for (const name of ['Scan', 'Live', 'Desk', 'Survey', 'Leak zoo', 'For teams', 'How it works', 'Wave 3', 'Adoption'])
+  // the button works once the page has hydrated; retry the click until the menu opens
+  await expect(async () => {
+    if (!(await menu.isVisible())) await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(menu).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 30_000 });
+  for (const name of ['Scan', 'Live', 'Tell Desk', 'Survey', 'Leak zoo', 'For teams', 'How it works', 'Wave 3', 'Adoption'])
     await expect(menu.getByRole('link', { name, exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toHaveCount(0);

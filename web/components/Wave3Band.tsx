@@ -9,26 +9,25 @@ import { StatusPill } from './ui';
 
 export default function Wave3Band() {
   return (
-    <section className="border-y border-[var(--rule)] bg-[var(--sheet)]" data-testid="wave3-band">
-      <div className="mx-auto max-w-[1180px] px-4 py-12 sm:px-6">
-        <div className="grid gap-6 md:grid-cols-[1fr_1.6fr] md:items-end">
-          <div>
-            <p className="label">New in Wave 3</p>
-            <h2 className="mt-2 text-[30px] font-extrabold leading-[1.08] sm:text-[36px]">You said. We did.</h2>
-          </div>
-          <p className="text-[16px] text-[var(--graphite)]">
-            Every point from the Wave 2 review, answered with something you can open.{' '}
-            <Link href="/wave3" className="font-semibold text-[var(--ink)]">
+    <section className="border-b border-[var(--rule)] bg-[var(--mist)] py-12 sm:py-14" data-testid="wave3-band">
+      <div className="wrap">
+        <div className="marg mb-7">
+          <p className="margin-note">
+            <b>New in Wave 3</b>Every point from the Wave 2 review, answered with something you can open.
+          </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+            <h2 className="text-[26px] sm:text-[30px]">You said. We did.</h2>
+            <Link href="/wave3" className="text-[15px] font-semibold">
               Read the whole list
             </Link>
-          </p>
+          </div>
         </div>
-        <ul className="mt-8 grid gap-px overflow-hidden rounded-sm border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-px overflow-hidden rounded-lg border border-[var(--rule)] bg-[var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
           {wave3.highlights.map((h) => (
-            <li key={h.title} className="bg-[var(--paper)]">
-              <Link href={h.href} className="flex h-full flex-col gap-2 p-5 no-underline hover:bg-[var(--sheet)]">
+            <li key={h.title} className="bg-white">
+              <Link href={h.href} className="flex h-full flex-col items-start gap-2 p-5 no-underline hover:bg-[var(--paper)] hover:shadow-[inset_3px_0_0_var(--marker)]">
                 <StatusPill status={h.status} />
-                <span className="text-[17px] font-bold">{h.title}</span>
+                <span className="font-[family-name:var(--serif)] text-[19px] font-medium leading-snug">{h.title}</span>
                 <span className="text-[14.5px] text-[var(--graphite)]">{h.text}</span>
               </Link>
             </li>

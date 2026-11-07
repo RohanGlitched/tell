@@ -5,6 +5,7 @@ import CodePane from '@/components/CodePane';
 import zoo from '@/data/zoo.json';
 import precomputed from '@/data/sample-results.json';
 import type { ScanResponse } from '@/lib/types';
+import { PageHead } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Leak zoo',
@@ -78,12 +79,14 @@ const CASES: Case[] = [
 export default function ZooPage() {
   const src = new Map(zoo.map((z) => [z.id, z]));
   return (
-    <div className="mx-auto max-w-[1180px] px-4 pb-10 pt-10 sm:px-6">
-      <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.015em] sm:text-[46px]">The leak zoo</h1>
-      <p className="mt-3 max-w-[66ch] text-[17px] text-[var(--graphite)]">
-        Five small contracts, each with one leak a careful developer could ship, and its fix. For every pair, Tell reports the leak on the left and nothing above
-        low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 87 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
-      </p>
+    <>
+      <PageHead kicker="Evidence" title="The leak zoo">
+        <p>
+          Five small contracts, each with one leak a careful developer could ship, and its fix. For every pair, Tell reports the leak on the left and nothing above
+          low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 87 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+        </p>
+      </PageHead>
+    <div className="wrap pb-16 pt-12 sm:pt-14">
       <nav aria-label="Cases" className="mt-6 flex flex-wrap gap-2 text-[14px]">
         {CASES.map((c) => (
           <a key={c.id} href={`#${c.id}`} className="inline-flex min-h-[44px] items-center rounded border border-[var(--rule)] px-3 no-underline hover:border-[var(--ink)] sm:min-h-[36px]">
@@ -102,7 +105,7 @@ export default function ZooPage() {
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="mono text-[13px] text-[var(--graphite)]">{String(i + 1).padStart(2, '0')}</span>
                 <h2 className="text-[26px] font-semibold">{c.name}</h2>
-                <span className={`rounded-sm px-2 py-0.5 text-[12px] font-semibold uppercase ${c.severity === 'medium' ? 'bg-[var(--hi)] text-[#151b2c]' : 'bg-[var(--red)] text-white'}`}>
+                <span className="sev" data-sev={c.severity}>
                   {c.severity}
                 </span>
                 <span className="text-[14px] text-[var(--graphite)]">{c.kind}</span>
@@ -130,6 +133,7 @@ export default function ZooPage() {
         })}
       </div>
     </div>
+    </>
   );
 }
 

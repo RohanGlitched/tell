@@ -88,7 +88,7 @@ export function DeskWalletSlot() {
         <li>Pick a scan from this browser and seal it: the report and its salt are kept in your private state.</li>
         <li>File: one transaction writes the grade and the commitment to the public ledger.</li>
       </ol>
-      <button type="button" disabled className="mt-4 min-h-[44px] rounded bg-[var(--ink)] px-5 font-medium text-[var(--paper)] opacity-50">
+      <button type="button" disabled className="btn btn-ink mt-4">
         Connect Lace (available once Tell Desk is deployed)
       </button>
     </Slot>
