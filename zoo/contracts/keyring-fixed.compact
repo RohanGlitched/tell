@@ -1,0 +1,28 @@
+// Tell leak zoo: keyring, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// The account id and the private scalar come from the same seed under two
+// different domain separators. The id on the ledger says nothing about the
+// scalar, so only the seed's owner holds the private key.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger accounts: Map<Bytes<32>, JubjubPoint>;
+
+witness seed(): Bytes<32>;
+
+export pure circuit accountOf(s: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "keyring:account"), s]);
+}
+
+export pure circuit scalarOf(s: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "keyring:enc-key"), s]);
+}
+
+export circuit register(): [] {
+  const s = seed();
+  accounts.insert(disclose(accountOf(s)), disclose(ecMulGenerator(degradeToTransient(scalarOf(s)))));
+}

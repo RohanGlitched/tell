@@ -95,8 +95,23 @@ describe('manual fixes where no rewrite is safe', () => {
     expect(m).toContain('SecretKey(): Bytes<32>;');
     expect(m).toContain('persistentHash<Vector<2, Bytes<32>>>');
   });
-  it('a secret returned from a circuit', () => {
-    expect(manualFor('case-return')[0]).toContain('Circuit results are public');
+  it('a secret returned from a circuit: low, so no fix is planned; the advice says where it goes', () => {
+    expect(manualFor('case-return')).toEqual([]);
+    const [f] = load('case-return').findings;
+    const p = propose(srcOf('case-return'), f, load('case-return'), 'case-return.compact');
+    expect(p.rule).toBeNull();
+    expect(p.manual).toContain('not on chain');
+    expect(p.manual).toContain('a contract that calls `leakKey`');
+  });
+  it('a public value used as a private key: manual, with the domain-separation fix', () => {
+    const f = load('case-derived-key').findings.find((x) => x.kind === 'derivable-secret')!;
+    const p = propose(srcOf('case-derived-key'), f, load('case-derived-key'), 'case-derived-key.compact');
+    expect(p.rule).toBeNull();
+    expect(p.manual).toContain('domain separator');
+  });
+  it('a membership lookup: manual, pointing at a Merkle proof', () => {
+    const [m] = manualFor('case-member-lookup');
+    expect(m).toContain('checkRoot');
   });
   it('a branch inside a loop is not turned into an assert', () => {
     const src = `pragma language_version 0.23;
@@ -142,7 +157,8 @@ describe.runIf(hasCompiler())('verified patches', () => {
     ['payband', 'commit-hash', 'F', 'A'],
     ['reserve', 'assert-branch', 'C', 'A'],
     ['vault', 'hash-key', 'F', 'A'],
-    ['board', 'one-time-tag', 'C', 'B'],
+    // still C: the membership check looks the member's tag up (the zoo's Merkle version is the full fix)
+    ['board', 'one-time-tag', 'C', 'C'],
   ];
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-fix-test-'));
   for (const [name, rule, before, after] of EXPECT)
@@ -159,8 +175,10 @@ describe.runIf(hasCompiler())('verified patches', () => {
       fs.writeFileSync(file, plan.combined!.source);
       const again = await planFixes(await scanFile(file, compilers), { compilers });
       expect(again.grade).toBe(after);
-      expect(again.suggestions).toEqual([]);
+      expect(again.suggestions.filter((s) => s.patch)).toEqual([]);
       expect(again.combined).toBeUndefined();
+      // what is left is the board's membership lookup, with the Merkle proof as the manual fix
+      expect(again.suggestions.map((s) => s.manual ?? '')).toEqual(name === 'board' ? [expect.stringContaining('checkRoot')] : []);
     }, 120_000);
 
   it('fixed zoo contracts produce no patches', async () => {

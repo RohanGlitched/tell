@@ -1,0 +1,79 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.14 () (Kernel)))
+  (public-ledger-declaration
+    ((%keyOf.8 (0) (Map (tbytes 32) (tbytes 32))) (%above.0 (1) (Counter)) (%below.2 (2) (Counter))
+      (%limit.10
+        (3)
+        (__compact_Cell (tunsigned 18446744073709551615)))
+      (%level.9
+        (4)
+        (__compact_Cell (tunsigned 18446744073709551615)))
+      (%codes.5 (5) (Set (tbytes 32)))
+      (%checks.4 (6) (Set (tbytes 32)))
+      (%winner.13 (7) (__compact_Cell (tbytes 32)))))
+  (native
+    %persistentHash.15
+    ((%value.16 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentCommit.17
+    ((%value.18 (tunsigned 255)) (%rand.19 (tbytes 32)))
+    (tbytes 32))
+  (witness %deviceKey.20 () (tbytes 32))
+  (witness %balance.21 () (tunsigned 18446744073709551615))
+  (witness %reading.22 () (tunsigned 18446744073709551615))
+  (witness %code.23 () (tunsigned 65535))
+  (witness %checkSalt.24 () (tbytes 32))
+  (witness %pick.25 () (tbytes 32))
+  (circuit %enroll.7 ((%device.26 (tbytes 32))) (ttuple)
+    (= #t %t.37 (call %deviceKey.20))
+    (= #t
+       %t.38
+       (tuple
+         #vu8(100 101 118 105 99 101 58 107 101 121 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.37))
+    (= #t %tmp.29 (call %persistentHash.15 %t.38))
+    (= #t
+       %t.39
+       (public-ledger %keyOf.8 (0) insert %device.26 %tmp.29))
+    (= #t %t.40 (tuple)) %t.40)
+  (circuit %check.3 () (ttuple) (= #t %t.27 (call %balance.21))
+    (= #t %t.41 (public-ledger %limit.10 (3) read))
+    (= #t %t.42 (< 64 %t.41 %t.27))
+    (= #t %t.43 (select %t.42 #t #f))
+    (= #t %t.44 (select %t.42 #f #t))
+    (= %t.43 %t.45 (public-ledger %above.0 (1) increment 1))
+    (= %t.44 %t.46 (public-ledger %below.2 (2) increment 1))
+    (= #t %t.47 (tuple)) %t.47)
+  (circuit %report.12 () (ttuple) (= #t %tmp.32 (call %reading.22))
+    (= #t %t.48 (public-ledger %level.9 (4) write %tmp.32))
+    (= #t %t.49 (tuple)) %t.49)
+  (circuit %publish.11 () (ttuple) (= #t %t.50 (call %code.23))
+    (= #t %t.51 (field->bytes 32 %t.50))
+    (= #t
+       %t.52
+       (tuple
+         #vu8(99 111 100 101 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0)
+         %t.51))
+    (= #t %tmp.33 (call %persistentHash.15 %t.52))
+    (= #t %t.53 (public-ledger %codes.5 (5) insert %tmp.33))
+    (= #t %t.54 (tuple)) %t.54)
+  (circuit %balanced.1 () (ttuple) (= #t %t.28 (call %balance.21))
+    (= #t %t.55 (public-ledger %limit.10 (3) read))
+    (= #t %t.56 (< 64 %t.55 %t.28))
+    (= #t %t.57 (select %t.56 #t #f))
+    (= #t %t.58 (select %t.56 #f #t))
+    (= %t.57 %t.59 (call %checkSalt.24))
+    (= %t.57 %tmp.34 (call %persistentCommit.17 1 %t.59))
+    (= %t.57 %t.60 (public-ledger %checks.4 (6) insert %tmp.34))
+    (= %t.58 %t.61 (call %checkSalt.24))
+    (= %t.58 %tmp.35 (call %persistentCommit.17 0 %t.61))
+    (= %t.58 %t.62 (public-ledger %checks.4 (6) insert %tmp.35))
+    (= #t %t.63 (tuple)) %t.63)
+  (circuit %draw.6 () (ttuple) (= #t %tmp.36 (call %pick.25))
+    (= #t %t.64 (public-ledger %winner.13 (7) write %tmp.36))
+    (= #t %t.65 (tuple)) %t.65))
+tell-constructor:
+(constructor () (tuple))

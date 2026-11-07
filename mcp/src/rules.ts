@@ -5,7 +5,7 @@
 // are the leak zoo's contracts (zoo/contracts), cut to the lines that matter,
 // and the engine's own regression cases (engine/test/fixtures/src).
 
-export type RuleId = 'guessable-hash' | 'secret-published' | 'published' | 'branch' | 'predicate' | 'attributable' | 'linkable';
+export type RuleId = 'guessable-hash' | 'secret-published' | 'published' | 'branch' | 'predicate' | 'attributable' | 'linkable' | 'derivable-secret';
 
 export type Rule = {
   id: RuleId;
@@ -152,16 +152,37 @@ export const RULES: Rule[] = [
   {
     id: 'linkable',
     name: 'Linkable tag',
-    severities: 'low / info',
+    severities: 'medium / low / info',
     summary: 'The same hash of a key is published by several circuits, tying a user\'s transactions together.',
     explanation:
-      'Fine for registrations and nullifiers, where linking is the point. Worth a look when the circuits are meant to be unlinkable (register, commit, reveal). Mix in a per-action counter or fresh randomness for repeated actions.',
+      'Fine for registrations and nullifiers, where linking is the point. Worth a look when the circuits are meant to be unlinkable (register, commit, reveal). Mix in a per-action counter or fresh randomness for repeated actions. Low when a key tag has no domain separator and no contract address, so any contract hashing the same secret the same way publishes the same tag. Medium when a circuit proves membership by looking up the caller\'s own tag (`Set.member(hash(key))`): the lookup key is public, so every call names the member; prove membership with a Merkle `checkRoot` instead.',
     quiet: 'Hashes that mix in a per-use nonce, salt or a changing counter link nothing and are not reported.',
     example: {
       source: 'zoo/contracts/ballot-leaky.compact (register and vote)',
       leak: ['export circuit register(): [] {', '  voters.insert(disclose(voterTag(voterKey())));', '}', '', 'export circuit vote(): [] {', '  const tag = disclose(voterTag(voterKey()));', '  ballots.insert(tag, ...);', '}'].join('\n'),
       fix: '// Expected for a voter roll: the tag links register to vote by design.\n// To unlink them, register a Merkle leaf and vote with a nullifier hash(key, election id).',
       attack: 'Match the tag in voters with the key of ballots: who registered is who voted.',
+    },
+  },
+  {
+    id: 'derivable-secret',
+    name: 'Public value used as a private key',
+    severities: 'critical',
+    summary: 'A public key is made from a private scalar that anyone can compute, because the contract also publishes that value.',
+    explanation:
+      '`ecMulGenerator(k)` is a public key whose private key is `k`. When `k` is a hash the contract also writes to the ledger (an account id, say), or a public function of one, with nothing secret mixed in, everyone holds the private key: they can decrypt what is encrypted to it or sign as it. Derive the key under its own domain separator so it differs from every published value.',
+    quiet: 'Different domain separators for the published id and the key (`hash("app:id", seed)` and `hash("app:enc", seed)`) are not reported.',
+    example: {
+      source: 'bench/cases/L16-public-digest-as-key.compact, S13-separate-key-domain.compact',
+      leak: ['witness seed(): Bytes<32>;', '', 'export circuit register(): [] {', '  const id = persistentHash<Vector<1, Bytes<32>>>([seed()]);', '  accountId = disclose(id);', '  encKey = disclose(ecMulGenerator(degradeToTransient(id)));   // private key = accountId', '}'].join('\n'),
+      fix: [
+        'export circuit register(): [] {',
+        '  accountId = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:id"), seed()]));',
+        '  const k = persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:enc"), seed()]);',
+        '  encKey = disclose(ecMulGenerator(degradeToTransient(k)));',
+        '}',
+      ].join('\n'),
+      attack: 'Read accountId, compute degradeToTransient(accountId) and use it as the private key of encKey.',
     },
   },
 ];

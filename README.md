@@ -41,13 +41,16 @@ Tell starts where `disclose()` stops. It works on the compiler's own output, so 
 | Finding | Severity | Example |
 |---|---|---|
 | Guessable hash | critical / high | `ballots.insert(tag, persistentHash(choice))` after `assert(choice < 4)`: 2 bits, four guesses |
-| Secret in the clear | critical / high | `owner = disclose(secretKey())`; a value hashed as a key in one circuit and written raw in another; a secret returned from a circuit |
+| Secret in the clear | critical / high | `owner = disclose(secretKey())`; a value hashed as a key in one circuit and written raw in another |
+| Public value used as a private key | critical | `accountId = disclose(id); encKey = disclose(ecMulGenerator(id))`: the published id is the encryption key's private scalar |
 | Secret-dependent branch | medium | writing `qualified` or `belowReserve` depending on a hidden bid; count leaks in fixed-size loops |
 | Same tag on every action | medium | every post stores `hash(memberKey)`, so one identified post unmasks the rest |
 | Wallet key published | medium | a user's `ownPublicKey()` stored in a record ties all their activity to one wallet |
 | Private bytes or personal data in the clear | medium | a seed or private key written as-is; a salary or a location written to a map |
-| Linkable tag | low / info | the same `hash(sk)` in register, commit and reveal |
+| Membership shown by a lookup | medium | `assert(members.member(disclose(hash(key))))`: the lookup key is public, so every "anonymous" claim names its member |
+| Linkable tag | low / info | the same `hash(sk)` in register, commit and reveal; a key tag with no domain separator and no contract address, the same in any contract that hashes the secret this way |
 | Published value / yes-no fact | info | values written on purpose, listed so nothing is hidden |
+| Value returned from a circuit | low / info | a secret returned to the DApp: it leaves the proof, but it is not on chain (see Limits) |
 
 Grades run from A (nothing above info) to F (anything critical). Severity follows what is revealed; names only adjust it at the edges (officer fields, personal data, key material):
 
@@ -117,6 +120,24 @@ Some disclosures are the point; mark them once and Tell stops reporting them:
 seeds.insert(slot, s); // tell:allow published
 ```
 
+### Declared intent (`tell.json`)
+
+Tell guesses intent from shape and names. Where you know better, say so once in a `tell.json` (or `.tellrc.json`) next to your contracts or at the repository root; the CLI, the Action and the MCP server pick up the nearest one (`--policy <file>` to choose one, `--no-policy` to ignore them):
+
+```json
+{
+  "witnesses": { "deviceKey": "secret", "now": "public" },
+  "arguments": { "vote.choice": "secret" },
+  "circuits": { "enroll": { "once": true }, "check": { "caller": "identified" } },
+  "intended": [{ "kind": "published", "field": "winner", "reason": "the draw result is public" }]
+}
+```
+
+- `secret`: private data whatever its name (published in the clear it is a secret leak; an argument ranks like a witness). `public`: an observer knows it already, so it adds nothing to a hash.
+- `once`: each holder runs the circuit once (an enrolment), so the tag it stores does not line up repeated actions.
+- `caller`: `identified` when transactions can be tied to their sender outside the circuit; branches and membership lookups then rate as for an identified caller. The default, `anonymous`, is what Midnight gives by itself (see Limits).
+- `intended`: findings that match are kept in the JSON and SARIF, marked suppressed with the reason. `files` holds per-file overrides. A typo is an error, never a silent no-op.
+
 ## Who it is for
 
 - **Midnight developers**: findings land on the pull request, before a contract is deployed and its history is public forever.
@@ -155,7 +176,12 @@ What exists today: the compiler checks *whether* data is disclosed; OpenZeppelin
 
 ## Limits
 
-Tell is static analysis of what the compiler builds. It reports what the public transcript *can* reveal, not proof that anyone has read it. It does not yet analyse constructors, and outside `assert` bounds and personal-data names it estimates brute-force cost from types, not from the real distribution of values. See [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).
+Tell is static analysis of what the compiler builds. It reports what the public transcript *can* reveal, not proof that anyone has read it. Outside `assert` bounds and personal-data names it estimates brute-force cost from types, not from the real distribution of values. See [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).
+
+Two assumptions about Midnight, with the evidence:
+
+- **A circuit's result is not public.** A contract call in a transaction carries its address, entry point, public transcripts, proof and a *communication commitment*, a randomized commitment to the call's inputs and outputs (ledger `ContractCall`; `communicationCommitment(input, output, rand)` in the runtime). Midnight's guide says the same: a return value "is not written to the ledger or readable in the transaction". So a value returned from an exported circuit goes to the DApp, or to the calling contract in a cross-contract call, which may publish it; Tell reports it at low, as a value leaving the proof. (Some tutorials list returns among public outputs; the ledger structure is what Tell follows.)
+- **A transaction does not name its sender by itself.** Fees are paid in DUST, a shielded resource spent by nullifier (a `DustSpend` holds the fee, a nullifier, a new commitment and a proof), and a contract call carries no wallet key unless the circuit or the wallet adds one. So a branch on a private value in a circuit that publishes nothing identifying rates low: each call still leaks its outcome, but not whose it is. Timing, network metadata, an unshielded payment in the same transaction or an app that submits for its users can identify callers; declare `"caller": "identified"` and those branches rate medium.
 
 ## License
 

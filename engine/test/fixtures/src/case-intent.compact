@@ -1,0 +1,56 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// What a policy file (tell.json) changes: one-time circuits, declared secrets and public inputs,
+// the caller model, intended disclosures. Without a policy Tell guesses from names and shape.
+export ledger keyOf: Map<Bytes<32>, Bytes<32>>;
+export ledger above: Counter;
+export ledger below: Counter;
+export ledger limit: Uint<64>;
+export ledger level: Uint<64>;
+export ledger codes: Set<Bytes<32>>;
+export ledger checks: Set<Bytes<32>>;
+export ledger winner: Bytes<32>;
+witness deviceKey(): Bytes<32>;
+witness balance(): Uint<64>;
+witness reading(): Uint<64>;
+witness code(): Uint<16>;
+witness checkSalt(): Bytes<32>;
+witness pick(): Bytes<32>;
+
+// attributable without a policy (the device id is a caller-chosen key); one tag per device with `once`
+export circuit enroll(device: Bytes<32>): [] {
+  keyOf.insert(disclose(device), disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "device:key"), deviceKey()])));
+}
+
+// a branch on a private value: low when nothing identifies the caller, medium with caller "identified"
+export circuit check(): [] {
+  if (disclose(balance() > limit)) {
+    above.increment(1);
+  } else {
+    below.increment(1);
+  }
+}
+
+// a reading written as-is: low by name; high when the policy declares it secret
+export circuit report(): [] {
+  level = disclose(reading());
+}
+
+// a hash of a 16-bit code: critical; nothing when the policy declares the code public
+export circuit publish(): [] {
+  codes.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "code"), (code() as Field) as Bytes<32>])));
+}
+
+// the same operation on both sides of a branch: nothing at any severity
+export circuit balanced(): [] {
+  if (disclose(balance() > limit)) {
+    checks.insert(disclose(persistentCommit<Uint<8>>(1, checkSalt())));
+  } else {
+    checks.insert(disclose(persistentCommit<Uint<8>>(0, checkSalt())));
+  }
+}
+
+// a private value written as-is: low; suppressed when the policy lists it as intended
+export circuit draw(): [] {
+  winner = disclose(pick());
+}

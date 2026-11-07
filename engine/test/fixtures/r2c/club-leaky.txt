@@ -1,0 +1,28 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.5 () (Kernel)))
+  (public-ledger-declaration
+    ((%members.4 (0) (Set (tbytes 32)))
+      (%claims.1 (1) (Counter))))
+  (native
+    %persistentHash.6
+    ((%value.7 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %memberKey.8 () (tbytes 32))
+  (circuit %join.2 ((%leaf.10 (tbytes 32))) (ttuple)
+    (= #t %t.14 (public-ledger %members.4 (0) insert %leaf.10))
+    (= #t %t.15 (tuple)) %t.15)
+  (circuit %claim.0 () (ttuple) (= #t %sk.13 (call %memberKey.8))
+    (= #t
+       %t.16
+       (tuple
+         #vu8(99 108 117 98 58 109 101 109 98 101 114 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %sk.13))
+    (= #t %tmp.11 (call %persistentHash.6 %t.16))
+    (= #t %t.17 (public-ledger %members.4 (0) member %tmp.11))
+    (= #t %t.18 (select #t %t.17 #t))
+    (assert %t.18 "members only") (= #t %t.19 (tuple))
+    (= #t %t.20 (public-ledger %claims.1 (1) increment 1))
+    (= #t %t.21 (tuple)) %t.21))
+tell-constructor:
+(constructor () (tuple))

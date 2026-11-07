@@ -36,6 +36,10 @@ inputs:
     description: 'Lowest severity that gets an inline comment: critical, high, medium or low'
     required: false
     default: 'medium'
+  policy:
+    description: 'A Tell policy file (declared intent: secret and public inputs, one-time circuits, intended disclosures). Default: the nearest tell.json or .tellrc.json above each contract; "none" ignores policy files'
+    required: false
+    default: ''
   github-token:
     description: 'Token used to post pull request comments'
     required: false
@@ -68,6 +72,7 @@ runs:
       shell: bash
       env:
         TELL_SUGGEST: ${{ inputs.suggest-fixes }}
+        TELL_POLICY: ${{ inputs.policy }}
       run: |
         out="$RUNNER_TEMP/tell.sarif"
         json="$RUNNER_TEMP/tell.json"
@@ -75,6 +80,7 @@ runs:
         args=(--sarif "$out" --json-out "$json")
         if [ "$fail" != "none" ]; then args+=(--fail-on "$fail"); fi
         if [ "$TELL_SUGGEST" = "true" ]; then args+=(--fix-dry-run); fi
+        if [ "$TELL_POLICY" = "none" ]; then args+=(--no-policy); elif [ -n "$TELL_POLICY" ]; then args+=(--policy "$TELL_POLICY"); fi
         set +e
         read -r -a paths <<< "${{ inputs.path }}"
         npx --prefix "${{ github.action_path }}/engine" tsx "${{ github.action_path }}/engine/src/cli.ts" "${paths[@]}" "${args[@]}"
@@ -91,6 +97,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         TELL_COMMENT: ${{ inputs.comment }}
         TELL_SUGGEST: ${{ inputs.suggest-fixes }}
+        TELL_POLICY: ${{ inputs.policy }}
         TELL_COMMENT_ON: ${{ inputs.comment-on }}
         TELL_RESULTS: ${{ steps.scan.outputs.results }}
       run: |

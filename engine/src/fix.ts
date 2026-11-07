@@ -392,7 +392,8 @@ const keyish = (n: string) => KEYISH.test(words(rootName(n))) && !/\b(pub|public
 export function propose(srcText: string, f: Finding, report?: Report, file?: string): Proposal {
   const src = new Source(srcText, file);
   const manual = (text: string): Proposal => ({ rule: null, manual: text });
-  if (f.field === 'return') return manual(`Circuit results are public. Return a hash or a commitment of ${f.sources.map((s) => `\`${s.name}\``).join(', ')} from \`${f.circuit}\`, or nothing, and keep the value in private state. ${f.fix}`);
+  if (f.field === 'return') return manual(`A circuit's result is not on chain, but it leaves the proof: your DApp, or a contract that calls \`${f.circuit}\`, receives it and may publish it. If only the DApp needs ${f.sources.map((s) => `\`${s.name}\``).join(', ')}, read it from private state there instead; otherwise return a hash or a commitment, or nothing.`);
+  if (f.kind === 'derivable-secret') return manual(`${where(f)}: ${f.fix}`);
   if (f.field === 'kernel') return manual(`${where(f)} is a token operation whose operands are public by design. ${f.fix}`);
   const src0 = f.sources[0];
   switch (f.kind) {
@@ -794,7 +795,12 @@ export async function verifyPatch(file: string, patched: string, before: Contrac
   const live = r.report!.findings.filter((f) => !f.suppressed);
   const gone = target ? !live.some((g) => same(g, target) && g.severity !== 'info') : true;
   const old = (before.report?.findings ?? []).filter((f) => !f.suppressed);
-  const newFindings = live.filter((g) => isSerious(g) && !old.some((o) => same(o, g) && severityRank(o.severity) <= severityRank(g.severity) && (!target || !same(o, target))));
+  // A one-time tag per action leaves the same circuit's membership lookup of the old tag in place.
+  // Tell reports that lookup on its own once the tag is no longer stored with every action; it was
+  // there before the patch (the patch's notes name it), so it is not new.
+  const remainingLookup = (g: Finding) =>
+    target?.kind === 'attributable' && g.kind === 'linkable' && g.circuit === target.circuit && g.op === 'member' && g.sources.some((s) => target.sources.some((t) => t.name === s.name));
+  const newFindings = live.filter((g) => isSerious(g) && !remainingLookup(g) && !old.some((o) => same(o, g) && severityRank(o.severity) <= severityRank(g.severity) && (!target || !same(o, target))));
   return { ok: gone && newFindings.length === 0, compiles: true, compiler: r.compiler, gone, newFindings, gradeBefore, gradeAfter: r.grade ?? gradeOf(live), result: r };
 }
 

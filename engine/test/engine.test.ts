@@ -47,6 +47,9 @@ const ZOO: [string, Finding['kind'], Finding['severity'], string][] = [
   ['faucet', 'shielded-coin', 'medium', 'ownPublicKey.bytes'],
   ['deposit', 'published', 'medium', 'bidAmount'],
   ['poll', 'guessable-hash', 'critical', 'choice'],
+  // after the benchmark: a published hash used as a private key; a lookup that names the member
+  ['keyring', 'derivable-secret', 'critical', 'seed'],
+  ['club', 'linkable', 'medium', 'memberKey'],
 ];
 
 describe('the leak zoo', () => {
@@ -109,7 +112,8 @@ describe('official Midnight examples', () => {
   it('shielded-coin plumbing is not reported as a leak; a mint amount is public', () => {
     // (a coin whose nonce is public is a separate finding, below)
     for (const n of ['chips', 'token-transfers', 'private-tip-jar'])
-      expect(load(n).findings.filter((f) => f.kind !== 'shielded-coin' && (f.fields ?? []).some((x) => /claimZswap|kernel\.self/.test(x)))).toEqual([]);
+      // (info: chips' burn spends a coin passed as an argument only on one path; arguments are the caller's own)
+      expect(load(n).findings.filter((f) => f.kind !== 'shielded-coin' && f.severity !== 'info' && (f.fields ?? []).some((x) => /claimZswap|kernel\.self/.test(x)))).toEqual([]);
     expect(load('token-transfers').findings.some((f) => (f.fields ?? []).includes('kernel.mintShielded') && f.kind === 'published')).toBe(true);
   });
 
@@ -165,8 +169,9 @@ describe('review cases', () => {
     expect(r.findings.some((f) => f.kind === 'published' && f.severity === 'medium' && f.suppressed)).toBe(true);
     expect(serious(r.findings)).toEqual([]);
   });
-  it('a circuit result is public, like a ledger write', () => {
-    expect(one('case-return')).toMatchObject([{ kind: 'secret-published', severity: 'critical', field: 'return' }]);
+  it('a circuit result leaves the proof but is not on chain: kept, at low', () => {
+    // a ContractCall carries only a randomized commitment to the call's inputs and outputs
+    expect(load('case-return').findings).toMatchObject([{ kind: 'secret-published', severity: 'low', field: 'return' }]);
   });
   it('a shielded receive that only runs on a private condition shows the condition', () => {
     expect(one('case-shielded-guard')).toMatchObject([{ kind: 'branch', sources: [{ name: 'accept' }] }]);
@@ -262,8 +267,8 @@ describe('tokens', () => {
     // public ledger state, so whether the withdrawal went to a given wallet can be checked.
     expect(coin('private-tip-jar')).toMatchObject([{ circuit: 'withdraw', severity: 'medium', sources: [{ name: 'ownPublicKey.bytes' }] }]);
   });
-  it('a nonce the circuit returns is public too (low: the recipient is the caller\'s own argument)', () => {
-    expect(coin('chips')).toMatchObject([{ circuit: 'mint', severity: 'low', sources: [{ name: 'recipient.bytes', kind: 'argument' }] }]);
+  it('a nonce the circuit returns goes to the DApp, not the chain: the mint is not reported', () => {
+    expect(coin('chips')).toEqual([]);
   });
   it('a wallet key from private state written publicly is medium; from an argument it is info', () => {
     const fs_ = load('case-coin-nonce').findings.filter((f) => f.field === 'payees');

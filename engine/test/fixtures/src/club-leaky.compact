@@ -1,0 +1,30 @@
+// Tell leak zoo: an "anonymous" claim that names its member.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Members join with a leaf, hash(key). A claim proves membership by looking
+// the caller's own leaf up in the member set. The key stays private, but the
+// key of a lookup is part of the public transcript: every claim carries the
+// claimant's leaf, so it is tied to their join and to all their other claims.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: Set<Bytes<32>>;
+export ledger claims: Counter;
+
+witness memberKey(): Bytes<32>;
+
+export pure circuit memberLeaf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), sk]);
+}
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit claim(): [] {
+  assert(members.member(disclose(memberLeaf(memberKey()))), "members only");
+  claims.increment(1);
+}

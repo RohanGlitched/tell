@@ -1,0 +1,32 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.3 () (Kernel)))
+  (public-ledger-declaration
+    ((%accounts.1
+       (0)
+       (Map (tbytes 32) (topaque "JubjubPoint")))))
+  (native
+    %persistentHash.4
+    ((%value.5 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native %degradeToTransient.6 ((%x.7 (tbytes 32))) (tfield))
+  (native
+    %ecMulGenerator.8
+    ((%b.9 (tfield)))
+    (topaque "JubjubPoint"))
+  (witness %seed.10 () (tbytes 32))
+  (circuit %register.2 () (ttuple) (= #t %s.14 (call %seed.10))
+    (= #t
+       %t.15
+       (tuple
+         #vu8(107 101 121 114 105 110 103 58 97 99 99 111 117 110 116
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %s.14))
+    (= #t %id.12 (call %persistentHash.4 %t.15))
+    (= #t %t.16 (call %degradeToTransient.6 %id.12))
+    (= #t %tmp.13 (call %ecMulGenerator.8 %t.16))
+    (= #t
+       %t.17
+       (public-ledger %accounts.1 (0) insert %id.12 %tmp.13))
+    (= #t %t.18 (tuple)) %t.18))
+tell-constructor:
+(constructor () (tuple))

@@ -8,6 +8,7 @@
 
 import { type SExpr, isList, isSym, head, symName, baseName, show } from './sexpr.js';
 import { type Program, type Circuit, type Type, type Callable, typeBits, hasBytes, isVar, isTypeForm, parseType, typeText } from './ir.js';
+import { type PolicyBody, applyIntended, argumentVisibility, callerOf, circuitPolicy, witnessVisibility } from './policy.js';
 
 export type SourceKind = 'witness' | 'argument';
 export type Source = { key: string; kind: SourceKind; name: string; type: Type; bits: number };
@@ -22,14 +23,19 @@ const RANK: Record<Flow, number> = { reveal: 3, guessable: 2, predicate: 1, hidd
 
 // idTag: a deterministic hash of key material only (an identity), not of content.
 // choice: the secret entered the hash only as a yes/no selector (e.g. Merkle path bits).
-export type Fact = { flow: Flow; via?: string; preimageBits?: number; tag?: boolean; idTag?: boolean; choice?: boolean; fp?: string };
+// dom: a literal domain separator went into the hash (it cannot collide with another app's hash of the same key).
+// scoped: the contract's own address (kernel.self()) went into the hash: the tag differs from contract to contract.
+// derivedKey: a public key (ecMulGenerator) whose private scalar is a value this contract publishes.
+export type Fact = { flow: Flow; via?: string; preimageBits?: number; tag?: boolean; idTag?: boolean; choice?: boolean; fp?: string; dom?: boolean; scoped?: boolean; derivedKey?: boolean };
 export type Label = Map<string, Fact>;
 
 // `varying`: derived from public state that changes between calls (a counter, a sequence).
 // lits: literal constants inside the value (domain separators), used to fingerprint tags.
 // coin: set on a CoinPreimage (and the hash of one, a coin commitment): its nonce, value and recipient.
 type Coin = { nonce: Val; value: Val; recipient: Val };
-type Val = { label: Label; parts?: Val[]; fields?: Map<string, Val>; varying?: boolean; lits?: string[]; coin?: Coin };
+// dom: the value holds a non-zero byte-string literal (a domain separator such as pad(32, "app:pk")).
+// self: the value holds the contract's own address (kernel.self()).
+type Val = { label: Label; parts?: Val[]; fields?: Map<string, Val>; varying?: boolean; lits?: string[]; coin?: Coin; dom?: boolean; self?: boolean };
 
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type FindingKind =
@@ -40,7 +46,8 @@ export type FindingKind =
   | 'predicate'
   | 'linkable'
   | 'attributable'
-  | 'shielded-coin';
+  | 'shielded-coin'
+  | 'derivable-secret';
 
 export type Finding = {
   circuit: string;
@@ -57,6 +64,8 @@ export type Finding = {
   line?: number;
   fields?: string[];
   suppressed?: boolean;
+  // what suppressed it: a `// tell:allow` comment, or the policy file (with its reason)
+  suppressedBy?: string;
   // for tags: a fingerprint of the hash expression, so only identical tags are linked
   tagFp?: string;
 };
@@ -81,6 +90,8 @@ export type Report = {
   circuits: CircuitReport[];
   findings: Finding[];
   unknownForms: string[];
+  // the policy file that applied, if any
+  policy?: string;
 };
 
 // degradeToTransient is a reversible Bytes<32>→Field conversion, not a hash: it is a cast below.
@@ -171,6 +182,7 @@ const rootName = (n: string) => n.replace(/[.[].*$/, '');
 const ownName = (n: string) => (/\[\d+\]$/.test(n) ? '' : n.includes('.') ? n.slice(n.lastIndexOf('.') + 1) : n);
 
 const empty = (): Val => ({ label: new Map() });
+const SEVERITY_ORDER: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 
 function mergeFact(a: Fact | undefined, b: Fact): Fact {
   if (!a) return b;
@@ -194,7 +206,8 @@ function union(...vs: Val[]): Label {
 
 const withFlow = (l: Label, f: (x: Fact) => Fact): Label => new Map([...l].map(([k, x]) => [k, f(x)]));
 
-export function analyze(p: Program, opts: { sourceText?: string } = {}): Report {
+export function analyze(p: Program, opts: { sourceText?: string; policy?: PolicyBody & { source?: string } } = {}): Report {
+  const pol = opts.policy;
   const unknown = new Set<string>();
   const circuits: CircuitReport[] = [];
   // Fields some circuit writes: reading them gives a value that can change between calls.
@@ -216,10 +229,20 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
   // Also the private values some circuit takes care to hide (inside a published hash or commitment):
   // the contract treats those as private, so paying one out in the clear is a leak, not a design.
   const seen: Shared = { tags: new Set(), hidden: new Set() };
-  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), new Set(), mutated, keyed, new Set(), seen, { tags: new Set(), hidden: new Set() }));
+  // Inputs the policy declares public are known to an observer from the start.
+  const declaredKnown = (c: Circuit) =>
+    new Set([
+      ...Object.keys(pol?.witnesses ?? {}).filter((k) => witnessVisibility(pol, k) === 'public'),
+      ...c.params.filter((prm) => argumentVisibility(pol, c.name, prm.name) === 'public').map((prm) => prm.name),
+    ]);
+  const firsts = p.circuits.map((c) => analyzeCircuit(p, c, new Set(), declaredKnown(c), mutated, keyed, new Set(), seen, { tags: new Set(), hidden: new Set() }, pol));
   p.circuits.forEach((c, i) => {
-    const known = new Set(firsts[i].findings.filter((f) => f.kind === 'published' || f.kind === 'secret-published').flatMap((f) => f.sources.map((s) => s.name)));
-    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed, { tags: new Set(), hidden: new Set() }, seen));
+    // A value the circuit returns is not on chain (see onlyReturned), so it is not known to an observer.
+    const known = new Set([
+      ...declaredKnown(c),
+      ...firsts[i].findings.filter((f) => (f.kind === 'published' || f.kind === 'secret-published') && !onlyReturned(f)).flatMap((f) => f.sources.map((s) => s.name)),
+    ]);
+    circuits.push(analyzeCircuit(p, c, unknown, known, mutated, new Set(), keyed, { tags: new Set(), hidden: new Set() }, seen, pol));
   });
   const findings = circuits.flatMap((c) => c.findings);
   if (opts.sourceText) {
@@ -227,8 +250,12 @@ export function analyze(p: Program, opts: { sourceText?: string } = {}): Report 
     declaredPublic(findings, opts.sourceText);
   }
   linkAcrossCircuits(findings);
-  return { circuits, findings, unknownForms: [...unknown].sort() };
+  applyIntended(findings, pol);
+  return { circuits, findings, unknownForms: [...unknown].sort(), policy: pol ? (pol.source ?? 'inline') : undefined };
 }
+
+// A finding whose only sink is the circuit's return value.
+export const onlyReturned = (f: Finding) => (f.fields ?? [`${f.field}.${f.op}`]).every((x) => x.startsWith('return.'));
 
 type Shared = { tags: Set<string>; hidden: Set<string> };
 
@@ -242,7 +269,16 @@ function analyzeCircuit(
   hiddenElsewhere: Set<string>,
   collect: Shared,
   prior: Shared,
+  pol?: PolicyBody,
 ): CircuitReport {
+  // Declared intent (tell.json). A witness or argument declared secret is private data whatever
+  // its name; `once` and `caller` replace two guesses about the threat model.
+  const declaredSecret = (s: { kind: SourceKind; name: string }) =>
+    s.kind === 'witness' ? witnessVisibility(pol, rootName(s.name)) === 'secret' : argumentVisibility(pol, c.name, rootName(s.name)) === 'secret';
+  // An argument declared secret ranks like a witness.
+  const privateKind = (s: { kind: SourceKind; name: string }) => s.kind === 'witness' || declaredSecret(s);
+  const once = circuitPolicy(pol, c.name).once === true;
+  const callerIdentified = callerOf(pol, c.name) === 'identified';
   const env = new Map<string, Val>();
   const sources = new Map<string, Source>();
   const findings = new Map<string, Finding>();
@@ -275,7 +311,7 @@ function analyzeCircuit(
   const val = (x: SExpr): Val => {
     if (isVar(x)) return env.get(x.v) ?? empty();
     if (isList(x)) return isTypeForm(x) ? empty() : evalExpr(x);
-    return empty();
+    return domLit(x) ? { label: new Map(), dom: true } : empty();
   };
 
   // Unknown bits an attacker must guess to invert a one-way function of `l`.
@@ -301,14 +337,20 @@ function analyzeCircuit(
     return { bits, strong };
   };
 
-  const oneWay = (via: string, input: Label, salt?: Label, varying = false, lits: string[] = []): Val => {
+  const oneWay = (via: string, input: Label, salt?: Label, varying = false, lits: string[] = [], dom = false, scoped = false): Val => {
     const all = salt ? union({ label: input }, { label: salt }) : input;
     const { bits, strong } = unknownBits(all);
+    // ecMulGenerator(s) makes a public key whose private key is s. When s is (a public function of)
+    // a value this contract publishes, and nothing secret is mixed in, anyone holds the private key.
+    if (via === 'ecMulGenerator' && all.size && bits === 0 && [...all].some(([k, f]) => isPublicTag(f) && !known.has(sources.get(k)!.name))) {
+      const out: Label = new Map([...all].map(([k, f]) => [k, { ...f, flow: 'hidden', derivedKey: true, tag: false }]));
+      return { label: out, varying };
+    }
     const secure = strong && bits >= SAFE_BITS;
     // A commitment whose randomness is secret and strong is hiding and unlinkable.
     const saltStrong = salt ? unknownBits(salt).strong : false;
     const out: Label = new Map();
-    const fp = `${via}|${[...all.keys()].sort().join(',')}|${[...lits].sort().join(',')}`;
+    const fp = `${via}|${[...all.keys()].sort().join(',')}|${[...lits].sort().join(',')}${scoped ? '|self' : ''}`;
     const idTag = [...all].every(([k, f]) => f.flow === 'hidden' || (hasBytes(sources.get(k)!.type) && sources.get(k)!.bits >= SAFE_BITS));
     // A secret named like per-use randomness makes the output a one-time value.
     const freshType = (t: Type): boolean => (t.k === 'struct' ? t.fields.some((x) => isFresh(x.name) || freshType(x.type)) : t.k === 'tuple' ? t.items.some(freshType) : false);
@@ -323,9 +365,11 @@ function analyzeCircuit(
         out.set(k, f);
         continue;
       }
-      if (f.flow === 'hidden') out.set(k, { ...f, idTag: f.idTag && idTag, fp: f.fp ?? fp });
+      // A one-way function of a hidden value is a different value: its fingerprint names both, so
+      // publishing ecMulGenerator(k) does not count as publishing k (or hash(k) as publishing k).
+      if (f.flow === 'hidden') out.set(k, { ...f, idTag: f.idTag && idTag, fp: f.fp ? `${via}(${f.fp})|${[...lits].sort().join(',')}` : fp, dom: f.dom || dom, scoped: f.scoped || scoped });
       else if (secure) {
-        out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp });
+        out.set(k, { flow: 'hidden', via, tag: !saltStrong && !varying, idTag: idTag && !saltStrong && !varying, fp, dom, scoped });
         // Only private data counts: public ids (arguments) are hashed into keys all the time.
         if (f.flow === 'reveal' && !salt && idTag && !varying && sources.get(k)!.kind === 'witness' && rootName(sources.get(k)!.name) !== 'ownPublicKey')
           keyed.add(sources.get(k)!.name);
@@ -336,6 +380,10 @@ function analyzeCircuit(
   };
   const anyVarying = (vs: Val[]): boolean =>
     vs.some((v) => v.varying || (v.parts ?? []).some((x) => anyVarying([x])) || [...(v.fields?.values() ?? [])].some((x) => anyVarying([x])));
+  // A domain separator: a byte-string literal with a non-zero byte, here or inside a part.
+  const domLit = (a: SExpr) => !Array.isArray(a) && a.t === 'bytes' && [...Buffer.from(a.v as Uint8Array)].some((b) => b !== 0);
+  const anySelf = (vs: Val[]): boolean => vs.some((v) => v.self || (v.parts ?? []).some((x) => anySelf([x])) || [...(v.fields?.values() ?? [])].some((x) => anySelf([x])));
+  const anyDom = (vs: Val[]): boolean => vs.some((v) => v.dom || (v.parts ?? []).some((x) => anyDom([x])) || [...(v.fields?.values() ?? [])].some((x) => anyDom([x])));
 
   const callable = (id: string): Callable | undefined => p.witnesses.get(id) ?? p.natives.get(id);
 
@@ -386,12 +434,14 @@ function analyzeCircuit(
           const key = addSource('witness', 'ownPublicKey', n?.result ?? { k: 'bytes', n: 32 });
           return { label: new Map([[key, { flow: 'reveal' }]]) };
         }
-        if (CASTS.has(name)) return { label: union(...args), parts: args.length === 1 ? args[0].parts : undefined, varying: anyVarying(args) };
+        if (CASTS.has(name)) return { label: union(...args), parts: args.length === 1 ? args[0].parts : undefined, varying: anyVarying(args), self: anySelf(args) };
         const lits = [...args.flatMap((a) => a.lits ?? []), ...x.slice(2).filter((a) => !isList(a) && !isVar(a)).map(litKey)];
         // A coin commitment keeps track of what went into it, so the claim can be checked below.
-        if (HASHES.has(name)) return { ...oneWay(name, union(...args), undefined, anyVarying(args), lits), coin: args[0]?.coin };
-        if (COMMITS.has(name)) return oneWay(name, union(args[0] ?? empty()), union(args[1] ?? empty()), anyVarying(args), lits);
-        if (ONE_WAY_EC.has(name)) return oneWay(name, union(...args), undefined, anyVarying(args), lits);
+        const dom = anyDom(args) || x.slice(2).some(domLit);
+        const scoped = anySelf(args);
+        if (HASHES.has(name)) return { ...oneWay(name, union(...args), undefined, anyVarying(args), lits, dom, scoped), coin: args[0]?.coin };
+        if (COMMITS.has(name)) return oneWay(name, union(args[0] ?? empty()), union(args[1] ?? empty()), anyVarying(args), lits, dom, scoped);
+        if (ONE_WAY_EC.has(name)) return oneWay(name, union(...args), undefined, anyVarying(args), lits, dom, scoped);
         if (!n) unknown.add(`call:${name}`);
         return { label: union(...args), varying: anyVarying(args) };
       }
@@ -405,7 +455,7 @@ function analyzeCircuit(
       case 'tuple': {
         const parts = x.slice(1).map(val);
         const lits = [...x.slice(1).filter((a) => !isList(a) && !isVar(a)).map(litKey), ...parts.flatMap((v) => v.lits ?? [])];
-        return { label: new Map(), parts, varying: anyVarying(parts), lits };
+        return { label: new Map(), parts, varying: anyVarying(parts), lits, dom: anyDom(parts) || x.slice(1).some(domLit), self: anySelf(parts) };
       }
       case 'new': {
         const t = parseType(x[1]);
@@ -421,8 +471,12 @@ function analyzeCircuit(
         }
         return { label: union(...args) };
       }
-      case 'elt-ref':
-        return member(val(x[1]), isSym(x[2]) ? x[2].v : '');
+      case 'elt-ref': {
+        const base = val(x[1]);
+        const m = member(base, isSym(x[2]) ? x[2].v : '');
+        // a field of a value that changes between calls (a queue's head, a counter struct) changes too
+        return base.self || base.varying ? { ...m, self: base.self, varying: m.varying || base.varying } : m;
+      }
       case 'bytes-ref': {
         const i = !Array.isArray(x[2]) && x[2].t === 'num' ? Number(x[2].v) : -1;
         return i >= 0 ? project(val(x[1]), i) : { label: union(val(x[1]), val(x[2])) };
@@ -430,7 +484,8 @@ function analyzeCircuit(
       case 'tuple-ref': {
         const v = val(x[1]);
         const i = !Array.isArray(x[2]) && x[2].t === 'num' ? Number(x[2].v) : -1;
-        return v.parts?.[i] ?? (v.parts ? empty() : project(v, i));
+        if (v.parts) return v.parts[i] ?? empty();
+        return v.varying ? { ...project(v, i), varying: true } : project(v, i);
       }
       case 'select': {
         const cond = union(val(x[1]));
@@ -467,7 +522,7 @@ function analyzeCircuit(
       case 'safe-cast':
       case 'cast': {
         const args = x.slice(1).map(val);
-        return { label: union(...args), varying: anyVarying(args) };
+        return { label: union(...args), varying: anyVarying(args), self: anySelf(args) };
       }
       default:
         unknown.add(h ?? show(x, 1));
@@ -506,15 +561,36 @@ function analyzeCircuit(
   // role 'value': the operand is stored as data (a map value, a cell); 'key': looked up or registered.
   const sink = (field: string, op: string, operand: Val, guard: Label, role: 'key' | 'value' = 'key', perAction = false) => {
     const l = flat(operand);
-    for (const [k, f] of l)
-      if (f.flow === 'hidden') {
-        if (f.fp) collect.tags.add(f.fp);
-        collect.hidden.add(sources.get(k)!.name);
-      }
+    // A returned value is not on chain, so it publishes no tag (see the return handling below).
+    if (field !== 'return')
+      for (const [k, f] of l)
+        if (f.flow === 'hidden') {
+          if (f.fp) collect.tags.add(f.fp);
+          collect.hidden.add(sources.get(k)!.name);
+        }
     for (const [k, f] of l) {
       const s = sources.get(k)!;
       const src = [describe(k)];
       const who = whoOf(s);
+      if (f.derivedKey) {
+        if (field === 'return') continue;
+        report({
+          circuit: c.name,
+          kind: 'derivable-secret',
+          severity: 'critical',
+          field,
+          op,
+          sources: src,
+          bits: 0,
+          via: 'ecMulGenerator',
+          title: `the private key of this public key is on the ledger`,
+          detail:
+            `\`${field}\` ${op} receives ecMulGenerator(k), a public key whose private key is k. Here k is computed only from a value this contract also publishes (a hash of ${who}), with nothing secret mixed in, ` +
+            `so anyone who reads the ledger can compute k: decrypt what is encrypted to this key, or sign as it.`,
+          fix: `Derive the private key from the secret under its own domain separator, e.g. persistentHash([pad(32, "app:enc"), ${rootName(s.name)}()]), so it differs from every value the contract publishes.`,
+        });
+        continue;
+      }
       if (f.flow === 'guessable') {
         const bits = f.preimageBits ?? s.bits;
         // Arguments are usually public inputs the caller chose; witnesses are the private data.
@@ -524,10 +600,10 @@ function analyzeCircuit(
         const witnessSev: Severity = bits <= 40 ? 'critical' : 'high';
         const publicHint = isPositional(s.name) || isHint(s.name);
         const severity: Severity = f.choice
-          ? publicHint || s.kind === 'argument'
+          ? publicHint || !privateKind(s)
             ? 'low'
             : 'medium'
-          : s.kind === 'witness' || isSecretish(s.name)
+          : privateKind(s) || isSecretish(s.name)
             ? witnessSev
             : !publicHint && (s.bits <= 16 || isPersonal(s.name))
               ? bits <= 40
@@ -550,8 +626,22 @@ function analyzeCircuit(
             ? `\`${field}\` receives a ${f.via} whose only unknown inputs are yes/no choices made from ${who} (about ${bits} bit${bits === 1 ? '' : 's'} in all). Trying every combination recovers them. Harmless if those choices are public anyway (a leaf's position in an append-only tree usually is).`
             : `\`${field}\` receives ${f.via}(… ${who} …), but the only unknown input is ${who} (${typeText(s.type)}), about ${bits} bit${bits === 1 ? '' : 's'}. ` +
               `Anyone reading the chain can try every value (${bits <= 40 ? `at most ${fmtTries(bits)} tries` : 'real values cluster, so far fewer in practice'}) and recover it.` +
-              (s.kind === 'argument' ? ' Arguments are often public on purpose; this matters only if the caller expects it to stay private.' : ''),
+              (s.kind === 'argument' && !declaredSecret(s) ? ' Arguments are often public on purpose; this matters only if the caller expects it to stay private.' : ''),
           fix: `Use persistentCommit(value, salt) with a fresh 32-byte random salt kept in private state, or mix a 32-byte secret into the hash.`,
+        });
+      } else if (f.flow === 'reveal' && declaredSecret(s) && rootName(s.name) !== 'ownPublicKey') {
+        // Declared secret in the policy: published in a readable form, whatever its name or type.
+        report({
+          circuit: c.name,
+          kind: 'secret-published',
+          severity: s.kind === 'witness' && hasBytes(s.type) && s.bits >= SAFE_BITS ? 'critical' : 'high',
+          field,
+          op,
+          sources: src,
+          bits: s.bits,
+          title: `${who} is declared secret, and it is published`,
+          detail: `\`${field}\` ${op} receives ${who} (${typeText(s.type)}) in a form anyone can read back. The policy file declares it secret.`,
+          fix: `Keep it in private state and publish a commitment (persistentCommit(value, salt) with a fresh random salt) or a hash with a secret, or remove it from the policy's secrets if it is meant to be public.`,
         });
       } else if (f.flow === 'reveal') {
         const looksSecret = isSecretish(s.name) && hasBytes(s.type);
@@ -661,6 +751,11 @@ function analyzeCircuit(
             detail: `\`${field}\` ${op} receives ${who} (${typeText(s.type)}, ${s.bits} bits) as a readable value. Fine if it is meant to be public; a leak if not.`,
             fix: `If it should stay private, store a commitment instead: persistentCommit(value, salt) with a random salt from private state.`,
           });
+      } else if (f.flow === 'predicate' && f.via === 'guard' && [...l].some(([, x]) => x.via !== 'guard' && x.flow === 'hidden' && !x.tag)) {
+        // A hiding value (a salted commitment) computed on one side of a condition: what can show is
+        // which side ran, and the branch rule judges that from the whole transcript (it drops branches
+        // that look the same both ways). A public value chosen by the condition still shows it, below.
+        continue;
       } else if (f.flow === 'predicate') {
         report({
           circuit: c.name,
@@ -675,7 +770,7 @@ function analyzeCircuit(
           detail: `\`${field}\` ${op} depends on a comparison involving ${who}. Observers learn one bit about it per call.`,
           fix: `Usually intended (e.g. "age ≥ 18"). Prove it with assert() instead of storing it if the chain does not need to remember it.`,
         });
-      } else if (f.flow === 'hidden' && f.tag && f.idTag && role === 'value' && perAction && [...flat(operand)].some(([k]) => isKeyish(sources.get(k)!.name) || isSecretish(sources.get(k)!.name))) {
+      } else if (f.flow === 'hidden' && f.tag && f.idTag && role === 'value' && perAction && !once && [...flat(operand)].some(([k]) => isKeyish(sources.get(k)!.name) || isSecretish(sources.get(k)!.name))) {
         // Only identity material (a key, a secret) makes a signature; a hash of content does not.
         // The tag is stored next to each action: every action is signed with it.
         report({
@@ -693,19 +788,30 @@ function analyzeCircuit(
           fix: `Store a one-time tag instead: hash the secret together with a per-action public value (a post number, a counter) or a fresh random value.`,
         });
       } else if (f.flow === 'hidden' && f.tag) {
+        // Across contracts: a tag with no contract address in it is the same in every deployment of
+        // this contract where the user holds the same secret (one key for every board, every auction);
+        // with no domain separator either, it is the same in any contract that hashes that secret this way.
+        const keyTag = f.idTag && !f.scoped && HASHES.has(f.via ?? '') && privateKind(s) && (isKeyish(s.name) || isSecretish(s.name) || declaredSecret(s));
+        const across = !keyTag
+          ? ''
+          : f.dom
+            ? ` It has a domain separator but no contract address, so if the user keeps the same secret for other deployments of this contract, those publish the same tag.`
+            : ` It has no domain separator and no contract address, so any contract that hashes the same secret the same way publishes the same tag: a user who reuses the secret can be followed from contract to contract.`;
         report({
           circuit: c.name,
           kind: 'linkable',
-          severity: 'info',
+          severity: keyTag && !f.dom ? 'low' : 'info',
           field,
           op,
           sources: src,
           bits: 0,
           via: f.via,
           tagFp: f.fp,
-          title: `${who} is hidden, but leaves the same tag every time`,
-          detail: `\`${field}\` ${op} receives ${f.via}(… ${who} …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.`,
-          fix: `Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.`,
+          title: keyTag && !f.dom ? `${who} leaves a tag that is the same in every contract hashing it this way` : `${who} is hidden, but leaves the same tag every time`,
+          detail: `\`${field}\` ${op} receives ${f.via}(… ${who} …). It cannot be reversed, but the same input always gives the same value, so every call that publishes it can be linked to the same holder.${across}`,
+          fix: keyTag
+            ? `Fine for nullifiers and one-time registrations. Hash a domain separator and the contract's address with the secret (persistentHash([pad(32, "app:tag"), kernel.self().bytes, sk])), and for repeated actions a per-action counter or a fresh random value.`
+            : `Fine for nullifiers and one-time registrations. For repeated actions, mix a per-action counter or a fresh random value into the hash.`,
         });
       }
     }
@@ -721,7 +827,7 @@ function analyzeCircuit(
         // A branch on a key reveals which authorised path the caller took, not the key.
         // ownPublicKey in a guard is an access check: it shows whether the caller is the officer.
         severity:
-          s.kind === 'argument'
+          !privateKind(s)
             ? 'info'
             : s.name === 'ownPublicKey' || isPositional(s.name) || isHint(s.name) || (isSecretish(s.name) && hasBytes(s.type))
               ? 'low'
@@ -844,7 +950,7 @@ function analyzeCircuit(
       const field = p.ledger.get(fid)?.name ?? baseName(fid);
       const op = isSym(l[3]) ? l[3].v : 'op';
       // Ledger results are public, and may differ from call to call.
-      env.set(target, { label: new Map(), varying: mutated.has(fid) || field === 'kernel' });
+      env.set(target, { label: new Map(), varying: mutated.has(fid) || field === 'kernel', self: field === 'kernel' && op === 'self' });
       if (field === 'kernel' && SHIELDED_KERNEL_OPS.has(op)) {
         // The coin itself is private, but whether a receive or spend happened at all is public.
         if (op !== 'self') {
@@ -892,7 +998,12 @@ function analyzeCircuit(
     } else env.set(target, v);
   }
 
-  // An exported circuit's result is part of the public transaction, like a ledger write.
+  // An exported circuit's result leaves the proof, but it is not on chain: a contract call in a
+  // transaction carries the address, the entry point, the public transcripts, the proof and a
+  // communication commitment, a randomized commitment to the call's inputs and outputs
+  // (ledger ContractCall; compact-runtime communicationCommitment(input, output, rand)). The value
+  // goes to the DApp that called the circuit, or to the calling contract in a cross-contract call,
+  // which may publish it. Findings on it are kept, capped at low, with that explanation.
   if (c.ret && !c.isConstructor) {
     const r = val(c.ret);
     if (flat(r).size) {
@@ -921,19 +1032,52 @@ function analyzeCircuit(
   // a branch then publishes an anonymous choice, like a public tally.
   const opsOn = (field: string) => new Set(ops.filter((o) => o.field === field).map((o) => o.op));
   const oneTime = (field: string) => opsOn(field).has('member') && opsOn(field).has('insert');
-  const identified = list.some(
-    (f) =>
-      ((f.kind === 'linkable' || f.kind === 'attributable') && !oneTime(f.field)) ||
-      // the wallet key, or a private identifier (16+ bytes) written in the clear
-      (f.kind === 'published' && f.sources.some((x) => rootName(x.name) === 'ownPublicKey' || (x.kind === 'witness' && (/^Bytes<(1[6-9]|[2-9]\d|\d{3,})>$/.test(x.type) || x.type === 'ZswapCoinPublicKey' || x.type === 'UserAddress')))) ||
-      (f.kind === 'shielded-coin' && f.title.startsWith('who receives')),
-  );
+  // Returned values are not on chain: what follows only counts what the transaction publishes.
+  for (const f of list)
+    if (onlyReturned(f) && SEVERITY_ORDER.indexOf(f.severity) < SEVERITY_ORDER.indexOf('low')) {
+      f.severity = 'low';
+      f.title = f.title.replace(/, and it is published$/, ', and it is returned').replace(/ is published( in the clear)?$/, ' is returned in the clear');
+      f.detail +=
+        ` A circuit's result is not on chain, though: the transaction carries only a randomized commitment to the call's inputs and outputs. ` +
+        `The value goes to the code that called the circuit, your DApp or, in a cross-contract call, the calling contract, which may publish it. It is a disclosure out of the proof, not to the network.`;
+    }
+  // An "anonymous" check against a set of registered tags: looking up the caller's own tag shows
+  // which entry it is, so every such call is tied to the registration and to every other call by
+  // the same member. A one-time check (a nullifier the circuit also inserts) links nothing.
+  for (const f of list)
+    if (f.kind === 'linkable' && !once && !callerIdentified && f.sources.some((x) => privateKind(x) && (isKeyish(x.name) || isSecretish(x.name) || declaredSecret(x)))) {
+      // A tag the circuit also writes is published anyway (a voter's one-time ballot key): the write is judged on its own.
+      if ((f.fields ?? []).some((x) => !/\.(member|lookup)$/.test(x))) continue;
+      // ...or stores it with every action: that is reported once, as the same tag on every action.
+      if (list.some((g) => g.kind === 'attributable' && g.sources.some((s) => f.sources.some((x) => x.name === s.name)))) continue;
+      // Set membership only: a Map keyed by the caller's tag is an account record (a balance, a bid), read by design.
+      const isSet = (fld: string) => [...p.ledger.values()].some((d) => d.name === fld && d.type.k === 'adt' && d.type.name === 'Set');
+      const lookup = (f.fields ?? []).map((x) => x.split('.')).find(([fld, op]) => op === 'member' && isSet(fld) && !oneTime(fld) && !opsOn(fld).has('insert') && !opsOn(fld).has('remove') && !isRoleField(fld));
+      if (!lookup) continue;
+      f.severity = 'medium';
+      f.title = `which member made each \`${c.name}\` call shows on chain`;
+      f.detail =
+        `\`${c.name}\` looks up ${f.via}(… ${f.sources.map((x) => whoOf(x)).join(' + ')} …) in \`${lookup[0]}\`, and the key of a lookup is part of the public transcript. ` +
+        `The tag is the same on every call and equals the caller's registered entry, so each call is tied to that member, and all of one member's calls line up. Proving membership this way is not anonymous.`;
+      f.fix = `For an anonymous check, prove membership in a MerkleTree with checkRoot (the path stays private) and spend a one-time nullifier per action; if identifying the member is the design, declare it in tell.json ("circuits": {"${c.name}": {"caller": "identified"}}).`;
+    }
+  const identified =
+    callerIdentified ||
+    list.some(
+      (f) =>
+        !onlyReturned(f) &&
+        (((f.kind === 'linkable' || f.kind === 'attributable') && !oneTime(f.field)) ||
+          // the wallet key, or a private identifier (16+ bytes) written in the clear
+          (f.kind === 'published' && f.sources.some((x) => rootName(x.name) === 'ownPublicKey' || (x.kind === 'witness' && (/^Bytes<(1[6-9]|[2-9]\d|\d{3,})>$/.test(x.type) || x.type === 'ZswapCoinPublicKey' || x.type === 'UserAddress')))) ||
+          (f.kind === 'shielded-coin' && f.title.startsWith('who receives'))),
+    );
   // ...unless the guarded operation itself writes an identity tag (a bidder filed under one set).
   const tagged = (field: string) => ops.some((o) => o.field === field && o.guardedBy.length && o.operands.some((xs) => xs.some((x) => x.tag)));
+  const anonymous = new Set<Finding>();
   for (const f of list)
     if (f.kind === 'branch' && f.severity === 'medium' && !identified && !tagged(f.field)) {
       f.severity = 'low';
-      f.detail += ` Nothing else this circuit publishes ties the transaction to its caller, so this reads like a public tally of anonymous choices.`;
+      anonymous.add(f);
     }
   for (const f of list) {
     const roots = [...new Set(f.sources.map((x) => rootName(x.name)))];
@@ -967,6 +1111,13 @@ function analyzeCircuit(
       f.title = `${names} are hidden, but leave the same tag every time`;
       f.detail = f.detail.replace(/receives (\w+)\(… .*? …\)/, `receives $1(… ${names} …)`);
     }
+  // Why low: a Midnight transaction does not name its sender by itself. Fees are paid in DUST, a
+  // shielded resource spent by nullifier (DustSpend: fee, nullifier, commitment, proof), and a
+  // contract call carries no wallet key unless the circuit or the wallet adds one.
+  for (const f of anonymous)
+    f.detail +=
+      ` Nothing else this circuit publishes ties the transaction to its caller, and a Midnight transaction does not name its sender by itself (fees are paid in shielded DUST), so this reads like a public tally of anonymous choices. ` +
+      `It still leaks the outcome of each call: if callers can be identified another way (an unshielded payment in the same transaction, an app that submits for its users, network metadata), declare "caller": "identified" in tell.json and this rates medium.`;
   const publishedBits = list.reduce((a, f) => a + (f.kind === 'linkable' || f.kind === 'attributable' ? 0 : f.bits), 0);
   return {
     name: c.name,
@@ -1001,7 +1152,7 @@ function linkAcrossCircuits(findings: Finding[]) {
     const circuits = [...new Set(fs.map((f) => f.circuit))];
     if (circuits.length > 1)
       for (const f of fs) {
-        f.severity = 'low';
+        if (f.severity === 'info') f.severity = 'low';
         f.detail += ` The same tag appears in ${circuits.map((c) => `\`${c}\``).join(', ')}, so those transactions can be tied to one person.`;
       }
   }

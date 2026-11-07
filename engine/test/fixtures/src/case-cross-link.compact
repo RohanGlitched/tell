@@ -1,0 +1,29 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// Tags of a user secret with and without a domain separator.
+export ledger plain: Set<Bytes<32>>;
+export ledger tagged: Set<Bytes<32>>;
+export ledger scoped: Set<Bytes<32>>;
+export ledger notes: Set<Bytes<32>>;
+witness secretKey(): Bytes<32>;
+witness docHash(): Bytes<32>;
+
+// low: no domain separator and no contract address: the same tag in any contract hashing it this way
+export circuit joinPlain(): [] {
+  plain.insert(disclose(persistentHash<Bytes<32>>(secretKey())));
+}
+
+// info: a domain separator, but no contract address
+export circuit joinTagged(): [] {
+  tagged.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "app:member"), secretKey()])));
+}
+
+// no cross-contract note: the contract address is mixed in
+export circuit joinScoped(): [] {
+  scoped.insert(disclose(persistentHash<Vector<2, Bytes<32>>>([kernel.self().bytes, secretKey()])));
+}
+
+// info: a hash of content, not of a key
+export circuit note(): [] {
+  notes.insert(disclose(persistentHash<Bytes<32>>(docHash())));
+}
