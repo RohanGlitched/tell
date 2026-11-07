@@ -1,0 +1,32 @@
+# Tell on every pull request that touches a Compact contract.
+# Copy this file to .github/workflows/tell.yml and set `path` to where your contracts live.
+#
+# On a pull request, Tell comments on the changed lines that leak, in bits, with a verified fix
+# as a one-click suggestion where one exists. On every run it writes a job summary (grade per
+# contract, findings, grade after the fixes) and sends the findings to code scanning.
+name: tell
+
+on:
+  pull_request:
+    paths: ['**/*.compact']
+  push:
+    branches: [main]
+    paths: ['**/*.compact']
+
+permissions:
+  contents: read          # check out the code
+  pull-requests: write    # inline review comments
+  security-events: write  # findings in code scanning (SARIF)
+
+jobs:
+  tell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: RohanGlitched/tell@v1
+        with:
+          path: contract          # directories or files, space-separated
+          fail-on: high           # fail the check at high or critical
+          comment: 'true'         # inline comments on pull requests
+          suggest-fixes: 'true'   # verified fixes as suggestions
+          comment-on: medium      # lowest severity that gets an inline comment
