@@ -1,0 +1,28 @@
+# Tell reviewing pull requests in this repository: any change to demo/ is scanned, leaking lines get
+# an inline comment with the bits revealed and a verified fix as a suggestion, and the job summary
+# shows the grade before and after. Uses the Action from this checkout (`uses: ./`); other
+# repositories use `RohanGlitched/tell@v1` as in examples/tell-pr-review.yml.
+name: tell-pr-demo
+
+on:
+  pull_request:
+    paths: ['demo/**']
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  tell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          path: demo
+          fail-on: high
+          comment: 'true'
+          suggest-fixes: 'true'
+          comment-on: medium
+          upload-sarif: 'false'
