@@ -1,104 +1,78 @@
 # Gaps for Tell, from the benchmark
 
-Privacy issues that another tool reports and Tell misses or underrates, in priority order. Each item names the competitor rule, a minimal example, why it is a real leak, what Tell does today (checked by running it), and a suggested rule. Cases are in `bench/cases`; numbers in [RESULTS.md](RESULTS.md).
+Privacy issues that another tool reported and Tell missed or underrated in the first run (Tell `d3a9104`, Nov 7, 2026), what was done about each, and the evidence. Cases are in `cases/` and `../zoo/contracts`; numbers in [RESULTS.md](RESULTS.md). The engine changes are in `engine/src/analyze.ts` and `engine/src/policy.ts`; their tests in `engine/test/gaps.test.ts`.
 
-## 1. Constructors are not analysed
+## Status
 
-- **Who catches it:** Nightshade `declared-secret-publication` with a secrets policy (high). Nobody else.
-- **Case:** `cases/L12-constructor-leak.compact`
+| # | Gap | Status | Where it shows |
+|---|---|---|---|
+| 1 | Constructors not analysed (L12) | **closed** by the Wave 3 engine (constructor analysis landed before this pass) | L12: TP critical |
+| 2 | Published hash reused as a private scalar (L16) | **closed**: new rule `derivable-secret` (critical) | L16: TP critical; S13 quiet; zoo `keyring` pair with an attack test |
+| 3 | Branches in circuits that name no caller (L06, L10) | **kept at low, on evidence**, with the reasoning in the finding text and README Limits; a policy can raise them | L06, L10: low (FN at medium, by decision) |
+| 4 | Hashes of a secret with no domain or contract tag | **closed**: low with no separator and no contract address; a note with a separator only | `engine/test/fixtures/src/case-cross-link.compact` |
+| 5 | Shielded coin nonce reaching a circuit result | **closed as not a leak, on evidence**: a circuit's result is not on chain. Tell's own rating of returned values was wrong and is fixed; L09 relabelled | chips `mint` no longer reported; L09 now `not-public` |
+| 6 | Declared intent (a policy file) | **closed**: `tell.json` / `.tellrc.json`, used by the CLI, the Action and the MCP tools | S07 quiet with a one-line policy (`tell-policy` row); S05 fixed without one |
+| - | `Set.member(hash(key))` in an "anonymous" claim (L11; no tool caught it) | **closed**: medium | L11: TP medium; zoo `club` pair with an attack test |
 
-```compact
-witness adminSecret(): Bytes<32>;
-constructor() {
-  admin = disclose(adminSecret());
-}
-export circuit act(): [] {
-  assert(admin == adminSecret(), "admin only");
-  actions.increment(1);
-}
-```
+## 1. Constructors
 
-- **Why it leaks:** the constructor's ledger writes are the contract's initial public state. The admin secret is readable by anyone from the deploy transaction, and (as Nightshade's `spoofable-authorization` also notes) anyone can then pass the admin check.
-- **Tell today:** no finding; the constructor is not traced. `cases/S11-constructor-hash.compact` is the safe counterpart.
-- **Suggested rule:** run the same source tracing over the constructor's circuit in the `reduce-to-circuit` output (witnesses and constructor arguments as sources; constructor arguments the source wraps in `disclose()` are public on purpose, as for circuit arguments). Already on Tell's Wave 3 roadmap.
+- **Case:** `cases/L12-constructor-leak.compact` (`admin = disclose(adminSecret())` in the constructor).
+- **Status:** found at critical by the current engine (`secret-published`, constructor line: a 32-byte secret-named witness written as-is), which reads the constructor from the compiler's `drop-safe-casts` pass and lowers it to the same guarded bindings. Nothing was added in this pass; the old run predates that engine.
 
-## 2. A published hash reused as a private scalar
+## 2. A published hash used as a private key
 
-- **Who catches it:** Nightshade `publicly-derivable-encryption-secret` (default-on, high; written for this class, did not fire on this case), `published-digest-generator-scalar-review` (opt-in, info; fired), and `declared-secret-publication` with a policy (high). compact-guard CG006 points at the missing domain separation (low).
-- **Case:** `cases/L16-public-digest-as-key.compact`
+- **Case:** `cases/L16-public-digest-as-key.compact`; safe counterpart `S13-separate-key-domain.compact`.
+- **Rule (`derivable-secret`, critical):** `ecMulGenerator(k)` makes a public key with private key `k`. When every private input of `k` reaches it only through values the contract publishes (a hash written to the ledger, or a public function of one, such as `hash("enc", id)` with `id` published) and nothing secret is mixed in, and the resulting public key reaches a public output, anyone holds the private key.
+- **Look-alikes that stay quiet** (tested): the secret itself as the scalar while only its hash is published; differently tagged hashes for the id and the scalar (S13); a verification step `ecMul(pk, c)` with a public challenge; a public key returned rather than published.
+- **A precision fix it needed:** fingerprints of nested one-way functions were inherited, so publishing `ecMulGenerator(hash(s))` counted as publishing `hash(s)`. A one-way function of a hidden value now has its own fingerprint.
+- **Scope, honestly:** only `ecMulGenerator` (key generation). `ecMul(P, s)` with a public `s` is normal in signature verification and is not reported. A published hash reused as the preimage of an authorisation hash elsewhere would need to know that two witnesses return the same value, which static analysis cannot see.
+- **Zoo:** `keyring-leaky` / `keyring-fixed`, with `zoo/test/linking.test.ts` recovering every user's private key from the public account id (and none from the fixed contract).
 
-```compact
-export circuit register(): [] {
-  const id = persistentHash<Vector<1, Bytes<32>>>([seed()]);
-  accountId = disclose(id);
-  encKey = disclose(ecMulGenerator(degradeToTransient(id)));
-}
-```
+## 3. Branches in circuits that name no caller
 
-- **Why it leaks:** `encKey` is a public key whose private scalar is `id`, and `id` is on the ledger as `accountId`. Anyone can decrypt what is encrypted to `encKey`, or sign as it.
-- **Tell today:** one info note that `accountId` is a stable tag ("it cannot be reversed"). The fact that the same hash is used as secret key material is not seen. Safe counterpart: `cases/S13-separate-key-domain.compact` (differently tagged hashes).
-- **Suggested rule:** when an expression is published (on the ledger or in a return) and the *same* expression (same tag fingerprint, which Tell already computes for linkable tags) is used as secret material elsewhere, report critical: as the scalar of `ecMulGenerator`/`ecMul`, as commitment randomness, or as the preimage of a hash that guards something. The published value then is the secret.
+- **Cases:** `cases/L06-branch-unbalanced.compact`, `cases/L10-count-in-loop.compact`.
+- **The question:** can a Midnight contract-call transaction be tied to its submitter outside the circuit? If so, a branch on a private value tells observers something about a known person and should be medium, as Nightshade's policy run rates it.
+- **Evidence** (Midnight docs, `midnight-docs` at `a11fc9d`, and the ledger API reference for ledger 8.1.2):
+  - Fees are paid in DUST, "a shielded capacity resource" built on "the commitment/nullifier paradigm"; a DUST spend is a self-spend whose public parts are a fee, a nullifier, a new commitment and a proof (`DustSpend { vFee, oldNullifier, newCommitment, proof }`, `docs/concepts/dust-architecture.mdx`). It does not name the owner or the NIGHT that generates it.
+  - A contract call carries the address, entry point, transcripts, a communication commitment and a proof (`ContractCall`). No wallet key, unless the circuit publishes one (`ownPublicKey()`, which Tell reports) or the wallet adds an unshielded offer, which is signed and does name its owner.
+  - What remains: network metadata (the submitting node), timing, an unshielded payment in the same transaction, a DApp that submits for its users.
+- **Decision:** keep low when nothing in the circuit identifies the caller (as before), and say so in the finding: the text now names the evidence (fees in shielded DUST) and what would identify callers, and tells the user to declare `"caller": "identified"` in `tell.json` if that is their case, which rates the same branch medium. The README's Limits section states the assumption. L06 and L10 therefore remain misses at medium in the default run, by decision; they are found at low.
 
-## 3. Branches in circuits that name no caller: severity
+## 4. Hashes of a secret without a domain or contract tag
 
-- **Who catches it:** Nightshade `declared-secret-publication` with a policy, as implicit flows (high).
-- **Cases:** `cases/L06-branch-unbalanced.compact`, `cases/L10-count-in-loop.compact`
+- **Probe:** `engine/test/fixtures/src/case-cross-link.compact`.
+- **Rule:** a published tag that is a hash of key material (a witness named as a key or secret, or declared secret) and that contains neither a non-zero byte-string literal (a domain separator) nor the contract's address (`kernel.self()`): low, "the same in every contract hashing it this way". With a separator but no address: the info finding gets one sentence (other deployments of the same contract, if the user keeps one secret for them, publish the same tag). With the address: nothing added.
+- **Noise control:** hashes of content (not keys), public keys (`ecMulGenerator`, where "domain separator" does not apply) and commitments with a strong salt are left alone. On Midnight's examples the rule raises no severity: the only unseparated key tag is `secret-message`'s `publishMessageHash` (the example's own lesson 1), which was already low because the same tag is published by other circuits; it now says why it links across contracts. The one-sentence note appears on 17 info or low tag findings across the examples (election, battleship, roulette, silent-auction, and others) whose tags have a separator but no contract address. In the bench cases it raises L16's account id from info to low.
 
-```compact
-export circuit check(): [] {
-  if (disclose(balance() > limit)) { above.increment(1); } else { below.increment(1); }
-}
-```
+## 5. Shielded coin nonces in a circuit result, and what a result reveals
 
-- **Why it can leak:** the counter that moved is public, so each call reveals one bit about the caller's balance (L10: how many of eight scores passed). Tell rates this low because nothing in the circuit identifies the caller.
-- **Tell today:** branch, low (both cases). It does find them.
-- **Suggested change:** decide and document whether a Midnight transaction can be linked to its submitter outside the circuit (fee payment, wallet coins spent in the same transaction, the submitting node, timing). If it can, rate these medium like the identified case. If it cannot, keep low and say why in the finding text, so a reviewer sees the assumption. Either way this is calibration, not a missing rule.
+- **The question:** is an exported circuit's return value public? Tell assumed yes (and rated L09 critical); Nightshade calls it an application output, "not necessarily a public ledger".
+- **Evidence:**
+  - The ledger's `ContractCall` has `address`, `entryPoint`, `guaranteedTranscript`, `fallibleTranscript`, `communicationCommitment` and `proof`; the inputs and outputs are not fields. `communicationCommitment(input, output, rand)` in compact-runtime commits to them with randomness.
+  - `docs/concepts/how-midnight-works/building-blocks.mdx`: the communication commitment "commits to the inputs and outputs of the circuit that the call targets", and is how one contract calls another.
+  - `docs/guides/build-a-private-smart-contract.mdx`: "A return value is not written to the ledger or readable in the transaction, which carries only a randomized commitment to the call's inputs and outputs. The compiler still requires `disclose()` when the returned value comes from a witness, because the value leaves the circuit, to your DApp or to a calling contract."
+  - Some tutorials list "returns from exported circuits" among public outputs (`private-party/smart-contract.mdx`); the ledger structure and the guide above are what Tell follows.
+- **Change:** findings whose only sink is the return value are kept but capped at low, with that explanation; a returned value no longer counts as known to an observer (so it no longer weakens other hashes or marks a caller as identified).
+- **Consequences:** `cases/L09-secret-returned.compact` was relabelled from `leak` to `not-public` (a correct observation of a value leaving the proof, not a public leak): this removes one of Tell's own true positives from the first run. The shielded-chips `mint` circuit, which returns the minted coin's info with its nonce, is no longer reported: the nonce goes to the DApp, which needs it to spend the coin, and the source's claim that the nonce "is never published" holds. Gap 5's suggested rule (a nonce reaching a public output is medium) is therefore not added for returns; a nonce written to the ledger or an event is still covered by the existing rules.
 
-## 4. Hashes of secrets without a domain or contract tag (cross-contract linkability)
+## 6. Declared intent
 
-- **Who catches it:** compact-guard CG006 (review: "Hash input has no recognized nonempty literal domain prefix").
-- **Example** (probe, not in the corpus):
+- **Format:** `tell.json` or `.tellrc.json`, the nearest one at or above the contract up to the repository root; `--policy <file>` and `--no-policy` on the CLI; a `policy` input on the Action; a `policy` argument on the MCP tools (`tell_scan`, `tell_check_fix`). The web scanner is unchanged (out of scope for this pass). Documented in the README ("Declared intent").
+- **Fields:** `witnesses` and `arguments` (`secret` or `public`), `circuits.<name>.once`, `circuits.<name>.caller` and a top-level `caller` (`anonymous` or `identified`), `intended` (findings kept but suppressed, with the reason), `files` (per-file overrides). Unknown keys and values are errors, so a typo never turns into "no policy".
+- **S07** (a per-device key tag read as "the same tag on every action", Tell's one medium false alarm): one line, `"circuits": {"enroll": {"once": true}}`, in `bench/policies/tell.json`; reported in the `tell-policy` row, separately from the default run.
+- **S05** (a balanced branch reported as a yes/no fact, info): fixed in the analysis, no policy needed. A salted commitment computed on one side of a branch no longer counts as a published yes/no fact; the branch rule, which drops branches that look the same on both sides, decides.
 
-```compact
-witness secretKey(): Bytes<32>;
-export circuit join(): [] {
-  members.insert(disclose(persistentHash<Bytes<32>>(secretKey())));
-}
-```
+## L11: membership shown by a lookup
 
-- **Why it leaks:** a user who reuses a wallet secret across dapps publishes the same tag in every contract that hashes it the same way, so their activity links across contracts. Midnight's own `private-bid` example avoids this on purpose by hashing `kernel.self().bytes` into the key ("a bidder cannot be linked across auctions by their key").
-- **Tell today:** info, "leaves the same tag every time": linkability inside the contract only.
-- **Suggested rule:** for a secret-derived tag that is published, check for a literal domain prefix and for `kernel.self()` in the preimage. Neither present: low, "linkable across contracts"; prefix but no contract address: info. Keep CG006's distinction that a domain tag does not help against guessing.
-
-## 5. Shielded coin nonces reaching a public output
-
-- **Who catches it:** Nightshade `exported-shielded-descriptor` (opt-in, info).
-- **Example:** `examples/shielded-chips/contract/chips.compact`, `mint` (and a probe):
-
-```compact
-export circuit mint(recipient: ZswapCoinPublicKey, amount: Uint<64>, nonce: Bytes<32>): ShieldedCoinInfo {
-  return mintShieldedToken(pad(32, "probe:token"), disclose(amount), disclose(nonce),
-                           left<ZswapCoinPublicKey, ContractAddress>(disclose(recipient)));
-}
-```
-
-- **Why it may leak:** a coin's commitment is computed from its info (nonce, color, value) and the recipient's key. If the nonce is public, anyone can try candidate recipient keys against the commitment and identify who was paid. The chips source states that keeping the nonce unpublished "is what keeps the recipient private", and then returns the coin info from an exported circuit.
-- **Tell today:** info, "argument `nonce` is published in the clear", the same as any argument the source wraps in `disclose()`.
-- **Suggested rule:** treat a coin nonce (the `nonce` passed to `mintShieldedToken`, or `ShieldedCoinInfo.nonce` from a send or mint result) reaching a public output as "recipient can be identified", medium, regardless of `disclose()`. First confirm with Midnight how exported-circuit results are exposed: Tell treats them as part of the public transaction, Nightshade as an application-output boundary that is "not necessarily a public ledger". The answer also decides how Tell rates L09-style returns.
-
-## 6. Declared intent (a policy file)
-
-- **Who has it:** Nightshade `policies.secrets` (which witnesses and parameters are secret, which forms are allowed, which sinks count).
-- **Why it matters for Tell:** two of Tell's false alarms come from guessing intent from shape and names: S07 (a per-device key tag read as "the same tag on every action") and S05 (a balanced branch reported as a published yes/no fact at info). A small optional file (for example `tell.json`: secret and public witnesses, one-time circuits, an "anonymous caller" flag per circuit) would let users remove these without per-line `tell:allow` comments, and would let the branch rating in item 3 follow the contract's own threat model.
-- **Suggested:** optional, never required; Tell's inference stays the default.
-
-## Also missed by Tell, with no competitor rule
-
-- `cases/L11-set-member.compact`: an "anonymous" claim that tests `Set.member(disclose(hash(key)))`. Tell reports it at info as a linkable tag; it identifies which member acted, and every claim by that member, so medium is closer. No other tool reports it (compact-guard's CG004 covers low-entropy or raw keys only).
+- **Case:** `cases/L11-set-member.compact`.
+- **Rule (medium, kind `linkable`):** a circuit tests `Set.member` with a deterministic hash of the caller's key material, does not insert into or remove from that set itself (a one-time nullifier does), does not otherwise write the same tag (that is judged as its own finding), and the set is not an officer list (`admins`, `owner`, …). The lookup key is in the public transcript, so each call names the member and lines up with their other calls. Maps are excluded: a Map keyed by the caller's tag is an account record (a balance, a bid) read by design. A policy can declare the caller identified, or the circuit once per member, which keeps it at info.
+- **Precision work it needed:** a field of a changing ledger value (a queue's head) is now treated as changing, so `hash(sk, shot)` in battleship is not mistaken for a member tag.
+- **Zoo:** `club-leaky` / `club-fixed` (a Merkle `checkRoot` and a one-time nullifier); `zoo/test/linking.test.ts` reads each claim's public transcript and names the member who made it, and finds no member leaf in any claim of the fixed contract.
+- **Side effect on the auto-fix:** board's verified fix (a one-time tag per post) leaves the membership lookup of the old tag in place. Tell now reports that lookup on its own (medium), so the patched board grades C instead of B; the patch's note already named it, and the zoo's Merkle version is the full fix.
 
 ## Checked and not a gap
 
-- **Preimage checked against a ledger hash, then published** (Nightshade `ledger-bound-preimage-publication`): Tell reports it high or critical, also when the witness has a neutral name (probe with `witness code()`: "hidden behind a hash elsewhere, and published in the clear here", high).
-- **Constant commitment randomness** (Nightshade `predictable-commitment-randomness`): Tell reports it critical, including for a wide value (`persistentCommit<Uint<64>>(amount(), pad(32, "fixed"))`).
-- **Whole-struct disclosure** (compact-guard CG007): Tell already measures each field separately.
+- **Preimage checked against a ledger hash, then published** (Nightshade `ledger-bound-preimage-publication`): Tell reports it high or critical, also with a neutral witness name.
+- **Constant commitment randomness** (Nightshade `predictable-commitment-randomness`): critical, including for a wide value.
+- **Whole-struct disclosure** (compact-guard CG007): Tell measures each field separately.
 - **`ownPublicKey()` used for authorization** (compact-guard CG001, Nightshade `public-key-membership-authorization`): an authentication issue, not a disclosure; Tell's wallet-key rule covers the privacy side.

@@ -333,12 +333,62 @@
       "findings": []
     },
     {
+      "id": "zoo/club-fixed.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
       "id": "zoo/payband-fixed.compact",
       "status": "complete",
       "findings": []
     },
     {
       "id": "zoo/payband-leaky.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
       "status": "complete",
       "findings": []
     },
@@ -363,7 +413,7 @@
       "findings": []
     }
   ],
-  "seconds": 5,
+  "seconds": 1,
   "corpus": {
     "sets": [
       "zoo",

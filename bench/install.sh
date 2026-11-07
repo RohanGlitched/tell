@@ -29,6 +29,10 @@ check "$NS_TGZ" fee7af6cb124d677e7b62c90da22466dd2c0b5819de9625c11de398635a0a3d6
 npm install --prefix "$T/nightshade" --no-audit --no-fund "$(realpath "$NS_TGZ")" >/dev/null
 "$T/nightshade/node_modules/.bin/nightshade" --version
 
+# Nightshade's source repository, for its published regression corpus (tests/corpus), which
+# bench/nightshade-corpus.mjs runs Tell on. Not used to run Nightshade itself.
+clone DicksonWu654/nightshade "$T/nightshade-src" 9ef4aeaa943ab244f59ab48855317c45f0267d72
+
 # compact-guard: no releases; source at the last commit on master (Oct 19, 2026)
 clone KAMEVETRICS/compact-guard "$T/compact-guard" 152b05d
 (cd "$T/compact-guard" && npm ci --no-audit --no-fund >/dev/null && npm run build -w packages/analyzer -w packages/cli >/dev/null)

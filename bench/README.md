@@ -8,7 +8,7 @@ Written by Tell's author. That is a conflict of interest, so everything needed t
 
 | Tool | Version run | Source | How it was run |
 |---|---|---|---|
-| [Tell](https://github.com/RohanGlitched/tell) | 0.1.0 at this commit | this repository | `npx tsx engine/src/cli.ts <file> --json` (runs the Compact compiler its pragma asks for) |
+| [Tell](https://github.com/RohanGlitched/tell) | 0.1.0 at this commit | this repository | `npx tsx engine/src/cli.ts <file> --json --no-policy`, and with `--policy bench/policies/tell.json` (runs the Compact compiler its pragma asks for) |
 | [Nightshade](https://github.com/DicksonWu654/nightshade) | 0.1.1 | release tarball `nightshade-compact-0.1.1.tgz` (sha256 `fee7af6c…a3d6`) | three configurations, below |
 | [compact-guard](https://github.com/KAMEVETRICS/compact-guard) | 0.1.0, commit `152b05d` (Oct 19, 2026) | source build (no releases) | `compact-guard --format json --fail-on none <file>`, all eight rules |
 | [compact-lint](https://github.com/wbaxterh/compact-lint) | 0.1.0, commit `812a6cc` (Oct 1, 2026) | source (no dependencies) | `compact-lint --json <file>` |
@@ -29,8 +29,8 @@ The OpenZeppelin SDK cannot be built from source today: its `tree-sitter-compact
 
 | Set | Files | Ground truth |
 |---|---|---|
-| Tell's leak zoo (`zoo/contracts`) | 5 leaky, 5 fixed | each leaky contract has one leak, carried out by an attack test in `zoo/test/attacks.test.ts`; the fixes have none (`truth.json`) |
-| Bench cases (`bench/cases`) | 16 leaky, 13 safe, 1 non-privacy bug | written for this benchmark; truth, class, circuit and line in each file's header. All compile under Compact 0.31.1 |
+| Tell's leak zoo (`zoo/contracts`) | 10 leaky, 10 fixed | each leaky contract has one leak, carried out by an attack test in `zoo/test/` (`attacks`, `deploy-tokens`, `linking`); the fixes have none (`truth.json`) |
+| Bench cases (`bench/cases`) | 15 leaky, 13 safe, 1 non-privacy bug, 1 not-public value | written for this benchmark; truth, class, circuit and line in each file's header. All compile under Compact 0.31.1. L09 was relabelled `not-public` on Nov 7 (a circuit's result is not on chain) |
 | Midnight's examples ([midnightntwrk/midnight-examples](https://github.com/midnightntwrk/midnight-examples) at `377495c`) | 29 contracts in `examples/` and `experimental/q2-ledger9` | no planted truth: every medium-or-worse finding from every tool is labelled by hand in `labels/examples.md` |
 
 `zk-loan/contract/schnorr.compact` is a module imported by `zk-loan.compact`, not a contract, so it is scanned through its importer. `packages/mnkit` holds templates and copies of the examples and is left out.
@@ -56,5 +56,7 @@ bash bench/install.sh                    # pinned tools into bench/.tools, examp
 node bench/run.mjs                       # every tool on every file -> bench/results/<tool>.json
 node bench/score.mjs                     # -> bench/results/scores.md and scores.json
 ```
+
+Tell runs in two configurations: `tell` (`--no-policy`, inference only) and `tell-policy` (with [`policies/tell.json`](policies), intent stated in a file's header that Tell cannot infer). `NIGHTSHADE_REPO=bench/.tools/nightshade-src node bench/nightshade-corpus.mjs` runs Tell on Nightshade's own published regression corpus (`tests/corpus`, drafts excluded) and writes `results/nightshade-corpus.json`; its hand labels are in [`labels/nightshade-corpus.md`](labels/nightshade-corpus.md).
 
 `node bench/run.mjs --tools compact-guard --sets cases` reruns one tool on one set; results for other sets are kept. `node bench/score.mjs --todo` lists findings that have no hand label yet (a new tool version can produce new ones). Tools run one file at a time; nothing contacts a network after installation, and nothing needs an account or a paid service.
