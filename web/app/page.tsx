@@ -5,7 +5,7 @@ import { MarginSection, StatusPill } from '@/components/ui';
 import { Ticks } from '@/components/Ticks';
 import Wave3Band from '@/components/Wave3Band';
 import { fixedBallot, leakyBallot, short } from '@/lib/ballots';
-import { business, desk, numberWord, zooCounts } from '@/lib/content';
+import { business, desk, numberWord, tests, zooCounts } from '@/lib/content';
 import deskDeployment from '@/data/desk-deployment.json';
 import { fixOf, KIND_LABEL, SEVERITY_ORDER, type ScanResponse } from '@/lib/types';
 import integrations from '@/data/integrations.json';
@@ -311,7 +311,7 @@ export default function Home() {
             <div className="rounded-lg bg-white p-5 text-[var(--ink)] sm:p-6">
               <h3 className="font-[family-name:var(--serif)] text-[19px] font-semibold">The leak zoo</h3>
               <p className="mt-1 text-[14px] text-[var(--graphite)]">
-                {numberWord(zooCounts.pairs, true)} leaks, {numberWord(zooCounts.pairs)} fixes ({zooCounts.contracts} contracts), 18 attack tests in CI.
+                {numberWord(zooCounts.pairs, true)} leaks, {numberWord(zooCounts.pairs)} fixes ({zooCounts.contracts} contracts), {tests.zoo.attack} attack tests in CI.
 </p>
               <ul className="mt-3">
                 {[
@@ -323,6 +323,8 @@ export default function Home() {
                   ['raffle', 'hash in the constructor'],
                   ['faucet', 'shielded mint, public nonce'],
                   ['deposit', 'bid paid in the clear'],
+                  ['club', 'own leaf as a lookup key'],
+                  ['keyring', 'account id is the private key'],
                   ['poll', 'hash in a Ledger 9 event'],
                 ].map(([id, what]) => (
                   <li key={id} className="grid grid-cols-[84px_1fr_auto] gap-3 border-b border-dashed border-[var(--rule)] py-2 text-[14px] last:border-b-0">

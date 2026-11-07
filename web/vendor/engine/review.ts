@@ -79,15 +79,18 @@ export type Placement = { line: number; startLine?: number; suggestion: boolean 
 
 // Where a comment goes, and whether the fix can be a one-click suggestion: the patch must replace
 // a small block of lines that contains the finding and sits inside one hunk of the diff.
+// The suggestion goes on the lines the patch replaces, which need not include the finding's own
+// line (a commitment's randomness on the line below, say): it is enough that every replaced line
+// is in one hunk of the diff, the finding's hunk when the finding's line is in the diff at all.
 export function placeComment(f: Finding, s: Suggestion | undefined, lines: Map<number, number>, maxLines = 15): Placement | null {
-  if (!f.line || !lines.has(f.line)) return null;
   const r = s?.patch?.range;
-  if (r && r.start <= f.line && f.line <= r.end && r.end - r.start + 1 <= maxLines) {
-    const hunk = lines.get(f.line);
-    let inOne = true;
+  if (r && r.end - r.start + 1 <= maxLines && lines.has(r.start)) {
+    const hunk = lines.get(r.start);
+    let inOne = !f.line || !lines.has(f.line) || lines.get(f.line) === hunk;
     for (let l = r.start; l <= r.end; l++) if (lines.get(l) !== hunk) inOne = false;
     if (inOne) return r.start === r.end ? { line: r.end, suggestion: true } : { line: r.end, startLine: r.start, suggestion: true };
   }
+  if (!f.line || !lines.has(f.line)) return null;
   return { line: f.line, suggestion: false };
 }
 

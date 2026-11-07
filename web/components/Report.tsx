@@ -449,7 +449,7 @@ const SEV_GRADE: Record<string, Grade> = { critical: 'F', high: 'D', medium: 'C'
 function gradeReason(after: Grade | undefined, others: Numbered[]): string | null {
   if (!after || GRADES.indexOf(after) < GRADES.indexOf('C')) return null;
   const setting = others.filter((o) => SEV_GRADE[o.severity] === after);
-  if (setting.length === 0) return null;
+  if (setting.length === 0) return 'the patched contract still has a finding at this level that this patch does not touch. Re-scan with fix to see it.';
   const sev = setting[0].severity;
   const what = setting.map((o) => `${o.id} ${KIND_LABEL[o.kind].toLowerCase()} in ${o.circuit}`).join('; ');
   return setting.length === 1 ? `another ${sev} finding remains: ${what}.` : `${setting.length} other ${sev} findings remain: ${what}.`;

@@ -60,7 +60,7 @@ Compared with the Wave 2 submission (tag [`v1.0.0`](https://github.com/RohanGlit
 6. **Tell Desk**, a new Compact contract, deployed on Preprod ([`desk/`](desk)).
 7. **Radar**: a source-free privacy scan of 329 Preprod contracts from chain data alone ([`radar/`](radar)).
 8. **MCP server** for coding agents and a **VS Code extension** ([`mcp/`](mcp), [`vscode/`](vscode)).
-9. **Leak zoo: 5 pairs to 9** (raffle with a constructor leak, faucet with a public coin nonce, deposit paid in the clear, a Ledger 9 poll that emits its vote hash), with 18 attack tests, up from 10.
+9. **Leak zoo: 5 pairs to 11** (raffle with a constructor leak, faucet with a public coin nonce, deposit paid in the clear, a members' club whose claims carry the member's leaf, a keyring whose public account id is a private key, a Ledger 9 poll that emits its vote hash), with 22 attack tests, up from 10.
 10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 79 files, and Tell on Nightshade's own published corpus ([`bench/`](bench)).
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
 12. **Outreach**: 11 teams were each sent a public GitHub issue naming the file, the line and the kind of finding, and asking where to send the details; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot talks requested with two audit firms.
@@ -302,12 +302,12 @@ Midnight's own `midnight-expert` `/audit-compact` command (an LLM reviewer) was 
 
 ## Evidence
 
-- **Leak zoo** ([`zoo/`](zoo)): nine leaky contracts and their fixes, eight on Ledger 8 and one on Ledger 9 (Compact 0.36). Each leak is carried out by an attack test that reads only public data (initial state, ledger state, transaction effects, events) and recovers the secret; each fix stops it. 24 tests: 18 attack tests (16 on Ledger 8, 2 on the Ledger 9 poll) and 6 that apply Tell's verified fixes to the original five leaky contracts and run the attacks again. CI also runs the Action on the zoo (every leaky contract must fail at medium, every fixed one pass) and checks the zoo contract by contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36.
-- **Precision tests** ([`engine/test`](engine/test)): 199 tests (152 for the analyzer, 23 for the fixer, 24 for the pull-request review). Every zoo leak reported once, nothing above low on the fixes, regression cases from review, Ledger 9 and constructor cases, the fixer and the pull-request review.
+- **Leak zoo** ([`zoo/`](zoo)): eleven leaky contracts and their fixes, ten on Ledger 8 and one on Ledger 9 (Compact 0.36). Each leak is carried out by an attack test that reads only public data (initial state, ledger state, transaction effects, events) and recovers the secret; each fix stops it. 28 tests: 22 attack tests (20 on Ledger 8, 2 on the Ledger 9 poll) and 6 that apply Tell's verified fixes to the original five leaky contracts and run the attacks again. CI also runs the Action on the zoo (every leaky contract must fail at medium, every fixed one pass) and checks the zoo contract by contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36.
+- **Precision tests** ([`engine/test`](engine/test)): 257 tests for the analyzer, the fixer, the policy file and the pull-request review. Every zoo leak reported once, nothing above low on the fixes, regression cases from review, Ledger 9 and constructor cases, the fixer and the pull-request review.
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json), run October 11 with the Wave 2 engine): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed. 15 projects had a finding at medium or worse; 44 had linkable tags. Every medium-or-worse finding was read by hand. Results are in aggregate; no team is named. A re-run after the outreach is pending ([`web/data/survey-rerun.json`](web/data/survey-rerun.json)).
 - **Tell Desk tests** ([`desk/test`](desk/test)): 40 tests in a simulator that runs the compiled contract: lifecycle, rejections (forged proofs, wrong openings, out-of-order steps) and an attacker who reads only public data.
 - **Radar** ([`radar/test`](radar/test)): 18 tests, including the hash encoding checked against `@midnight-ntwrk/compact-runtime` and the 6-of-6 recovery from a cached Preprod snapshot.
-- **Integrations**: 39 MCP server tests (an MCP client calls every tool against the zoo) and 24 VS Code extension tests (including the packaged bundle and the real compiler).
+- **Integrations**: 40 MCP server tests (an MCP client calls every tool against the zoo) and 24 VS Code extension tests (including the packaged bundle and the real compiler).
 
 ### Live contracts on Midnight Preprod
 

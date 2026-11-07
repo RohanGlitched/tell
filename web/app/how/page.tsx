@@ -61,7 +61,8 @@ const QUIET = [
 ];
 
 const CHANGELOG = [
-  ['2026-11', 'Benchmark against Nightshade, compact-guard, compact-lint and OpenZeppelin’s Compact detectors on 69 files, with the bias stated first (bench/). Run on the Wave 2 engine; a re-run with this engine is in progress.'],
+  ['2026-11', 'Benchmark against Nightshade, compact-guard, compact-lint and OpenZeppelin’s Compact detectors on 79 files, with the bias stated first (bench/): run on the Wave 2 engine, then again on the Wave 3 engine. Tell also ran on Nightshade’s published corpus of 465 contracts without a crash.'],
+  ['2026-11', 'tell.json: declare which inputs are secret or public, which circuits run once and which disclosures are intended, in one file the CLI, the Action and the MCP server read.'],
   ['2026-11', 'Radar: a privacy scan of Preprod contracts from chain data alone, no source needed (radar/).'],
   ['2026-11', 'MCP server for coding agents (scan, explain a finding, propose a fix) and a VS Code extension that shows findings in the editor.'],
   ['2026-11', 'Tell Desk: a Compact contract on Preprod for sealed, provable disclosure of a leak and an on-chain registry of grades keyed by code hash.'],
@@ -194,6 +195,23 @@ jobs:
         <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
           {`// the reveal phase publishes the seed by design
 seeds.insert(slot, s); // tell:allow published`}
+        </pre>
+      </section>
+
+      <section id="policy" className="mt-14 scroll-mt-20">
+        <h2 className="text-[24px] font-semibold">Declaring intent with tell.json</h2>
+        <p className="mt-2 max-w-[66ch] text-[15px]">
+          Tell guesses intent from shape and names. Where you know better, say so once in a <code>tell.json</code> next to your contracts or at the repository
+          root: which witnesses are secret or public, which circuits run once, which disclosures are intended and why. The CLI, the GitHub Action and the MCP
+          server read the nearest one (<code>--policy</code> to choose a file, <code>--no-policy</code> to ignore it). In the benchmark, one line of it removed
+          Tell’s only false alarm. The web scanner does not read a policy yet; it scans with the defaults.
+        </p>
+        <pre className="mono mt-3 overflow-x-auto rounded-sm border border-[var(--rule)] bg-[var(--sheet)] p-4 text-[13px] leading-[1.7]">
+          {`{
+  "witnesses": { "deviceKey": "secret", "now": "public" },
+  "circuits": { "enroll": { "once": true } },
+  "intended": [{ "kind": "published", "field": "winner", "reason": "the draw result is public" }]
+}`}
         </pre>
       </section>
 

@@ -11,6 +11,7 @@ import adoptionJson from '@/data/adoption.json';
 import rerunJson from '@/data/survey-rerun.json';
 import deskJson from '@/data/desk.json';
 import zooJson from '@/data/zoo.json';
+import testsJson from '@/data/tests.json';
 
 // Work status. "done": shipped and linked; "in progress": being built now; "planned": not
 // started; "pilot": offered to a first user; "live": an offer anyone can use today.
@@ -56,7 +57,21 @@ export type Wave3 = {
   ask: { title: string; text: string }[];
 };
 
-export const wave3 = wave3Json as Wave3;
+// ---- tests.json ------------------------------------------------------------------------------
+// Test counts from the last full run (the README's table). Copy in the content files refers to
+// them as {tests.total}, {tests.desk}, {tests.zoo.attack}…, filled in here.
+export type Tests = { runAt: string; total: number; workspaces: Record<string, number>; zoo: { attack: number; autofix: number } };
+export const tests = testsJson as Tests;
+export const fillCounts = (text: string) =>
+  text.replace(/\{tests\.([\w.]+)\}/g, (m, key: string) => {
+    const v = key === 'total' ? tests.total : key.startsWith('zoo.') ? tests.zoo[key.slice(4) as 'attack' | 'autofix'] : tests.workspaces[key];
+    return v === undefined ? m : String(v);
+  });
+// every string in a content object, with counts filled in
+const fillDeep = <T,>(v: T): T =>
+  (typeof v === 'string' ? fillCounts(v) : Array.isArray(v) ? v.map(fillDeep) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fillDeep(x)])) : v) as T;
+
+export const wave3 = fillDeep(wave3Json as Wave3);
 
 // ---- business.json -------------------------------------------------------------------------
 export type Segment = { id: string; name: string; who: string; need: string; gets: string; pays: string; status: Status };

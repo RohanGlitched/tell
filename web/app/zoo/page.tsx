@@ -6,7 +6,7 @@ import zoo from '@/data/zoo.json';
 import precomputed from '@/data/sample-results.json';
 import type { ScanResponse } from '@/lib/types';
 import { PageHead } from '@/components/ui';
-import { numberWord, zooCounts } from '@/lib/content';
+import { numberWord, tests, zooCounts } from '@/lib/content';
 
 export const metadata: Metadata = {
   title: 'Leak zoo',
@@ -106,6 +106,26 @@ const CASES: Case[] = [
     fix: 'Every bidder locks the same public bond, the auction’s ceiling, and the difference is refunded after the bids are opened. The deposits say nothing.',
   },
   {
+    id: 'club',
+    name: 'The members’ club',
+    kind: 'Linkable tag',
+    severity: 'medium',
+    story: 'An “anonymous” claim for members. The key stays private, but a claim proves membership by looking the caller’s own leaf up in the member set.',
+    finding: 'The key of a Set lookup is part of the public transcript: every claim carries the claimant’s leaf, which ties it to their join and to all their other claims.',
+    attack: 'The test matches each claim’s transcript to the member who joined with that leaf.',
+    fix: 'Members join a Merkle tree; a claim proves some leaf is the caller’s without saying which, and spends a one-time nullifier from a different hash domain.',
+  },
+  {
+    id: 'keyring',
+    name: 'The keyring',
+    kind: 'Private key derivable from public data',
+    severity: 'critical',
+    story: 'Each user registers an account id, hash(seed), and an encryption key. To save a derivation, the private scalar of that key is the same hash.',
+    finding: 'ecMulGenerator(k) is a public key with private key k, and k here is the account id the contract publishes: anyone holds the private key.',
+    attack: 'The test reads each account id from the ledger and opens the matching encryption key with it.',
+    fix: 'Derive the account id and the private scalar from the seed under two different domain separators; the id says nothing about the scalar.',
+  },
+  {
     id: 'poll',
     name: 'The poll (Ledger 9)',
     kind: 'Guessable hash, in an event',
@@ -124,8 +144,8 @@ export default function ZooPage() {
       <PageHead kicker="Evidence" title="The leak zoo">
         <p>
           {numberWord(zooCounts.pairs, true)} pairs of small contracts ({zooCounts.contracts} in all, {zooCounts.ledger8} pairs on Ledger 8 and {zooCounts.ledger9} on Ledger 9), each a leak
-          a careful developer could ship and its fix: votes, salaries, bids, keys, tags, a constructor, shielded and unshielded tokens, and a Ledger 9 event.
-          For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public state. 18 attack tests, and auto-fix tests that apply Tell’s verified patches to the five original leaky contracts and run the attacks again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+          a careful developer could ship and its fix: votes, salaries, bids, keys, tags, membership claims, a constructor, shielded and unshielded tokens, and a Ledger 9 event.
+          For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public state. {tests.zoo.attack} attack tests, and auto-fix tests that apply Tell’s verified patches to the five original leaky contracts and run the attacks again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
         </p>
       </PageHead>
     <div className="wrap pb-16 pt-12 sm:pt-14">

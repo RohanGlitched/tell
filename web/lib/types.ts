@@ -1,6 +1,6 @@
 // Shapes shared by the scanner UI and the API (kept free of Node imports).
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info';
-export type FindingKind = 'guessable-hash' | 'secret-published' | 'published' | 'branch' | 'predicate' | 'linkable' | 'attributable';
+export type FindingKind = 'guessable-hash' | 'secret-published' | 'published' | 'branch' | 'predicate' | 'linkable' | 'attributable' | 'shielded-coin' | 'derivable-secret';
 
 export type Finding = {
   circuit: string;
@@ -105,6 +105,8 @@ export const KIND_LABEL: Record<FindingKind, string> = {
   predicate: 'Published yes/no fact',
   linkable: 'Linkable tag',
   attributable: 'Same tag on every action',
+  'shielded-coin': 'Coin with a public nonce',
+  'derivable-secret': 'Private key derivable from public data',
 };
 
 export const GRADE_TEXT: Record<string, string> = {

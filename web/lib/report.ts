@@ -17,6 +17,8 @@ const RULE_TEXT: Record<FindingKind, { name: string; short: string }> = {
   predicate: { name: 'PublishedPredicate', short: 'A yes/no fact about a private value is written to the public ledger' },
   attributable: { name: 'AttributableActions', short: 'Each action stores the same tag derived from a private key' },
   linkable: { name: 'LinkableTag', short: 'The same hash of a private value is published on every call' },
+  'shielded-coin': { name: 'GuessableCoinCommitment', short: 'A shielded coin is minted or sent with a nonce anyone can compute' },
+  'derivable-secret': { name: 'PublicPrivateKey', short: 'A public key is made from a private scalar the contract also publishes' },
 };
 const LEVEL: Record<Severity, 'error' | 'warning' | 'note'> = { critical: 'error', high: 'error', medium: 'warning', low: 'note', info: 'note' };
 const SCORE: Record<Severity, string> = { critical: '9.5', high: '8.0', medium: '5.5', low: '3.0', info: '1.0' };
