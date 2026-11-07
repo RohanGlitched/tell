@@ -195,6 +195,6 @@ describe.skipIf(compilers.length === 0)('with the real compiler', () => {
 
   it('the CLI exits cleanly with JSON for a whole directory', () => {
     const out = execFileSync('npx', ['tsx', path.resolve(__dirname, '../../engine/src/cli.ts'), ZOO, '--json'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    expect(parseCliJson(out)).toHaveLength(10);
+    expect(parseCliJson(out)).toHaveLength(fs.readdirSync(ZOO).filter((f) => f.endsWith('.compact')).length);
   });
 });

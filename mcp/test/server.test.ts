@@ -147,10 +147,10 @@ describe.skipIf(!hasCompiler)('tell_scan against the leak zoo', () => {
     expect(text(res)).toContain('grade F');
   });
 
-  it('scans a directory: all ten zoo contracts', async () => {
+  it('scans a directory: every zoo contract', async () => {
     const res = await call('tell_scan', { path: ZOO });
     const cs = contracts(res);
-    expect(cs).toHaveLength(10);
+    expect(cs).toHaveLength(fs.readdirSync(ZOO).filter((f) => f.endsWith('.compact')).length);
     expect(cs.every((c) => c.ok)).toBe(true);
     expect(cs.filter((c) => c.file.endsWith('-leaky.compact')).every((c) => serious(c).length === 1)).toBe(true);
   });
