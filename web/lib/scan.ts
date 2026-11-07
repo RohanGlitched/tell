@@ -11,6 +11,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { x as untar } from 'tar';
 import { findCompilers, findContracts, scanFile, type Compiler, type ContractResult } from '@tell/engine';
+import { attachFixes } from './fixes';
 
 const MAX_SOURCE = 200_000;
 const MAX_TARBALL = 25 * 1024 * 1024;
@@ -92,6 +93,8 @@ export async function scanSource(source: string, name = 'contract.compact'): Pro
     const file = path.join(dir, sourceFileName(name));
     fs.writeFileSync(file, source);
     const r = await scanFile(file, list);
+    // verified patches are made against the file on disk, before it is renamed and removed
+    await attachFixes(r, list, path.basename(file), t + 40_000);
     r.file = path.basename(file);
     return { kind: 'source', contracts: [r], compilers: list.map((c) => c.version), ms: Date.now() - t };
   } finally {
@@ -106,7 +109,7 @@ export function parseRepo(input: string): { owner: string; name: string; ref: st
   return { owner: m[1], name: m[2], ref: m[3]?.split('/')[0] ?? null };
 }
 
-export async function scanRepo(input: string): Promise<ScanResponse> {
+export async function scanRepo(input: string, opts: { fixes?: boolean } = {}): Promise<ScanResponse> {
   const t = Date.now();
   const r = parseRepo(input);
   if (!r) throw new UserError('Give a public GitHub repository, like `github.com/owner/repo`.');
@@ -156,7 +159,10 @@ export async function scanRepo(input: string): Promise<ScanResponse> {
     for (const f of files.slice(0, MAX_CONTRACTS)) {
       if (Date.now() - t > 45_000) break;
       const res = await scanFile(f, list);
-      res.file = path.relative(root, f).split(path.sep).join('/');
+      const rel = path.relative(root, f).split(path.sep).join('/');
+      // fixes only while there is time left; the findings come first
+      if (opts.fixes !== false) await attachFixes(res, list, rel, t + 30_000);
+      res.file = rel;
       contracts.push(res);
     }
     return {

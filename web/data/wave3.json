@@ -9,8 +9,8 @@
   },
   "highlights": [
     { "title": "On Preprod, addresses in the README", "text": "Both ballots deployed with real votes, as the review asked.", "href": "/live", "status": "done" },
-    { "title": "Tell Desk", "text": "A new contract: sealed reports, grades on the public ledger.", "href": "/desk", "status": "in progress" },
-    { "title": "Fixes, verified", "text": "A patch per finding and a re-scan that shows the grade before and after.", "href": "/scan", "status": "in progress" },
+    { "title": "Tell Desk", "text": "A new contract: sealed disclosure with zero-knowledge answers, and a grade registry wallets can read.", "href": "/desk", "status": "in progress" },
+    { "title": "Fixes, verified", "text": "A patch per finding, compiled and scanned again before it is offered: ballot F to B, vault F to A.", "href": "/scan?sample=ballot-leaky", "status": "done" },
     { "title": "Share links and a README badge", "text": "Send a report as a link; show your grade on GitHub.", "href": "/scan", "status": "done" },
     { "title": "Real outreach, tracked", "text": "Notes to teams and issues on Midnight's examples, with replies and fixes.", "href": "/adoption", "status": "in progress" },
     { "title": "Who pays", "text": "Free core, paid hosting for private code, honest status labels.", "href": "/teams", "status": "done" }
@@ -34,7 +34,7 @@
       "criterion": "engineering",
       "source": "Backend engineering review, 29/30",
       "quote": "You implemented genuine private state with implemented witnesses and a commitment/hash, exactly what a Midnight app should do.",
-      "did": "We built a second contract that uses private state for a real job. Tell Desk keeps a team's full report private and puts only a commitment and the grade on the ledger. Wallets and dApp stores can read the grade by contract address.",
+      "did": "We built a second contract where private state does real work. Tell Desk seals a privacy finding as a commitment with a per-report tag; maintainers answer with a zero-knowledge proof over a Merkle tree of credentials, without revealing who they are or which project; the opening is published only after the fix or the embargo. It also keeps Tell's grades by code hash for wallets to read. 33 contract tests, including an attacker who reads only public data.",
       "status": "in progress",
       "evidence": [{ "label": "Tell Desk: public ledger and private state", "href": "/desk" }]
     },
@@ -144,9 +144,9 @@
       "judged": "Contract compiles, private-state management, understanding of the dual-ledger model, repository and README",
       "changes": [
         { "text": "Demo ballots deployed on Preprod; addresses and transactions in the README", "status": "done", "href": "https://github.com/RohanGlitched/tell#deployed-contracts-midnight-preprod" },
-        { "text": "Tell Desk: a new Compact contract with sealed disclosure reports and an on-chain grade registry", "status": "in progress", "href": "/desk" },
-        { "text": "Engine: constructor analysis, shielded token patterns, Compact 0.36", "status": "in progress", "href": null },
-        { "text": "Auto-fix: the engine proposes a patch and re-scans it to check it works", "status": "in progress", "href": "/scan" },
+        { "text": "Tell Desk: a new Compact contract for sealed disclosure and an on-chain grade registry (33 tests; deploying to Preprod)", "status": "in progress", "href": "/desk" },
+        { "text": "Engine: constructor analysis, shielded and unshielded token rules, Compact 0.36 and Ledger 9 events", "status": "done", "href": "/zoo" },
+        { "text": "Auto-fix: the engine proposes a patch, compiles it and scans it again; only verified patches are offered", "status": "done", "href": "/scan?sample=ballot-leaky" },
         { "text": "Radar: grades deployed Preprod contracts from public state alone, without the source", "status": "in progress", "href": null }
       ]
     },
@@ -158,8 +158,8 @@
       "judged": "Simulation and test files, tests pass, stable under basic use",
       "changes": [
         { "text": "Browser tests (Playwright) for the scanner, share links, the badge route and the new pages", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/web/e2e" },
-        { "text": "Attack tests for the new sector examples", "status": "in progress", "href": null },
-        { "text": "Contract tests for Tell Desk", "status": "in progress", "href": null }
+        { "text": "Attack tests for the new zoo pairs: raffle, faucet, deposit, Ledger 9 poll", "status": "done", "href": "/zoo" },
+        { "text": "Contract tests for Tell Desk", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/desk/test" }
       ]
     },
     {
@@ -169,9 +169,9 @@
       "wave2": 8,
       "judged": "Strength of idea, connection to Midnight's core capabilities, realistic scope and roadmap",
       "changes": [
-        { "text": "Pull-request review: findings and fixes posted on the pull request", "status": "in progress", "href": null },
-        { "text": "MCP server, so AI coding agents check contracts as they write them", "status": "in progress", "href": null },
-        { "text": "VS Code extension that marks leaking lines as you type", "status": "in progress", "href": null },
+        { "text": "Pull-request review: findings and verified fixes posted on the changed lines", "status": "done", "href": "https://github.com/RohanGlitched/tell/blob/main/action.yml" },
+        { "text": "MCP server, so AI coding agents check contracts as they write them", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/mcp" },
+        { "text": "VS Code extension that marks leaking lines on open and save", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/vscode" },
         { "text": "Applied to the Aliit technical fellowship", "status": "in progress", "href": null }
       ]
     },
@@ -183,9 +183,9 @@
       "judged": "Intuitive frontend that connects to the contract end to end",
       "changes": [
         { "text": "Share links: the scanned contract travels in the link, never stored", "status": "done", "href": "/scan" },
-        { "text": "Fix view with the patch and a before-and-after re-scan", "status": "done", "href": "/scan" },
+        { "text": "Fix view with the verified patch and a before-and-after re-scan", "status": "done", "href": "/scan?sample=ballot-leaky" },
         { "text": "README badge and report downloads (JSON, SARIF, Markdown)", "status": "done", "href": "/scan" },
-        { "text": "Tell Desk: connect Lace, file a sealed report, read grades back from the indexer", "status": "in progress", "href": "/desk" }
+        { "text": "Tell Desk page: reports, reveals you can verify in the browser, and grade lookup by address, read from the indexer", "status": "in progress", "href": "/desk" }
       ]
     },
     {
@@ -237,9 +237,9 @@
     {
       "name": "OpenZeppelin's announced Compact scanner",
       "what": "Security detectors for Compact from OpenZeppelin: loop bounds, assertion messages and other correctness checks.",
-      "answer": "It checks correctness and Tell checks privacy, so they complement each other. Tell's output is SARIF, so both can run in the same GitHub code scanning view, and Tell's rules could feed their detectors.",
+      "answer": "It checks correctness and Tell checks privacy, so they complement each other. Tell's output is SARIF, so both can run in the same GitHub code scanning view, and Tell's rules could feed their detectors. The benchmark runs both, with Nightshade, compact-guard and compact-lint, on the same 69 files.",
       "status": "done",
-      "href": "/how"
+      "href": "/teams#compare"
     }
   ],
   "learned": [

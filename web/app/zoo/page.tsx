@@ -16,7 +16,7 @@ type Case = {
   id: string;
   name: string;
   kind: string;
-  severity: 'critical' | 'high' | 'medium';
+  severity: 'critical' | 'high' | 'medium'; // fallback; the precomputed scan's worst finding wins
   story: string;
   finding: string;
   attack: string;
@@ -74,6 +74,46 @@ const CASES: Case[] = [
     attack: 'Two members write five posts; grouping the public authors map by tag splits them 3 and 2.',
     fix: 'A Merkle membership proof plus a one-time tag hash(key, post number) per post. Five posts, five unrelated tags.',
   },
+  {
+    id: 'raffle',
+    name: 'The raffle',
+    kind: 'Guessable hash, in the constructor',
+    severity: 'critical',
+    story: 'The organiser seals the winning number at deploy time as hash(number). There are 10,000 tickets, and the seal sits in the contract’s initial state.',
+    finding: 'The constructor writes a hash whose only unknown is the winning number, about 14 bits. Tell now traces constructors the same way as circuits.',
+    attack: 'The test deploys the raffle and hashes every ticket against the initial state: the winning number is read before a single ticket is sold.',
+    fix: 'Seal the number in a commitment salted with 32 random bytes from the organiser’s private state. The same search finds nothing; the organiser can still open the draw.',
+  },
+  {
+    id: 'faucet',
+    name: 'The faucet',
+    kind: 'Shielded mint, public nonce',
+    severity: 'high',
+    story: 'A faucet mints a shielded coin to each caller, deriving the coin nonce from a counter in the public ledger. The token and amount are public too.',
+    finding: 'With the nonce, colour and value public, the coin commitment’s only unknown is the recipient: one hash per known wallet key says who received each coin.',
+    attack: 'The test mints to four claimers and matches every coin commitment against eight known wallet keys: each recipient is named.',
+    fix: 'Derive the nonce from a 32-byte seed in each claimer’s private state, as Midnight’s shielded token tutorial does. The commitment then hides who received the coin.',
+  },
+  {
+    id: 'deposit',
+    name: 'The deposit',
+    kind: 'Private amount, paid in the clear',
+    severity: 'high',
+    story: 'Bids are sealed in salted commitments, which is right. Then each bidder locks exactly the bid amount in unshielded tokens.',
+    finding: 'The unshielded amount locked by the circuit is the private bid: token amounts are part of every transaction’s public transcript.',
+    attack: 'The test reads every sealed bid straight from the deposits.',
+    fix: 'Every bidder locks the same public bond, the auction’s ceiling, and the difference is refunded after the bids are opened. The deposits say nothing.',
+  },
+  {
+    id: 'poll',
+    name: 'The poll (Ledger 9)',
+    kind: 'Guessable hash, in an event',
+    severity: 'critical',
+    story: 'The ledger keeps each vote as a salted commitment. Then the contract emits a receipt event so voters can find their vote, and the receipt is hash(choice).',
+    finding: 'Events are part of the public transaction, like ledger writes. Tell reads Compact 0.36 and Ledger 9 events: four hashes recover every vote.',
+    attack: 'The test casts votes and matches the four candidate hashes against the emitted receipts.',
+    fix: 'The receipt carries the same salted commitment the ledger stores; a voter finds it with the salt from their private state.',
+  },
 ];
 
 export default function ZooPage() {
@@ -82,8 +122,9 @@ export default function ZooPage() {
     <>
       <PageHead kicker="Evidence" title="The leak zoo">
         <p>
-          Five small contracts, each with one leak a careful developer could ship, and its fix. For every pair, Tell reports the leak on the left and nothing above
-          low on the right, and an attack test reads the secret back out of public state. Ten attack tests and 87 precision tests <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
+          Nine small contracts, each with one leak a careful developer could ship, and its fix: votes, salaries, bids, keys, tags, a constructor, shielded and
+          unshielded tokens, and a Ledger 9 event. For every pair Tell reports the leak on the left, and an attack test reads the secret back out of public
+          state. 18 attack tests, and auto-fix tests that patch each leaky contract and scan it again, <a href="https://github.com/RohanGlitched/tell/actions/workflows/ci.yml">run in CI</a>.
         </p>
       </PageHead>
     <div className="wrap pb-16 pt-12 sm:pt-14">
@@ -105,8 +146,8 @@ export default function ZooPage() {
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="mono text-[13px] text-[var(--graphite)]">{String(i + 1).padStart(2, '0')}</span>
                 <h2 className="text-[26px] font-semibold">{c.name}</h2>
-                <span className="sev" data-sev={c.severity}>
-                  {c.severity}
+                <span className="sev" data-sev={worst(s.leaky) ?? c.severity}>
+                  {worst(s.leaky) ?? c.severity}
                 </span>
                 <span className="text-[14px] text-[var(--graphite)]">{c.kind}</span>
               </div>
@@ -151,6 +192,13 @@ function leakLines(full: string): number[] {
     .filter((f) => !f.suppressed && f.line && ['critical', 'high', 'medium'].includes(f.severity))
     .map((f) => f.line! - dropped);
   return [...new Set(lines)].filter((n) => n > 0);
+}
+
+// The worst finding the precomputed scan reports for a contract (null before the samples are regenerated).
+function worst(full: string): string | null {
+  const res = RESULTS[crypto.createHash('sha256').update(full).digest('hex')];
+  const sev = (res?.contracts[0]?.report?.findings ?? []).filter((f) => !f.suppressed).map((f) => f.severity);
+  return ['critical', 'high', 'medium', 'low', 'info'].find((s) => sev.includes(s as never)) ?? null;
 }
 
 // Lines of the fix that do not appear in the leaky version.

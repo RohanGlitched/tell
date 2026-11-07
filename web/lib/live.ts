@@ -16,7 +16,7 @@ const DEP = deployments as Deployments;
 export const NETWORK: NetworkName = DEP.network ?? 'preview';
 
 // Preprod is served by Blockfrost; its project id stays on the server.
-function indexer(): [string, string] {
+export function indexer(): [string, string] {
   if (NETWORK === 'preview') return ['https://indexer.preview.midnight.network/api/v4/graphql', 'wss://indexer.preview.midnight.network/api/v4/graphql/ws'];
   const key = process.env.BLOCKFROST_PROJECT_ID?.trim();
   if (!key) throw new Error('BLOCKFROST_PROJECT_ID is not set');

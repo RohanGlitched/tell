@@ -32,7 +32,8 @@ export function parseAll(src: string): SExpr[] {
       else break;
     }
   };
-  const delim = (c: string | undefined) => c === undefined || c === '(' || c === ')' || c === ' ' || c === '\n' || c === '\t' || c === '\r' || c === '"';
+  // Brackets delimit too: earlier passes (the constructor's) print let* bindings as [(%x type) e].
+  const delim = (c: string | undefined) => c === undefined || c === '(' || c === ')' || c === '[' || c === ']' || c === ' ' || c === '\n' || c === '\t' || c === '\r' || c === '"';
   const read = (): SExpr => {
     ws();
     const c = src[i];

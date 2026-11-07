@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { business, fmtDate } from '@/lib/content';
 import { CtaRow, Page, PageHead, Section, StatusPill } from '@/components/ui';
 import InterestForm from '@/components/InterestForm';
+import CompareTable from '@/components/CompareTable';
 
 export const metadata: Metadata = {
   title: 'For teams',
@@ -91,7 +92,17 @@ export default function TeamsPage() {
         </div>
       </Section>
 
-      <Section id="principles" note="Principles" noteText="What stays free, and why." title="How we decide">
+      <Section
+        id="compare"
+        note="Benchmark"
+        noteText="Five tools, 69 Compact files, every number reproducible from bench/."
+        title="How Tell compares"
+        intro="The other analyzers a Midnight team can run today, on the same files: Tell's leak zoo, 30 cases written for the benchmark, and Midnight's official examples."
+      >
+        <CompareTable />
+      </Section>
+
+      <Section id="principles" tone="mist" note="Principles" noteText="What stays free, and why." title="How we decide">
         <div className="grid gap-6 md:grid-cols-3">
           {b.principles.map((p) => (
             <div key={p.title} className="border-t border-[var(--rule)] pt-4">
@@ -116,7 +127,7 @@ export default function TeamsPage() {
         )}
       </Section>
 
-      <Section id="interest" tone="mist" note="Contact" noteText="A public GitHub issue you review before sending. Nothing stored here." title="Tell us what you need" intro="A pilot, a license, a template integration, or just a question. This opens a GitHub issue you can edit before sending.">
+      <Section id="interest" note="Contact" noteText="A public GitHub issue you review before sending. Nothing stored here." title="Tell us what you need" intro="A pilot, a license, a template integration, or just a question. This opens a GitHub issue you can edit before sending.">
         <div className="max-w-[760px]">
           <InterestForm repo={b.contact.repo} label={b.contact.label} segments={b.segments.map(({ id, name }) => ({ id, name }))} offers={b.offers.map(({ id, name }) => ({ id, name }))} />
         </div>

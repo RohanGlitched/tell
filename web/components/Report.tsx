@@ -442,6 +442,7 @@ function FixView({ text, patch, onFix, file }: { text: string; patch: VerifiedFi
       </p>
       {patch && (
         <>
+          {patch.text && <p className="mt-2 text-[13.5px] text-[var(--graphite)]">Rewrite: {patch.text}</p>}
           <DiffView diff={patch.diff} file={file} />
           {patch.verified ? (
             <div className="mt-3.5 flex flex-wrap gap-2.5">
@@ -619,11 +620,16 @@ function Rail({
   busy: boolean;
 }) {
   const grade = worstGrade(result);
-  // the first verified patch on the worst finding, if the engine sent one
-  const patchAt = result.contracts
-    .map((c, i) => ({ c, f: lists[i].find((f) => fixOf(f).patch) }))
-    .find((x) => x.f && x.c.grade);
-  const patch = patchAt?.f ? fixOf(patchAt.f).patch : null;
+  // every verified patch for the first contract that has any, applied together and verified as a
+  // whole by the engine; else the first single verified patch
+  const combinedAt = result.contracts.find((c) => c.fixes?.diff && c.grade);
+  const singleAt = result.contracts.map((c, i) => ({ c, f: lists[i].find((f) => fixOf(f).patch) })).find((x) => x.f && x.c.grade);
+  const patchAt = combinedAt
+    ? { c: combinedAt, patch: { diff: combinedAt.fixes!.diff, verified: true, gradeAfter: combinedAt.fixes!.gradeAfter ?? undefined } as VerifiedFix, count: combinedAt.fixes!.applied }
+    : singleAt?.f
+      ? { c: singleAt.c, patch: fixOf(singleAt.f).patch!, count: 1 }
+      : null;
+  const patch = patchAt?.patch ?? null;
   const shareUrl = () => `${window.location.origin}/scan${result.kind === 'repo' && result.repo ? shareHash({ kind: 'repo', repo: result.repo }) : shareHash({ kind: 'source', source })}`;
   const canShare = result.kind === 'repo' ? !!result.repo : !!source;
   const [shown, setShown] = useState('');
@@ -653,11 +659,15 @@ function Rail({
       ) : patch && patchAt ? (
         <Card title={patch.verified ? 'With the fix applied' : 'A fix is proposed'}>
           {patch.gradeAfter && <Arrow from={patchAt.c.grade!} to={patch.gradeAfter} />}
-          <p className="mt-2 text-[12.5px] text-[var(--faint)]">{patch.verified ? 'The engine compiled the patch and scanned it again.' : 'Not verified yet: review the diff first.'}</p>
+          <p className="mt-2 text-[12.5px] text-[var(--faint)]">
+            {patch.verified
+              ? `${patchAt.count === 1 ? 'One verified patch' : `${patchAt.count} verified patches`}: compiled with the same compiler and scanned again${result.contracts.length > 1 ? ` (${patchAt.c.file})` : ''}.`
+              : 'Not verified yet: review the diff first.'}
+          </p>
           <div className="mt-3 grid gap-2">
             {onFix && (
-              <button type="button" disabled={busy} onClick={() => onFix(patch, patchAt.c.grade!)} className="btn btn-pri btn-sm w-full">
-                Apply fix
+              <button type="button" data-testid="apply-fix" disabled={busy} onClick={() => onFix(patch, patchAt.c.grade!)} className="btn btn-pri btn-sm w-full">
+                {patchAt.count > 1 ? 'Apply all fixes' : 'Apply fix'}
               </button>
             )}
             {onRescan && (
@@ -671,7 +681,7 @@ function Rail({
         <Card title="Fixes">
           {grade && <Arrow from={grade} to={null} />}
           <p className="mt-2 text-[12.5px] text-[var(--faint)]">
-            Every finding lists its fix. Patches that the engine compiles and re-scans for you are coming in Wave 3; they will appear here with the grade they reach.
+            Every finding lists its fix in words. Tell offers a patch only when it can verify one: the patched contract compiles, loses the finding and gains nothing at medium or worse. None passed for this scan.
           </p>
           {onRescan && (
             <button type="button" disabled={busy} onClick={onRescan} className="btn btn-quiet btn-sm mt-3 w-full">

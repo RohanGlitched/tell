@@ -20,7 +20,7 @@ const TIMEOUT = 50_000;
 type Verdict = { state: BadgeState; commit: string | null; at: string };
 
 async function grade(owner: string, name: string): Promise<Verdict> {
-  const r = await scanRepo(`${owner}/${name}`);
+  const r = await scanRepo(`${owner}/${name}`, { fixes: false });
   const ok = r.contracts.filter((c) => c.ok && c.grade);
   let state: BadgeState;
   if (r.contracts.length === 0) state = 'no contracts';

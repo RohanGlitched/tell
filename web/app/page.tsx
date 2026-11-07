@@ -6,7 +6,8 @@ import { Ticks } from '@/components/Ticks';
 import Wave3Band from '@/components/Wave3Band';
 import { fixedBallot, leakyBallot, short } from '@/lib/ballots';
 import { business, desk } from '@/lib/content';
-import { KIND_LABEL, SEVERITY_ORDER, type ScanResponse } from '@/lib/types';
+import deskDeployment from '@/data/desk-deployment.json';
+import { fixOf, KIND_LABEL, SEVERITY_ORDER, type ScanResponse } from '@/lib/types';
 import integrations from '@/data/integrations.json';
 import samples from '@/data/samples.json';
 import precomputed from '@/data/sample-results.json';
@@ -38,9 +39,15 @@ export default function Home() {
   const report = res?.contracts[0];
   const findings = (report?.report?.findings ?? []).filter((f) => !f.suppressed).sort((a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity));
   const critical = findings.find((f) => f.severity === 'critical');
+  // the engine's own verified patch for it, when the precomputed scan carries one (scripts/sample-results.ts)
+  const cp = critical ? fixOf(critical).patch : null;
+  const verified = cp?.verified
+    ? { gradeAfter: cp.gradeAfter, lines: cp.diff.split('\n').filter((l) => /^[+-]/.test(l) && !/^(\+\+\+|---)/.test(l)).slice(0, 8) }
+    : null;
   const total = Object.values(survey.grades).reduce((a, b) => a + b, 0);
   const serious = new Set(survey.cases.map((c) => c.project)).size;
   const items = integrations.items;
+  const deskAddr = (deskDeployment as { address?: string }).address ?? null;
 
   return (
     <div>
@@ -172,17 +179,27 @@ export default function Home() {
                   <span className="inline-block w-6 text-[var(--faint)]">3</span>ballots.insert(tag, <mark className="rounded-[2px] bg-[var(--marker-soft)] px-1 text-[var(--marker-ink)]">hash(choice()), {critical?.bits ?? 2} bits</mark>)
                 </li>
               </ol>
-              <h4 className="mb-2.5 mt-5 text-[13px] font-semibold text-[var(--graphite)]">The fix, from the leak zoo</h4>
+              <h4 className="mb-2.5 mt-5 text-[13px] font-semibold text-[var(--graphite)]">{verified ? 'The fix Tell wrote and verified' : 'The fix, from the leak zoo'}</h4>
               <div className="diff">
-                <div className="l add">+ witness ballotSalt(): Bytes&lt;32&gt;;</div>
-                <div className="l del">- ballots.insert(tag, disclose(choiceHash(c)));</div>
-                <div className="l add">+ ballots.insert(tag, disclose(persistentCommit&lt;Uint&lt;8&gt;&gt;(c, ballotSalt())));</div>
+                {verified ? (
+                  verified.lines.map((l, i) => (
+                    <div key={i} className={`l ${l.startsWith('+') ? 'add' : l.startsWith('-') ? 'del' : 'ctx'}`}>
+                      {l.startsWith('@@') ? '…' : l}
+                    </div>
+                  ))
+                ) : (
+                  <>
+                    <div className="l add">+ witness ballotSalt(): Bytes&lt;32&gt;;</div>
+                    <div className="l del">- ballots.insert(tag, disclose(choiceHash(c)));</div>
+                    <div className="l add">+ ballots.insert(tag, disclose(persistentCommit&lt;Uint&lt;8&gt;&gt;(c, ballotSalt())));</div>
+                  </>
+                )}
               </div>
               <h4 className="mb-2.5 mt-5 text-[13px] font-semibold text-[var(--graphite)]">Scanned again</h4>
               <div className="flex flex-wrap gap-2">
                 <span className="stamp">Compiles</span>
                 <span className="stamp">Finding gone</span>
-                <span className="stamp">Grade F to B</span>
+                <span className="stamp">Grade F to {verified?.gradeAfter ?? 'B'}</span>
               </div>
               <Link href="/scan?sample=ballot-leaky" className="btn btn-ink btn-sm mt-6">
                 Open the full report
@@ -293,7 +310,7 @@ export default function Home() {
             </div>
             <div className="rounded-lg bg-white p-5 text-[var(--ink)] sm:p-6">
               <h3 className="font-[family-name:var(--serif)] text-[19px] font-semibold">The leak zoo</h3>
-              <p className="mt-1 text-[14px] text-[var(--graphite)]">Five leaks, five fixes, ten attack tests in CI.</p>
+              <p className="mt-1 text-[14px] text-[var(--graphite)]">Nine leaks, nine fixes, 18 attack tests in CI.</p>
               <ul className="mt-3">
                 {[
                   ['ballot', 'hash(vote)'],
@@ -301,6 +318,10 @@ export default function Home() {
                   ['reserve', 'branch on a bid'],
                   ['board', 'same tag per post'],
                   ['vault', 'key cast to public'],
+                  ['raffle', 'hash in the constructor'],
+                  ['faucet', 'shielded mint, public nonce'],
+                  ['deposit', 'bid paid in the clear'],
+                  ['poll', 'hash in a Ledger 9 event'],
                 ].map(([id, what]) => (
                   <li key={id} className="grid grid-cols-[84px_1fr_auto] gap-3 border-b border-dashed border-[var(--rule)] py-2 text-[14px] last:border-b-0">
                     <Link href={`/zoo#${id}`} className="font-semibold no-underline hover:underline">
@@ -320,31 +341,31 @@ export default function Home() {
         <div className="wrap">
           <div className="marg mb-10">
             <p className="margin-note">
-              <b>Tell Desk</b>A Midnight contract for sealed reports and on-chain grades.
+              <b>Tell Desk</b>Coordinated disclosure for privacy leaks, on Midnight.
             </p>
             <div>
-              <h2 className="max-w-[24ch] text-[26px] leading-[1.2] text-white sm:text-[32px]">The grade is public. The report stays yours.</h2>
+              <h2 className="max-w-[24ch] text-[26px] leading-[1.2] text-white sm:text-[32px]">Tell the team before you tell the world.</h2>
               <p className="mt-3.5 max-w-[62ch] text-[17px] text-[var(--on-indigo)]">
-                Publishing a leak before it is fixed exposes the users first. Tell Desk keeps the full report in your private state, puts the grade and a commitment
-                on Midnight’s public ledger, and lets an auditor check one against the other.
+                A public report of a privacy leak exposes the users first. Tell Desk seals the finding on Midnight, lets the team answer and fix it without
+                announcing an open bug, and records the contract’s grade for wallets to read.
               </p>
               <p className="mt-3">
-                <StatusPill status={desk.address ? 'live' : 'in progress'} label={desk.address ? 'on Preprod' : 'coming in Wave 3'} />
+                <StatusPill status={deskAddr ? 'live' : 'in progress'} label={deskAddr ? 'live on Preprod' : 'deploying to Preprod'} />
               </p>
             </div>
           </div>
           <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.1fr]">
             <div className="relative rounded-lg bg-white p-6 text-[var(--ink)]">
-              <span className="text-[13px] text-[var(--faint)]">Sealed report for a ballot contract</span>
-              <h3 className="mb-3.5 mt-1.5 font-[family-name:var(--serif)] text-[21px] font-semibold">Findings F-1 to F-3</h3>
+              <span className="text-[13px] text-[var(--faint)]">To the maintainers of a contract</span>
+              <h3 className="mb-3.5 mt-1.5 font-[family-name:var(--serif)] text-[21px] font-semibold">Sealed finding</h3>
               <div className="grid gap-2.5">
                 {['92%', '78%', '85%', '40%'].map((w) => (
                   <Bar key={w} width={w} height={12} />
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap gap-4 text-[13px] text-[var(--graphite)]">
-                <span>Public: grade and commitment</span>
-                <span>Private: the report and its salt</span>
+                <span>On chain: a commitment, a time, a status</span>
+                <span>Embargo: 90 days</span>
               </div>
               <span className="absolute -bottom-5 right-5 grid h-16 w-16 place-items-center rounded-full bg-[var(--marker)] font-[family-name:var(--serif)] text-[26px] font-semibold text-white shadow-[0_8px_20px_-6px_rgba(255,62,165,.6)]">
                 T
@@ -352,7 +373,7 @@ export default function Home() {
             </div>
             <div>
               <ol className="border-t border-[var(--indigo-3)]">
-                {desk.flow.slice(1, 4).map((s, i) => (
+                {desk.flow.slice(0, 3).map((s, i) => (
                   <li key={s.step} className="grid grid-cols-[40px_1fr] gap-3 border-b border-[var(--indigo-3)] py-4">
                     <span className="font-[family-name:var(--serif)] text-[22px] text-[var(--marker)]">{i + 1}</span>
                     <div>

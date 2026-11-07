@@ -78,8 +78,14 @@ test('a verified fix re-scans and shows the grade before and after', async ({ pa
     first = false;
     const res = await route.fetch();
     const json = await res.json();
-    for (const c of json.contracts)
-      for (const f of c.report.findings) if (f.severity === 'critical') f.fix = { text: f.fix, diff: FIX_DIFF, verified: true, gradeAfter: 'B' };
+    // replace the engine's own patches with the zoo's fix, so the result is known exactly
+    for (const c of json.contracts) {
+      delete c.fixes;
+      for (const f of c.report.findings) {
+        delete f.patch;
+        if (f.severity === 'critical') f.fix = { text: f.fix, diff: FIX_DIFF, verified: true, gradeAfter: 'B' };
+      }
+    }
     await route.fulfill({ response: res, json });
   });
   await scanDefault(page);
@@ -93,6 +99,17 @@ test('a verified fix re-scans and shows the grade before and after', async ({ pa
   await compare.getByRole('button', { name: 'Undo the fix' }).click();
   await expect(page.locator('#src')).toHaveValue(leaky.source);
   await expect(page.getByLabel('Grade F').first()).toBeVisible();
+});
+
+test('the engine’s own verified fix applies from the rail and the grade improves', async ({ page }) => {
+  await scanDefault(page);
+  // the precomputed sample carries the patches the engine verified (scripts/sample-results.ts)
+  await expect(page.getByText('Finding gone').first()).toBeVisible();
+  await page.getByTestId('apply-fix').click();
+  const compare = page.getByTestId('fix-compare');
+  await expect(compare).toContainText(/Grade F before the fix, [AB] after/);
+  await expect(page.locator('#src')).not.toHaveValue(leaky.source);
+  await expect(pills(page, 'critical')).toHaveCount(0);
 });
 
 test('reports download as JSON, SARIF and Markdown', async ({ page }) => {
@@ -132,13 +149,26 @@ test('/teams opens a prefilled GitHub issue', async ({ page }) => {
   expect(new URL(href!).searchParams.get('title')).toContain('Interest:');
 });
 
+test('/teams shows how Tell compares, from the benchmark', async ({ page }) => {
+  await page.goto('/teams#compare');
+  const table = page.getByTestId('compare-table');
+  await expect(table.getByRole('rowheader', { name: 'Tell', exact: true })).toBeVisible();
+  await expect(table.getByRole('rowheader', { name: 'compact-guard' })).toBeVisible();
+});
+
+test('/zoo lists every pair, including constructor, token and Ledger 9 cases', async ({ page }) => {
+  await page.goto('/zoo');
+  for (const id of ['ballot', 'payband', 'reserve', 'vault', 'board', 'raffle', 'faucet', 'deposit', 'poll']) await expect(page.locator(`section#${id}`)).toBeVisible();
+});
+
 test('/desk shows the public ledger beside the private state', async ({ page }) => {
   await page.goto('/desk');
   const ledger = page.getByTestId('dual-ledger');
   await expect(ledger.getByRole('region', { name: 'Public ledger' })).toBeVisible();
   await expect(ledger.getByRole('region', { name: 'Your private state' })).toBeVisible();
   await expect(page.getByTestId('desk-wallet-slot')).toBeVisible();
-  await expect(page.getByTestId('desk-registry-slot')).toBeVisible();
+  // live reads once deployed; until then a marked slot
+  await expect(page.getByTestId('desk-live').or(page.getByTestId('desk-registry-slot'))).toBeVisible();
 });
 
 test('the badge route answers SVG', async ({ request }) => {

@@ -1,5 +1,5 @@
 {
-  "_readme": "Where Tell runs, as the home page lists it. LEAD: flip `shipped` to true (and fill `snippet`, `href`) when an integration lands; unshipped ones show 'coming in Wave 3' and no snippet.",
+  "_readme": "Where Tell runs, as the home page lists it. `shipped: false` shows 'coming in Wave 3' and no snippet. External hrefs open the code in the repository.",
   "items": [
     {
       "id": "action",
@@ -40,29 +40,29 @@
     {
       "id": "pr",
       "name": "Pull-request review",
-      "tag": "with fixes",
-      "what": "A comment on the pull request with the finding, the bits it gives away and a verified patch to commit.",
-      "snippet": null,
-      "href": null,
-      "shipped": false
+      "tag": "with verified fixes",
+      "what": "The Action comments on the changed lines of each pull request with the finding, the bits it gives away and, where one passes, a verified patch as a suggestion you commit.",
+      "snippet": "- uses: RohanGlitched/tell@v1\n  with:\n    comment: true\n    suggest-fixes: true\n    comment-on: medium",
+      "href": "https://github.com/RohanGlitched/tell/blob/main/action.yml",
+      "shipped": true
     },
     {
       "id": "vscode",
       "name": "VS Code",
       "tag": null,
-      "what": "Leaking lines marked as you write, with the bits and the fix on hover.",
-      "snippet": null,
-      "href": null,
-      "shipped": false
+      "what": "Leaking lines marked on open and save, with the bits and the fix on hover, a quick fix that shows Tell's patch, and the grade in the status bar.",
+      "snippet": "Problems: critical: choice() is hidden behind a persistentHash anyone can reverse (2 bits)\nStatus bar: Tell: F",
+      "href": "https://github.com/RohanGlitched/tell/tree/main/vscode",
+      "shipped": true
     },
     {
       "id": "mcp",
       "name": "MCP server",
       "tag": "for coding agents",
-      "what": "AI agents that write Compact call Tell before proposing a contract, and apply the fix it returns.",
-      "snippet": null,
-      "href": null,
-      "shipped": false
+      "what": "Agents that write Compact call tell_scan on what they wrote, tell_check_fix after each edit, and tell_explain_rule for the why. Runs locally; nothing is sent anywhere.",
+      "snippet": "claude mcp add tell -- node /path/to/tell/mcp/dist/server.js",
+      "href": "https://github.com/RohanGlitched/tell/tree/main/mcp",
+      "shipped": true
     }
   ]
 }

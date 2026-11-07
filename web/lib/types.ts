@@ -30,7 +30,8 @@ export type VerifiedFix = {
   diff: string; // unified diff against the scanned file
   verified: boolean;
   gradeAfter?: Grade;
-  text?: string; // the fix in words, when the patch carries it
+  text?: string; // the rewrite in words, when the patch carries it
+  rule?: string; // the engine's rewrite rule (commit-hash, hash-key, one-time-tag, assert-branch, commit-value)
 };
 
 // The fix in words and the patch, whichever shape the API sent.
@@ -59,6 +60,8 @@ export type ContractResult = {
   grade?: Grade;
   report?: { circuits: CircuitReport[]; findings: Finding[]; unknownForms: string[] };
   counts?: Record<Severity, number>;
+  // every verified patch applied together and verified again as a whole (engine planFixes)
+  fixes?: { diff: string; applied: number; gradeBefore: Grade | null; gradeAfter: Grade | null };
 };
 
 export type ScanResponse = {
