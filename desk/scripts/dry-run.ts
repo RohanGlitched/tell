@@ -1,10 +1,12 @@
 // Copyright (C) 2026 Rohan Borade
 // SPDX-License-Identifier: Apache-2.0
 //
-// The Preprod demo, offline: the same roles, findings and grades as
+// The Preprod demo, offline: the same roles, credentials, findings and grades as
 // chain/scripts/deploy-desk.ts, run in the simulator. Checks everything the deploy
 // needs except the network: the proving keys load, the code hash computes, the engine
 // grades the sources, and the lifecycle goes through. Prints what the chain would show.
+// The deploy also seals Tell's outreach notes from a private file; here twelve stand-in
+// notes take their place, so the counts match.
 //   npx tsx desk/scripts/dry-run.ts
 
 import fs from 'node:fs';
@@ -16,9 +18,10 @@ import {
   DeskSimulator,
   compiledDesk,
   codeHash,
-  credentialLeaf,
   fromHex,
+  gradeFor,
   gradeToNumber,
+  maintainerPublicKey,
   newOpening,
   noteOf,
   openingOfNote,
@@ -31,7 +34,7 @@ import {
   type DeskPrivateState,
   type GradeLetter,
 } from '../src/index.js';
-import { DEMO_EMBARGO, DEMO_FINDINGS, DEMO_REPO, rulesVersion } from './demo-data.js';
+import { DEMO_EMBARGO, DEMO_FINDINGS, DEMO_MAINTAINERS, DEMO_REPO, rulesVersion } from './demo-data.js';
 
 setNetworkId('undeployed');
 const DESK = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,17 +72,24 @@ for (const name of ['ballot-leaky', 'ballot-fixed']) {
 ok(`Tell grades: ${grades.map((g) => `${g.name} ${g.grade}`).join(', ')} (rules ${RULES})`);
 
 // 2. The lifecycle, role by role, as the deploy runs it.
-const R = { attester: randomBytes32(), researcher: randomBytes32(), researcher2: randomBytes32(), maintainer: randomBytes32() };
+const R = { attester: randomBytes32(), researcher: randomBytes32(), researcher2: randomBytes32() };
 const sim = new DeskSimulator(pureCircuits.attesterKey(R.attester), DEMO_EMBARGO, { time: Math.floor(Date.now() / 1000) });
 const ps: Record<string, DeskPrivateState> = {
   'desk-tell': { attesterSecret: R.attester, openings: {} },
   'desk-researcher': { researcherSecret: R.researcher, openings: {} },
   'desk-researcher-2': { researcherSecret: R.researcher2, openings: {} },
-  'desk-maintainer': { maintainerSecret: R.maintainer, openings: {} },
 };
+const maintainerId = (key: string) => (key === 'tell' ? 'desk-maintainer' : `desk-maintainer-${key}`);
 const now = () => BigInt(sim.time);
 
-sim.call(ps['desk-tell'], 'registerMaintainer', await credentialLeaf(R.maintainer, DEMO_REPO));
+// Five credentials: each maintainer hands Tell only maintainerKey(secret); Tell registers it with the project.
+for (const m of DEMO_MAINTAINERS) {
+  const sk = randomBytes32();
+  ps[maintainerId(m.key)] = { maintainerSecret: sk, openings: {} };
+  sim.call(ps['desk-tell'], 'registerMaintainer', maintainerPublicKey(sk), await projectId(m.repo));
+}
+const M = ps[maintainerId('tell')];
+
 const ids: Record<string, string> = {};
 for (const f of DEMO_FINDINGS) {
   const who = ps[f.researcher];
@@ -87,20 +97,28 @@ for (const f of DEMO_FINDINGS) {
   const id = toHex(sim.call(who, 'seal', now()).result as Uint8Array);
   who.openings[id] = who.draft;
   // the note travels off chain; the maintainer stores it
-  const note = noteOf(id, who.draft);
-  ps['desk-maintainer'].openings[id] = openingOfNote(note);
+  M.openings[id] = openingOfNote(noteOf(id, who.draft));
   who.draft = undefined;
   ids[f.key] = id;
   sim.advance(60);
 }
-sim.call(ps['desk-maintainer'], 'acknowledge', fromHex(ids.ballot), now());
-sim.call(ps['desk-maintainer'], 'acknowledge', fromHex(ids.board), now());
+// Outreach notes: sealed by Tell as researcher; only the commitments reach the chain.
+for (let i = 1; i <= 12; i++) {
+  const who = ps['desk-researcher'];
+  who.draft = await newOpening(`stand-in outreach note ${i}`, `https://github.com/example-team-${i}/contract`);
+  const id = toHex(sim.call(who, 'seal', now()).result as Uint8Array);
+  who.openings[id] = who.draft;
+  who.draft = undefined;
+}
+sim.call(M, 'acknowledge', fromHex(ids.ballot), now());
+sim.call(M, 'acknowledge', fromHex(ids.board), now());
 sim.advance(3600);
-sim.call(ps['desk-maintainer'], 'markFixed', fromHex(ids.ballot), now());
+sim.call(M, 'markFixed', fromHex(ids.ballot), now());
 sim.call(ps['desk-researcher'], 'reveal', fromHex(ids.ballot), ps['desk-researcher'].openings[ids.ballot]);
 const scan = BigInt(Math.floor(Date.now() / 1000));
 for (const g of grades) sim.call(ps['desk-tell'], 'attest', g.hash, gradeToNumber(g.grade), RULES, scan);
-sim.call(ps['desk-maintainer'], 'selfGrade', deskHash, await projectId(DEMO_REPO), gradeToNumber(grades[0].grade), RULES, scan);
+const tellProject = await projectId(DEMO_REPO);
+sim.call(M, 'selfGrade', deskHash, tellProject, gradeToNumber(grades[0].grade), RULES, scan);
 ok(`lifecycle: ${sim.transactions.length} transactions (${[...new Set(sim.transactions.map((t) => t.circuit))].join(', ')})`);
 
 // 3. What the chain would show.
@@ -109,6 +127,9 @@ const revealed = view.reports.find((r) => r.id === ids.ballot)!;
 const check = await verifyReveal(revealed, DEMO_FINDINGS[0].text, DEMO_REPO);
 if (!check.digest || !check.project || !check.seal) throw new Error(`reveal does not verify: ${JSON.stringify(check)}`);
 ok('the revealed report verifies against its published text');
+if (view.maintainerCredentials !== DEMO_MAINTAINERS.length) throw new Error(`expected ${DEMO_MAINTAINERS.length} credentials, found ${view.maintainerCredentials}`);
+if (gradeFor(sim.publicState, deskHash, tellProject)?.grade !== grades[0].grade) throw new Error('Desk’s grade does not read back');
+ok(`${view.maintainerCredentials} maintainer credentials; Desk’s grade reads back by code hash`);
 console.log(
   JSON.stringify(
     {

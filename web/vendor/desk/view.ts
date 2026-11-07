@@ -22,8 +22,11 @@ export type GradeView = { codeHash: string; grade: GradeLetter; rules: number; s
 
 export type DeskView = {
   attester: string;
+  /** A hand-over in progress: the proposed next officer key, until its holder accepts. */
+  pendingAttester?: string;
   embargoSeconds: number;
   sealedCount: number;
+  /** Distinct registered credentials: the anonymity set of a proof made against the latest root. */
   maintainerCredentials: number;
   maintainerRoot: string;
   reports: ReportView[];
@@ -34,6 +37,17 @@ export type DeskView = {
 const STATUS: ReportView['status'][] = ['pending', 'acknowledged', 'fixed', 'retracted'];
 
 const openingView = (o: Opening) => ({ digest: toHex(o.finding.digest), project: toHex(o.finding.project), nonce: toHex(o.nonce) });
+
+type GradeRecord = { codeHash: Uint8Array; grade: bigint; rules: bigint; scan: bigint; selfReported: boolean; project: Uint8Array };
+const gradeView = (g: GradeRecord): GradeView => ({
+  codeHash: toHex(g.codeHash),
+  grade: gradeToLetter(g.grade),
+  rules: Number(g.rules),
+  scan: Number(g.scan),
+  selfReported: g.selfReported,
+  ...(g.selfReported ? { project: toHex(g.project) } : {}),
+});
+const isZero = (b: Uint8Array) => b.every((x) => x === 0);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function readDesk(state: any): DeskView {
@@ -51,34 +65,42 @@ export function readDesk(state: any): DeskView {
     });
   }
   reports.sort((a, b) => a.sealedAt - b.sealedAt || a.id.localeCompare(b.id));
-  const grade = (codeHash: Uint8Array, g: { grade: bigint; rules: bigint; scan: bigint; selfReported: boolean; project: Uint8Array }): GradeView => ({
-    codeHash: toHex(codeHash),
-    grade: gradeToLetter(g.grade),
-    rules: Number(g.rules),
-    scan: Number(g.scan),
-    selfReported: g.selfReported,
-    ...(g.selfReported ? { project: toHex(g.project) } : {}),
-  });
   return {
     attester: toHex(l.attester),
+    ...(isZero(l.nextAttester) ? {} : { pendingAttester: toHex(l.nextAttester) }),
     embargoSeconds: Number(l.embargo),
     sealedCount: Number(l.sealedCount),
-    maintainerCredentials: Number(l.maintainers.firstFree()),
+    maintainerCredentials: Number(l.registered.size()),
     maintainerRoot: l.maintainers.root().field.toString(16),
     reports,
-    grades: [...l.grades].map(([h, g]) => grade(h, g)),
-    selfGrades: [...l.selfGrades].map(([h, g]) => grade(h, g)),
+    grades: [...l.grades].map(([, g]) => gradeView(g)),
+    selfGrades: [...l.selfGrades].map(([, g]) => gradeView(g)),
   };
 }
 
-/** A contract's grade as a wallet would show it: Tell's attestation first, else the self-report. */
+/**
+ * Every self-reported grade for a contract's code, one per project that published one. The
+ * same code can belong to several projects (a shared example, a fork), so each has its own.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function gradeFor(state: any, codeHash: Uint8Array): GradeView | undefined {
+export function selfGradesFor(state: any, codeHash: Uint8Array): GradeView[] {
   const l = ledger(state);
-  const pick = (m: typeof l.grades) => (m.member(codeHash) ? m.lookup(codeHash) : undefined);
-  const g = pick(l.grades) ?? pick(l.selfGrades);
-  if (!g) return undefined;
-  return { codeHash: toHex(codeHash), grade: gradeToLetter(g.grade), rules: Number(g.rules), scan: Number(g.scan), selfReported: g.selfReported, ...(g.selfReported ? { project: toHex(g.project) } : {}) };
+  return [...l.selfGrades].filter(([, g]) => equalBytes(g.codeHash, codeHash)).map(([, g]) => gradeView(g));
+}
+
+/**
+ * A contract's grade as a wallet would show it: Tell's attestation first; otherwise, when the
+ * caller names the project it expects the contract to belong to (a hash from `projectId`),
+ * that project's self-report. A self-report from some other project is never picked for the
+ * caller: use `selfGradesFor` to list them all, each with the project that made the claim.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function gradeFor(state: any, codeHash: Uint8Array, project?: Uint8Array): GradeView | undefined {
+  const l = ledger(state);
+  if (l.grades.member(codeHash)) return gradeView(l.grades.lookup(codeHash));
+  if (!project) return undefined;
+  const k = pureCircuits.selfGradeKey(codeHash, project);
+  return l.selfGrades.member(k) ? gradeView(l.selfGrades.lookup(k)) : undefined;
 }
 
 /**
