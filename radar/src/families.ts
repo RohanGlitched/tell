@@ -42,6 +42,50 @@ export function preimage(f: Family, i: number): Buffer {
   }
 }
 
+/**
+ * The same preimages as `preimage`, written into one reused buffer: the hot loop
+ * allocates nothing but the digest. The returned view is valid until the next call.
+ */
+export function preimageFiller(f: Family): (i: number) => Buffer {
+  const buf = Buffer.alloc(64);
+  const putLE = (off: number, width: number, v: number) => {
+    buf.fill(0, off, off + width);
+    for (let k = 0; k < width && v > 0; k++) {
+      buf[off + k] = v % 256;
+      v = Math.floor(v / 256);
+    }
+  };
+  const putStr = (off: number, s: string) => {
+    buf.fill(0, off, off + 32);
+    buf.write(s, off, 32, 'utf8');
+  };
+  switch (f.kind) {
+    case 'uint':
+      return (i) => { putLE(0, f.width, i); return buf.subarray(0, f.width); };
+    case 'word':
+      return (i) => { putStr(0, f.words[i]); return buf.subarray(0, 32); };
+    case 'tagged': {
+      let last = -1;
+      return (i) => {
+        const p = Math.floor(i / f.count);
+        if (p !== last) { putStr(0, f.prefixes[p]); last = p; }
+        putLE(32, f.width, i % f.count);
+        return buf.subarray(0, 32 + f.width);
+      };
+    }
+    case 'taggedWord': {
+      let last = -1;
+      const n = f.words.length;
+      return (i) => {
+        const p = Math.floor(i / n);
+        if (p !== last) { putStr(0, f.prefixes[p]); last = p; }
+        putStr(32, f.words[i % n]);
+        return buf.subarray(0, 64);
+      };
+    }
+  }
+}
+
 const TYPE: Record<Width, string> = { 1: 'Uint<8>', 2: 'Uint<16>', 4: 'Uint<32>', 8: 'Uint<64>', 16: 'Uint<128>', 32: 'Field' };
 
 /** What entry i is, written the way a Compact developer would write it. */

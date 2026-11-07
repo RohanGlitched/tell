@@ -4,9 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import * as rt from '@midnight-ntwrk/compact-runtime';
 import { describe, expect, it } from 'vitest';
-import { type Family, familySize, preimage } from '../src/families.js';
+import { type Family, familySize, preimage, preimageFiller } from '../src/families.js';
 import { le, pad32, sha256 } from '../src/hash.js';
-import { loadTable } from '../src/table.js';
+import { buildTable, lookupAll } from '../src/table.js';
 
 const hex = (b: Uint8Array) => Buffer.from(b).toString('hex');
 const B32 = new rt.CompactTypeBytes(32);
@@ -63,15 +63,37 @@ describe('persistentHash encoding', () => {
 });
 
 describe('precomputed table', () => {
-  it('finds values by digest and only those', async () => {
+  it('is built from sorted runs merged on disk, and finds values by digest and only those', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'radar-table-'));
     const f: Family = { kind: 'uint', width: 2, count: 1 << 16 };
-    const t = await loadTable(f, dir, { threads: 1 });
-    for (const v of [0, 7, 4242, 65535]) expect(t.lookup(Buffer.from(rt.persistentHash(U(16), BigInt(v))))).toEqual([v]);
-    expect(t.lookup(sha256(Buffer.from('nothing')))).toEqual([]);
-    // reloaded from disk, same answers
-    const again = await loadTable(f, dir, { threads: 1 });
-    expect(again.lookup(Buffer.from(rt.persistentHash(U(16), 4242n)))).toEqual([4242]);
+    const file = await buildTable(f, dir, { runSize: 5000 }); // 14 runs
+    expect(fs.readdirSync(dir)).toEqual([path.basename(file)]); // runs cleaned up
+    const words = new BigUint64Array(fs.readFileSync(file).buffer.slice(0));
+    expect(words.length).toBe(1 << 16);
+    for (let i = 1; i < words.length; i++) expect(words[i - 1] <= words[i]).toBe(true);
+    const d = (v: number) => hex(rt.persistentHash(U(16), BigInt(v)));
+    const found = lookupAll(f, file, [d(0), d(7), d(4242), d(65535), hex(sha256(Buffer.from('nothing')))]);
+    expect(found.map(([, i]) => i).sort((a, b) => a - b)).toEqual([0, 7, 4242, 65535]);
+    expect(found.find(([, i]) => i === 4242)![0]).toBe(d(4242));
+    // a second build finds the file and keeps it
+    const before = fs.statSync(file).mtimeMs;
+    await buildTable(f, dir);
+    expect(fs.statSync(file).mtimeMs).toBe(before);
     fs.rmSync(dir, { recursive: true, force: true });
+  });
+});
+
+describe('preimage filler', () => {
+  it('writes the same bytes as preimage for every family kind', () => {
+    const fams: Family[] = [
+      { kind: 'uint', width: 8, count: 300 },
+      { kind: 'word', words: ['a', 'bb:cc', 'x'.repeat(32)] },
+      { kind: 'tagged', prefixes: ['p', 'q:r'], width: 4, count: 300 },
+      { kind: 'taggedWord', prefixes: ['p', 'q'], words: ['s', 't'] },
+    ];
+    for (const f of fams) {
+      const fill = preimageFiller(f);
+      for (let i = 0; i < familySize(f); i++) expect(hex(fill(i)), `${f.kind} ${i}`).toBe(hex(preimage(f, i)));
+    }
   });
 });

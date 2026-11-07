@@ -10,11 +10,12 @@
 //  3. linkable tags: the same 32-byte value in several calls of a contract
 //     ties those calls together; the same value in several contracts ties them.
 
-import { bruteForce, type Hit, Targets } from './brute.js';
+import { bruteForce, HashPool, type Hit, Targets } from './brute.js';
 import type { ContractRecord } from './chain.js';
 import { describe, type Family, familyName, familySize } from './families.js';
 import { type Atom, decodeCalls, decodeState, type DecodedState, isOpaque32 } from './state.js';
-import { loadTable } from './table.js';
+import { defaultThreads } from './hash.js';
+import { buildTable, lookupAll } from './table.js';
 import { numericTables } from './tables.js';
 import { COMMON_WORDS, ownWords, pairPrefixes, singlePrefixes, vocabulary } from './words.js';
 
@@ -149,8 +150,10 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
   const { tables, streamed, pairChunks, count } = familiesFor(records, o);
   const hits: Hit[] = [];
   const families: FamilyRun[] = [];
+  const pool = new HashPool(targets.keys(), o.threads ?? defaultThreads());
+  try {
   for (const f of streamed) {
-    const r = await bruteForce(f, targets, { threads: o.threads });
+    const r = await bruteForce(f, targets, { pool });
     hits.push(...r.hits.map(narrow));
     families.push({ family: familyName(f), size: r.hashed, ms: r.ms, hits: r.hits.length });
     log(`  ${familyName(f)}: ${r.hashed} hashed in ${(r.ms / 1000).toFixed(1)} s, ${r.hits.length} hits`);
@@ -165,7 +168,7 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
       [`pairTagged8x${count}`, { kind: 'tagged', prefixes: chunk, width: 1, count }],
     ];
     for (const [name, f] of fams) {
-      const r = await bruteForce(f, targets, { threads: o.threads });
+      const r = await bruteForce(f, targets, { pool });
       hits.push(...r.hits.map(narrow));
       const run = (pairRuns[name] ??= { family: name, size: 0, ms: 0, hits: 0 });
       run.size += r.hashed;
@@ -178,13 +181,17 @@ export async function analyze(records: Digested[], o: Options = {}): Promise<Ana
     families.push({ ...run, family: `${run.family}(${prefixes} prefixes)` });
     log(`  ${run.family}: ${run.size} hashed in ${(run.ms / 1000).toFixed(1)} s, ${run.hits} hits`);
   }
+  const all = [...targets.byKey.values()].flat();
   for (const f of tables) {
     const t0 = Date.now();
-    const table = await loadTable(f, o.tableDir!, { threads: o.threads, log });
-    let n = 0;
-    for (const list of targets.byKey.values()) for (const d of list) for (const i of table.lookup(Buffer.from(d, 'hex'))) { hits.push({ family: f, index: i, digest: d }); n++; }
-    families.push({ family: familyName(f), size: familySize(f), ms: Date.now() - t0, hits: n });
-    log(`  ${familyName(f)} (table): ${n} hits`);
+    const file = await buildTable(f, o.tableDir!, { pool, log });
+    const found = lookupAll(f, file, all);
+    for (const [d, i] of found) hits.push({ family: f, index: i, digest: d });
+    families.push({ family: familyName(f), size: familySize(f), ms: Date.now() - t0, hits: found.length });
+    log(`  ${familyName(f)} (table): ${found.length} hits`);
+  }
+  } finally {
+    await pool.close();
   }
 
   const recoveries = new Map<string, Recovery>();

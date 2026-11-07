@@ -18,7 +18,8 @@ import { analyze, digest, type Digested } from './analyze.js';
 import { BLOCKS_PER_REQUEST, crawl, fetchContract, harvestCandidates, loadCrawl, tip, verifyAddresses } from './chain.js';
 import { BudgetExceeded, Indexer, type Network } from './indexer.js';
 import { aggregate, details, type Own } from './report.js';
-import { loadTable } from './table.js';
+import { HashPool } from './brute.js';
+import { buildTable } from './table.js';
 import { numericTables } from './tables.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -63,7 +64,12 @@ async function main() {
   try {
     if (cmd === 'tables') {
       // Builds the numeric tables ahead of a scan (about 400 MB on disk), one at a time.
-      for (const f of numericTables(1 << 24)) await loadTable(f, path.join(HOME, 'tables'), { log });
+      const pool = new HashPool(new Float64Array(0));
+      try {
+        for (const f of numericTables(1 << 24)) await buildTable(f, path.join(HOME, 'tables'), { pool, log });
+      } finally {
+        await pool.close();
+      }
       log(`tables ready in ${path.join(HOME, 'tables')}`);
     } else if (cmd === 'crawl') {
       const top = typeof flags.to === 'string' ? Number(flags.to) : await tip(ix);
