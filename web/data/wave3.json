@@ -44,8 +44,8 @@
       "criterion": "product",
       "source": "Product review",
       "quote": "We are not currently offering grants specifically, so please consider applying to our technical fellowship program",
-      "did": "The Aliit technical fellowship application is drafted, with Tell as the project. It is not submitted yet.",
-      "status": "in progress",
+      "did": "Applied to the Aliit technical fellowship on November 7, 2026, Builder and Educate paths, with Tell as the project. Also posted Tell as input to Midnight's MPS-0036 on review evidence (MIP discussion #413).",
+      "status": "done",
       "evidence": [{ "label": "Confirmation, once submitted", "href": null }]
     },
     {
@@ -174,7 +174,7 @@
         { "text": "MCP server, so AI coding agents check contracts as they write them", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/mcp" },
         { "text": "VS Code extension that marks leaking lines on open and save", "status": "done", "href": "https://github.com/RohanGlitched/tell/tree/main/vscode" },
         { "text": "Mapped Tell and Tell Desk to the gaps in Midnight's MPS-0036 (security-review evidence for Compact releases): what each already covers and what it does not", "status": "done", "href": "https://github.com/RohanGlitched/tell#tell-and-mps-0036" },
-        { "text": "Aliit technical fellowship application drafted, not yet submitted", "status": "in progress", "href": null }
+        { "text": "Applied to the Aliit technical fellowship (November 7)", "status": "done", "href": null }
       ]
     },
     {
