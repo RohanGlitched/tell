@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { describe, it, expect } from 'vitest';
 import { analyzeIr, scanFile, findCompilers, type Finding } from '../src/index.js';
 import { propose, applyEdits, unifiedDiff, changedRange, mask, splitTop, planFixes, findingKey } from '../src/fix.js';
@@ -222,16 +222,23 @@ export circuit raise(id: Bytes<32>): [] {
     expect(s!.verification?.compiles).toBe(false);
   }, 120_000);
 
-  const cli = (args: string[]) => spawnSync('npx', ['tsx', 'src/cli.ts', ...args], { encoding: 'utf8', cwd: path.join(__dirname, '..') });
-  it('--fix-dry-run prints the diff and changes nothing; --fix writes it and the scan passes', () => {
+  // async, so the test worker's event loop stays free while the CLI compiles
+  const cli = (args: string[]) =>
+    new Promise<{ status: number | null; stdout: string }>((resolve) => {
+      const p = spawn('npx', ['tsx', 'src/cli.ts', ...args], { cwd: path.join(__dirname, '..') });
+      let stdout = '';
+      p.stdout.on('data', (d) => (stdout += d));
+      p.on('close', (status) => resolve({ status, stdout }));
+    });
+  it('--fix-dry-run prints the diff and changes nothing; --fix writes it and the scan passes', async () => {
     const file = path.join(tmp, 'vault.compact');
     fs.copyFileSync(path.join(zoo, 'vault-leaky.compact'), file);
     const before = fs.readFileSync(file, 'utf8');
-    const dry = cli([file, '--fix-dry-run']);
+    const dry = await cli([file, '--fix-dry-run']);
     expect(dry.stdout).toContain('verified secret-published in claim, line 19 (hash-key)');
     expect(dry.stdout).toContain('-  owner = disclose(secretKey());');
     expect(fs.readFileSync(file, 'utf8')).toBe(before);
-    const fix = cli([file, '--fix', '--fail-on', 'medium']);
+    const fix = await cli([file, '--fix', '--fail-on', 'medium']);
     expect(fix.stdout).toContain('grade F → A');
     expect(fix.status).toBe(0);
     expect(fs.readFileSync(file, 'utf8')).toContain('persistentHash<Vector<2, Bytes<32>>>');
