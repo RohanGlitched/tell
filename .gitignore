@@ -17,3 +17,7 @@ survey/results.json
 next-env.d.ts
 survey/.salt
 survey/repos.txt
+web/data/outreach.local.json
+web/e2e/screenshots
+web/test-results
+web/playwright-report

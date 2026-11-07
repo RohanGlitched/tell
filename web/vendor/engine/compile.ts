@@ -9,6 +9,7 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { CONSTRUCTOR_MARK } from './ir.js';
 
 export type Compiler = { version: string; language: string; bin: string };
 
@@ -117,10 +118,48 @@ async function compileWith(file: string, compiler: Compiler): Promise<Compiled> 
       const msg = (r.stderr || text.split('\n').filter((l) => /Exception|error/i.test(l)).slice(-5).join('\n') || 'compile failed').trim();
       return { ok: false, compiler, error: msg.slice(0, 2000) };
     }
-    return { ok: true, compiler, ir: text.slice(a + 1, b < 0 ? undefined : b) };
+    const ctor = constructorForm(text, a);
+    return { ok: true, compiler, ir: text.slice(a + 1, b < 0 ? undefined : b) + (ctor ? CONSTRUCTOR_MARK + ctor + '\n' : '') };
   } finally {
     fs.rmSync(out, { recursive: true, force: true });
   }
+}
+
+// reduce-to-circuit keeps only what gets proved, so the constructor is gone by then. Every compiler
+// from 0.29 to 0.36 still prints it, inside public-ledger-declaration, up to drop-safe-casts: take it
+// from the last pass before reduce-to-circuit that has it.
+export function constructorForm(trace: string, r2c: number): string | null {
+  const before = trace.slice(0, r2c);
+  const headers = [...before.matchAll(/\n([a-z0-9/-]+):\n/g)];
+  // Only passes after inline-circuits: before it, helper circuits are still calls.
+  const first = headers.findIndex((h) => h[1] === 'inline-circuits');
+  if (first < 0) return null;
+  for (let i = headers.length - 1; i >= first; i--) {
+    const from = headers[i].index! + headers[i][0].length;
+    const to = i + 1 < headers.length ? headers[i + 1].index! : before.length;
+    const rel = before.slice(from, to).indexOf('(constructor');
+    if (rel < 0) continue;
+    const at = from + rel;
+    const end = matchParen(before, at);
+    return end > at ? before.slice(at, end) : null;
+  }
+  return null;
+}
+
+// Index just past the list that opens at `start`, skipping strings.
+function matchParen(s: string, start: number): number {
+  let depth = 0;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (c === '"') {
+      for (i++; i < s.length && s[i] !== '"'; i++) if (s[i] === '\\') i++;
+    } else if (c === '(' || c === '[') depth++;
+    else if (c === ')' || c === ']') {
+      depth--;
+      if (depth === 0) return i + 1;
+    }
+  }
+  return -1;
 }
 
 // A file worth compiling on its own: a contract, not a module or include file.

@@ -16,24 +16,25 @@ const who = (n: Note) => (n.kind === 'argument' ? n.source : `${n.source.replace
 function Chip({ n }: { n: Note }) {
   if (n.flow === 'guessable')
     return (
-      <span className="rounded-[2px] bg-[var(--uv)] px-1.5 py-0.5 font-bold text-[#ff4fd8]" style={{ textShadow: '0 0 8px rgba(255,79,216,.6)' }}>
-        {n.via}({who(n)}) · {n.bits} bits, guessable
-      </span>
+      <mark className="rounded-[2px] bg-[var(--marker-soft)] px-1.5 py-0.5 text-[var(--marker-ink)]">
+        {n.via}({who(n)}), {n.bits} bits, guessable
+      </mark>
     );
   if (n.flow === 'reveal')
-    return <span className="rounded-[2px] bg-[var(--red-soft)] px-1.5 py-0.5 font-bold text-[var(--red)]">{who(n)} in the clear · {n.bits} bits</span>;
-  if (n.flow === 'predicate') return <span className="rounded-[2px] bg-[var(--amber-soft)] px-1.5 py-0.5 text-[var(--amber)]">yes/no about {who(n)}</span>;
+    return <mark className="rounded-[2px] bg-[var(--marker)] px-1.5 py-0.5 text-white">{who(n)} in the clear, {n.bits} bits</mark>;
+  if (n.flow === 'predicate') return <span className="rounded-[2px] bg-[var(--violet-soft)] px-1.5 py-0.5 text-[var(--violet)]">yes/no about {who(n)}</span>;
   if (n.tag)
     return (
-      <span className="rounded-[2px] bg-[var(--uv)] px-1.5 py-0.5 text-[#5cf2ff]">
-        {n.via}({who(n)}) · same tag each call
+      <span className="rounded-[2px] bg-[var(--violet-soft)] px-1.5 py-0.5 text-[var(--violet)]">
+        {n.via}({who(n)}), same tag each call
       </span>
     );
-  return <span className="rounded-[2px] border border-[var(--rule)] px-1.5 py-0.5 text-[var(--graphite)]">{n.via ?? 'sealed'}({who(n)}) · sealed</span>;
+  return <span className="rounded-[2px] border border-[var(--rule)] px-1.5 py-0.5 text-[var(--graphite)]">{n.via ?? 'sealed'}({who(n)}), sealed</span>;
 }
 
-export default function Transcript({ circuits }: { circuits: CircuitReport[] }) {
-  const withOps = circuits.filter((c) => ((c as CircuitReport & { ops?: Op[] }).ops ?? []).length > 0);
+// `only`: show that circuit's transcript alone, without the circuit picker (one finding's view).
+export default function Transcript({ circuits, only }: { circuits: CircuitReport[]; only?: string }) {
+  const withOps = circuits.filter((c) => ((c as CircuitReport & { ops?: Op[] }).ops ?? []).length > 0 && (!only || c.name === only));
   // open on the circuit whose transcript gives away the most
   const score = (c: CircuitReport) =>
     ((c as CircuitReport & { ops?: Op[] }).ops ?? []).flatMap((o) => o.operands.flat()).reduce((a, n) => a + (n.flow === 'guessable' ? 100 : n.flow === 'reveal' ? 50 : n.flow === 'predicate' ? 5 : n.tag ? 1 : 0), 0) +
@@ -52,25 +53,27 @@ export default function Transcript({ circuits }: { circuits: CircuitReport[] }) 
   return (
     <figure className="mt-6">
       <figcaption className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]">
-        <span className="font-semibold text-[var(--ink)]">Public transcript</span>
-        <span className="text-[var(--graphite)]">What a chain observer sees when this circuit runs.</span>
-        <span className="ml-auto flex max-w-full flex-wrap gap-1">
-          {withOps.map((c) => (
-            <button
-              key={c.name}
-              onClick={() => setSel(c.name)}
-              className={`mono min-h-[32px] whitespace-nowrap rounded-sm px-2 text-[12px] pointer-coarse:min-h-[44px] ${c.name === cur.name ? 'bg-[var(--ink)] text-[var(--paper)]' : 'border border-[var(--rule)] text-[var(--graphite)] hover:border-[var(--ink)]'}`}
-            >
-              {c.name}
-            </button>
-          ))}
-        </span>
+        <span className="font-semibold text-[var(--graphite)]">{only ? `Public transcript of ${only}` : 'Public transcript'}</span>
+        <span className="text-[var(--faint)]">what anyone watching the chain records</span>
+        {!only && (
+          <span className="ml-auto flex max-w-full flex-wrap gap-1">
+            {withOps.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => setSel(c.name)}
+                className={`mono min-h-[32px] whitespace-nowrap rounded-md px-2 text-[12px] pointer-coarse:min-h-[44px] ${c.name === cur.name ? 'bg-[var(--indigo)] text-white' : 'border border-[var(--rule)] text-[var(--graphite)] hover:border-[var(--ink-3)]'}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </span>
+        )}
       </figcaption>
-      <ol className="tape mono overflow-x-auto rounded-sm px-7 py-3 text-[12.5px] leading-[1.9]">
+      <ol className="mono overflow-x-auto rounded-md border border-[var(--rule)] bg-white px-4 py-1.5 text-[12.5px] leading-[1.9]">
         {lines.map(({ op, n }, i) => (
           <li key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 border-b border-dashed border-[var(--rule)] py-1 last:border-0">
             <span className="w-6 shrink-0 text-right text-[var(--faint)]">{i + 1}</span>
-            {op.guardedBy.length > 0 && <span className="rounded-[2px] bg-[var(--amber-soft)] px-1.5 text-[var(--amber)]">only if f({op.guardedBy.join(', ')})</span>}
+            {op.guardedBy.length > 0 && <span className="rounded-[2px] bg-[var(--violet-soft)] px-1.5 text-[var(--violet)]">only if f({op.guardedBy.join(', ')})</span>}
             <span className="font-semibold">
               {op.field}.{op.op}
             </span>
