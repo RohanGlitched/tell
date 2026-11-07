@@ -5,7 +5,7 @@ Tell marks the lines of a Midnight Compact contract that give private data away,
 ## What it does
 
 - **Diagnostics on open and on save** for every `.compact` contract. Severity follows Tell's: critical and high are errors, medium a warning, low information; info findings (values published on purpose) are hidden unless `tell.minSeverity` is `info`. The message says what is revealed and how many bits, for example `critical: choice() is hidden behind a persistentHash anyone can reverse (2 bits)`.
-- **Related information** on each diagnostic: the public transcript line a chain observer sees, such as `ballots.insert(public, persistentHash(choice()): guessable, 2 bits)`, linked to the ledger field's declaration.
+- **Related information** on each diagnostic: the public transcript line a chain observer sees, such as `ballots.insert(persistentHash(voterKey()): same tag each call, persistentHash(choice()): guessable, 2 bits)`, linked to the ledger field's declaration.
 - **Hover** on a marked line: what leaks, Tell's explanation, the fix, the transcript, and a link to the full fix.
 - **Quick fix "Show Tell's fix"** (the light bulb, or `Ctrl+.`): opens a side preview with the finding, the change to make, and the rule with a worked leak and fix from Tell's leak zoo.
 - **Status bar grade** for the active contract, A to F: red for D and F, amber for C. Click it for the Problems panel.

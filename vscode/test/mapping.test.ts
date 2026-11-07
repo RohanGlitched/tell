@@ -9,7 +9,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { analyzeIr, gradeOf, SEVERITIES, type ContractResult, type Severity } from '@tell/engine';
+import { analyzeIr, candidates, gradeOf, SEVERITIES, type ContractResult, type Severity } from '@tell/engine';
 import { DiagnosticLevel, compilerDir, fixMarkdown, hoverMarkdown, levelOf, parseCliJson, spanOfLine, statusOf, toDiagnostics } from '../src/mapping.js';
 import { compilersIn, runTell } from '../src/runner.js';
 
@@ -63,8 +63,7 @@ describe('zoo findings as diagnostics', () => {
     expect(d.span.line).toBe(lineOf(src, 'ballots.insert(tag'));
     expect(src.split('\n')[d.span.line].slice(d.span.start, d.span.end)).toBe('ballots.insert(tag, disclose(choiceHash(c)));');
     expect(d.message).toMatch(/^critical: .*\(2 bits\)$/);
-    expect(d.related.length).toBeGreaterThan(0);
-    expect(d.related[0].message).toMatch(/^public transcript of vote: ballots\.insert\(.*guessable, 2 bits/);
+    expect(d.related.map((r) => r.message)).toContainEqual(expect.stringMatching(/^public transcript of vote: ballots\.insert\(.*persistentHash\(choice\(\)\): guessable, 2 bits\)$/));
     // related information points at the ledger declaration the transcript writes to
     expect(d.related[0].span.line).toBe(lineOf(src, 'export ledger ballots'));
   });
@@ -168,8 +167,10 @@ describe.skipIf(compilers.length === 0)('with the real compiler', () => {
   });
 
   it('tell.compilerVersion picks the compiler', async () => {
-    const want = compilers[compilers.length - 1].version;
-    const r = await runTell(path.join(ZOO, 'vault-leaky.compact'), { compilerVersion: want });
+    // the least preferred compiler that accepts the contract's pragma
+    const file = path.join(ZOO, 'vault-leaky.compact');
+    const want = candidates(compilers, fs.readFileSync(file, 'utf8')).at(-1)!.version;
+    const r = await runTell(file, { compilerVersion: want });
     expect(r.compiler).toBe(want);
     const missing = await runTell(path.join(ZOO, 'vault-leaky.compact'), { compilerVersion: '9.9.9' });
     expect(missing.ok).toBe(false);

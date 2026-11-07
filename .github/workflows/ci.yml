@@ -32,12 +32,12 @@ jobs:
       - run: npm ci --no-audit --no-fund --workspace engine --workspace mcp --workspace vscode --include-workspace-root
       - name: MCP server tests
         run: npm test -w mcp
-      - name: VS Code extension tests
+      - name: Package the extension
+        run: npm run package -w vscode
+      - name: VS Code extension tests (including the packaged bundle)
         run: npm test -w vscode
       - name: Typecheck
         run: npm run typecheck -w mcp && npm run typecheck -w vscode
-      - name: Package the extension
-        run: npm run package -w vscode
   compilers:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.
