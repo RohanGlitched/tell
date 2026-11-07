@@ -48,7 +48,7 @@ if (deskDep) {
   for (const r of Object.values(dep.reports ?? {})) if (!r.revealed) delete r.digest;
   // Outreach seals: publish only how many and their ids (public on chain anyway). The record keys
   // them by note, and a key may name the team a note went to, so keys stay off the site.
-  if (dep.outreach) dep.outreach = { sealed: Object.keys(dep.outreach).length, ids: Object.values(dep.outreach).map((o) => o.id).sort() };
+  if (dep.outreach) dep.outreach = { sealed: Object.values(dep.outreach).reduce((n, o) => n + (o.notes ?? 1), 0), reports: Object.keys(dep.outreach).length, ids: Object.values(dep.outreach).map((o) => o.id).sort() };
   for (const s of dep.steps ?? []) if (s.step.startsWith('seal outreach ')) s.step = 'seal outreach note';
   // Only what the site shows: drop anything else a record might carry.
   for (const k of Object.keys(dep)) if (!['network', 'contract', 'version', 'previous', 'address', 'deployTx', 'attesterHash', 'embargoSeconds', 'rulesVersion', 'maintainers', 'steps', 'reports', 'outreach', 'grades'].includes(k)) delete dep[k];

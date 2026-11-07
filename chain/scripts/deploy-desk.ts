@@ -201,9 +201,19 @@ async function retry<T>(what: string, f: () => Promise<T>, tries = Number(proces
   }
 }
 
+// DESK_ONE_STEP=1: submit one new transaction per process, then exit with code 3 so an outer loop
+// starts a fresh wallet for the next one. With wallet SDK 1.2.0 the first fee a wallet instance pays
+// after a sync is accepted, but its next one can be rejected as InvalidDustSpendProof (170).
+let newSteps = 0;
 async function step(name: string, f: () => Promise<{ txId: string; [k: string]: unknown }>): Promise<Step> {
   const prev = done(name);
   if (prev) return prev;
+  if (process.env.DESK_ONE_STEP === '1' && newSteps >= 1) {
+    logger.info(`more steps to run (next: ${name}); exiting for a fresh wallet`);
+    await house.stop();
+    process.exit(3);
+  }
+  newSteps++;
   const t = Date.now();
   const r = await retry(name, f);
   const s: Step = { ...r, step: name, at: new Date().toISOString() };
@@ -277,7 +287,23 @@ for (const f of FINDINGS) {
 // The outreach notes. The opening (digest, project, nonce) goes to Tell's private state and to a
 // private file with the house seed, so Tell can later hand it to the team or reveal it.
 const openings: Record<string, unknown> = fs.existsSync(OUTREACH_OPENINGS) ? JSON.parse(fs.readFileSync(OUTREACH_OPENINGS, 'utf8')) : {};
-for (const n of NOTES) {
+// DESK_OUTREACH_BUNDLE=1: one sealed report for all the notes. Its private text lists each note's
+// digest, so revealing the bundle later proves every note existed at the seal time, while the
+// notes, their repositories and the list itself stay private until then.
+if (process.env.DESK_OUTREACH_BUNDLE === '1' && NOTES.length > 0) {
+  const lines: string[] = [];
+  for (const n of NOTES) lines.push(`${n.key} ${toHex(await reportDigest(n.text))}`);
+  const text = `Tell outreach notes sent on 2026-11-07 (key, digest of the note):\n${lines.join('\n')}\n`;
+  const s = await step('seal outreach bundle', async () => {
+    const r = await desk.seal('desk-researcher', text, REPO);
+    openings.bundle = { note: r.note, text };
+    writeAtomic(OUTREACH_OPENINGS, JSON.stringify(openings, null, 2) + '\n', 0o600);
+    return { txId: r.txId, id: r.id };
+  });
+  out.outreach.bundle ??= { id: s.id as string, notes: NOTES.length } as { id: string };
+  save();
+}
+for (const n of process.env.DESK_OUTREACH_BUNDLE === '1' ? [] : NOTES) {
   const s = await step(`seal outreach ${n.key}`, async () => {
     const r = await desk.seal('desk-researcher', n.text, n.repo);
     openings[n.key] = r.note;

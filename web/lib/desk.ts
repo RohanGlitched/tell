@@ -24,7 +24,7 @@ type Dep = {
   // the repositories with a registered maintainer credential (sorted, not in leaf order)
   maintainers?: { count: number; repos: string[] };
   // outreach notes sealed by Tell: how many, and their report ids (keys and texts stay private)
-  outreach?: { sealed: number; ids: string[] };
+  outreach?: { sealed: number; reports?: number; ids: string[] }; // sealed = notes covered
   previous?: { version: number; address?: string };
 };
 const DEP = deployment as Dep;
@@ -50,6 +50,7 @@ export type DeskResponse = Omit<DeskView, 'reports' | 'grades' | 'selfGrades'> &
   // the record's own notes: which repositories hold credentials, the outreach seals, the earlier version
   maintainerRepos: string[];
   outreachIds: string[];
+  outreachNotes: number;
   previousAddress: string | null;
 };
 
@@ -109,6 +110,7 @@ export async function readDesk(): Promise<DeskResponse> {
     steps: DEP.steps ?? [],
     maintainerRepos: DEP.maintainers?.repos ?? [],
     outreachIds: DEP.outreach?.ids ?? [],
+    outreachNotes: DEP.outreach?.sealed ?? 0,
     previousAddress: DEP.previous?.address ?? null,
   };
   cache = { at: Date.now(), data };

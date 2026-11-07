@@ -86,7 +86,7 @@ export default function DeskLive() {
         {data.maintainerRepos.length > 0 ? <> ({data.maintainerRepos.map((r) => canonicalRepo(r).replace(/^github\.com\//, '')).join(', ')})</> : null}. An
         acknowledgement or fix proves only that one of them answered, not which one; with a single credential that would say who. Every demo
         transaction is still submitted by Tell’s one house wallet, so an observer sees one operator in every role.
-        {data.outreachIds.length > 0 ? ` ${data.outreachIds.length} of the sealed reports are leak notes Tell sent to teams; their texts and projects stay private.` : ''}
+        {data.outreachIds.length > 0 ? (data.outreachIds.length === 1 && data.outreachNotes > 1 ? ` One sealed report covers the ${data.outreachNotes} leak notes Tell sent to teams on November 7: it commits to a private list of each note’s digest, so revealing it later proves every note existed by then. The notes and their projects stay private.` : ` ${data.outreachIds.length} of the sealed reports are leak notes Tell sent to teams; their texts and projects stay private.`) : ''}
       </p>
 
       <div>
