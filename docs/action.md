@@ -34,6 +34,8 @@ jobs:
 
 Set `path` to the directories or files that hold your contracts.
 
+Contracts that use Ledger 9 features (events, cross-contract calls) declare `pragma language_version >= 0.25` and need Compact 0.36: add `compact-version: '0.36.0'`. Tell's own CI scans its Ledger 9 zoo contracts that way.
+
 ## Permissions
 
 | Permission | Why | Without it |
