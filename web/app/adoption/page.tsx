@@ -90,6 +90,7 @@ export default function AdoptionPage() {
             </Slot>
           )}
         </div>
+        {surveyRerun.after ? <p className="mt-4 max-w-[72ch] text-[15px] leading-relaxed text-[var(--graphite)]">{surveyRerun.note}</p> : null}
       </Section>
 
       <Section id="repository" tone="mist" note="GitHub" noteText="Public counts, plus traffic when the token can read it." title="The repository">
