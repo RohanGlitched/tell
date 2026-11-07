@@ -1,30 +1,192 @@
 {
+  "outreach": {
+    "sealed": 12,
+    "reports": 1,
+    "ids": [
+      "5594074c006847513b0665f3fb7075b86121536a11132622a143ae738478da23"
+    ]
+  },
   "network": "preprod",
   "contract": "tell-desk",
+  "version": 2,
+  "previous": {
+    "version": 1,
+    "address": "c3b70e8eb95761e88bd7f2d12532964a5abe753e9af93c1330b6c66cf88943d6",
+    "record": "desk-preprod-v1.json"
+  },
   "steps": [
     {
-      "txId": "007d555f89251720c5be1ef9dd18da58ad13653c0ab7b801d58fd28155d996473f",
+      "txId": "008fa8523a2e4940930e901896cfa9bf6c436ec0bd043f258ed3677e1b658d0607",
       "result": [],
-      "step": "register maintainer",
-      "at": "2026-11-07T06:07:02.612Z"
+      "step": "register maintainer 1",
+      "at": "2026-11-07T11:10:57.273Z"
     },
     {
-      "txId": "00c3c2531561a2b624b30f46d2bf25711a3f178c61399aa743983338625e408ccf",
-      "id": "f901357fd04014ca029ecc5ddc096de1a488f5699c583d014ba8206208ca2a85",
+      "txId": "00b6be89732e476dc1f9b80967102614fa61160c5c647522f970ec3fd14c94865a",
+      "result": [],
+      "step": "register maintainer 2",
+      "at": "2026-11-07T11:15:54.724Z"
+    },
+    {
+      "txId": "002e0eb00a6ddd7f642e2c205c9c24ff4980a2a088ed90c53c2cf832f6b6e771c7",
+      "result": [],
+      "step": "register maintainer 3",
+      "at": "2026-11-07T11:17:59.674Z"
+    },
+    {
+      "txId": "00093198adb90f5807b0cc9844c5c5506a7e39f3f1d653bc2e98b94bd736f7285c",
+      "result": [],
+      "step": "register maintainer 4",
+      "at": "2026-11-07T11:30:17.629Z"
+    },
+    {
+      "txId": "00d923c5fcf572f0cbe2d649095dfb892f9ccb6c7dc193fb1d51329549f4f782c9",
+      "result": [],
+      "step": "register maintainer 5",
+      "at": "2026-11-07T11:45:03.305Z"
+    },
+    {
+      "txId": "00ca166d8bca33b02450df6499a51513628f1d418e4d847a47f0bab798c30ea248",
+      "id": "6156bd4bc243067d59cb13acef123575d07a63d7a61485d686e3a5b6f17de004",
       "step": "seal ballot",
-      "at": "2026-11-07T06:08:26.412Z"
+      "at": "2026-11-07T11:59:10.798Z"
+    },
+    {
+      "txId": "005c871dc0df0a64fb9f36573aa9e71a15a1a60f0ab031def62c76862f8fcc574e",
+      "id": "90aed98a6b2753b599040505007568b2ed04f1960ec0cee52fdf5c170a1f7b24",
+      "step": "seal board",
+      "at": "2026-11-07T12:15:10.570Z"
+    },
+    {
+      "txId": "0092665437b3e79977ebf02d114188a909edfc65d465fd3427c4466656b28877cf",
+      "id": "50e9d151fca05192f5e6ad06d8c92493ee548f25efdcc3f6b699e5a1a63564b8",
+      "step": "seal vault",
+      "at": "2026-11-07T12:19:05.791Z"
+    },
+    {
+      "txId": "00d1cc9d329d54e2dcf9fdb043915f876e7bc11feab4128bca402a44e32c3b78b3",
+      "id": "5594074c006847513b0665f3fb7075b86121536a11132622a143ae738478da23",
+      "step": "seal outreach bundle",
+      "at": "2026-11-07T12:23:02.019Z"
+    },
+    {
+      "txId": "0060d056fccd1e37e2a7b4fc196a266ba34f4a63c8258c89a840b32788fc944b6b",
+      "result": [],
+      "step": "acknowledge ballot",
+      "at": "2026-11-07T12:34:15.265Z"
+    },
+    {
+      "txId": "007a4f4fd95d38b0b051430031d079f8c8e461e4e928a99008581f77222a5c0cc4",
+      "result": [],
+      "step": "acknowledge board",
+      "at": "2026-11-07T12:45:22.793Z"
+    },
+    {
+      "txId": "00f3434da35867c02d79ad297a5d6dee4261681051f30f9a6bf74c6db0356a9390",
+      "result": [],
+      "step": "fix ballot",
+      "at": "2026-11-07T12:56:35.806Z"
+    },
+    {
+      "txId": "00097286ddf02bee2df37244ba0945929538f996d4eb016a63af14713732f56b29",
+      "result": [],
+      "step": "reveal ballot",
+      "at": "2026-11-07T13:07:31.503Z"
+    },
+    {
+      "txId": "00f0a2a040003de81a7aeaf4abc42822791b08cb9e955b76e977a764d86f5ef1ee",
+      "result": [],
+      "codeHash": "da2562e3f6c0341a8d176a5e7040524745d12a3f77d3afe28af2ea78a1abfe1b",
+      "grade": "F",
+      "step": "attest ballot-leaky",
+      "at": "2026-11-07T13:11:23.876Z"
+    },
+    {
+      "txId": "0092d90a54c1638deaeb7ac5fc44a38806d869dcf991f26ff5c4e4eb307813462d",
+      "result": [],
+      "codeHash": "2089e43223b76cac8f118c0a413cf60c2b0bb6a7616e468b8e32dc523938a5bf",
+      "grade": "B",
+      "step": "attest ballot-fixed",
+      "at": "2026-11-07T13:22:30.668Z"
+    },
+    {
+      "txId": "0012e98d7e08d086a7844d8f25c18d40819d82e2b89d4b4a7aac9a7635cab4f1c9",
+      "result": [],
+      "codeHash": "5ad4f7f8ce085a1986e683d51886287269d636b06b99c750f0da7a9714661a64",
+      "grade": "A",
+      "step": "attest tell-desk",
+      "at": "2026-11-07T13:26:21.522Z"
+    },
+    {
+      "txId": "00a4535a499c9b86bc8ee92a83ce72b22deae45280202f3b02f37b7a9a7da69fa2",
+      "result": [],
+      "codeHash": "5ad4f7f8ce085a1986e683d51886287269d636b06b99c750f0da7a9714661a64",
+      "grade": "A",
+      "step": "self-grade tell-desk",
+      "at": "2026-11-07T13:30:28.235Z"
     }
   ],
   "reports": {
     "ballot": {
-      "id": "f901357fd04014ca029ecc5ddc096de1a488f5699c583d014ba8206208ca2a85",
+      "id": "6156bd4bc243067d59cb13acef123575d07a63d7a61485d686e3a5b6f17de004",
+      "digest": "0049766c8081df9cae7d588c86f3cb1b1fece832502b2f308c7f493d50437418",
+      "revealed": true,
+      "text": "zoo/contracts/ballot-leaky.compact, vote(): ballots.insert(tag, disclose(choiceHash(c))) after assert(c < 4). A hash of a 2-bit value: hashing the four candidates recovers every vote from public state. Fix: persistentCommit(c, salt) with a 32-byte salt from private state.",
+      "repo": "https://github.com/RohanGlitched/tell"
+    },
+    "board": {
+      "id": "90aed98a6b2753b599040505007568b2ed04f1960ec0cee52fdf5c170a1f7b24",
+      "revealed": false
+    },
+    "vault": {
+      "id": "50e9d151fca05192f5e6ad06d8c92493ee548f25efdcc3f6b699e5a1a63564b8",
       "revealed": false
     }
   },
-  "grades": [],
-  "address": "c3b70e8eb95761e88bd7f2d12532964a5abe753e9af93c1330b6c66cf88943d6",
-  "deployTx": "0054305347e45b281698bf849ed73ad25327244c81e83da5c9b88ea651cd07be4f",
+  "grades": [
+    {
+      "contract": "ballot-leaky",
+      "address": "817fd9366be8778cbf4d7d0d501582abd94c79275855ba35fafd3fbd741ed0ae",
+      "codeHash": "da2562e3f6c0341a8d176a5e7040524745d12a3f77d3afe28af2ea78a1abfe1b",
+      "grade": "F",
+      "selfReported": false
+    },
+    {
+      "contract": "ballot-fixed",
+      "address": "df593aea56bf44c6aead1e085d784cde8fe3f2a09348c997fff3bd173dc673b2",
+      "codeHash": "2089e43223b76cac8f118c0a413cf60c2b0bb6a7616e468b8e32dc523938a5bf",
+      "grade": "B",
+      "selfReported": false
+    },
+    {
+      "contract": "tell-desk",
+      "address": "fb9702556a59b9c70e75b8b414fd8b3de30c0cdde45b010cabedecffa7fb22a5",
+      "codeHash": "5ad4f7f8ce085a1986e683d51886287269d636b06b99c750f0da7a9714661a64",
+      "grade": "A",
+      "selfReported": false
+    },
+    {
+      "contract": "tell-desk",
+      "address": "fb9702556a59b9c70e75b8b414fd8b3de30c0cdde45b010cabedecffa7fb22a5",
+      "codeHash": "5ad4f7f8ce085a1986e683d51886287269d636b06b99c750f0da7a9714661a64",
+      "grade": "A",
+      "selfReported": true,
+      "repo": "https://github.com/RohanGlitched/tell"
+    }
+  ],
+  "address": "fb9702556a59b9c70e75b8b414fd8b3de30c0cdde45b010cabedecffa7fb22a5",
+  "deployTx": "0016dba59b812c76b3edaff54ba939be57992cb7cf3ddecd979b785da21a211133",
   "attesterHash": "5e21cbbff1ed6e910e5b22a038606e4bd3f7e6b9f0d704758f4294d3267b905a",
   "embargoSeconds": 7776000,
-  "rulesVersion": 100
+  "rulesVersion": 100,
+  "maintainers": {
+    "count": 5,
+    "repos": [
+      "https://github.com/RohanGlitched/avow",
+      "https://github.com/RohanGlitched/petri",
+      "https://github.com/RohanGlitched/segundo",
+      "https://github.com/RohanGlitched/sheaf",
+      "https://github.com/RohanGlitched/tell"
+    ]
+  }
 }

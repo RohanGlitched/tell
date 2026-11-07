@@ -10,7 +10,7 @@
   },
   "highlights": [
     { "title": "On Preprod, addresses in the README", "text": "Both ballots deployed with real votes, as the review asked.", "href": "/live", "status": "done" },
-    { "title": "Tell Desk", "text": "A new contract, deployed on Preprod: sealed disclosure with zero-knowledge answers, and a grade registry wallets can read. The demo lifecycle is partly run.", "href": "/desk", "status": "in progress" },
+    { "title": "Tell Desk", "text": "A new contract on Preprod running its whole lifecycle: 4 sealed reports, an acknowledged, fixed and revealed finding, and 4 privacy grades a wallet can read.", "href": "/desk", "status": "done" },
     { "title": "Fixes, verified", "text": "Verified patches for guessable hashes, secrets in the clear, the same tag on every action, branches and personal values, compiled and scanned again before they are offered: ballot F to B, vault F to A. Other kinds get the fix in words.", "href": "/scan?sample=ballot-leaky", "status": "done" },
     { "title": "Share links and a README badge", "text": "Send a report as a link; show your grade on GitHub.", "href": "/scan", "status": "done" },
     { "title": "Real outreach, tracked", "text": "Public issues to 11 teams naming the file and kind of finding, and one on Midnight's examples; replies and fixes counted as they come.", "href": "/adoption", "status": "in progress" },
