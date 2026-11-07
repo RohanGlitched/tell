@@ -36,6 +36,30 @@
   "source": "// Tell leak zoo: a secret key on the ledger.\n// Copyright (C) 2026 Rohan Borade\n// SPDX-License-Identifier: Apache-2.0\n//\n// The vault remembers its owner by storing the owner's secret key, so the\n// first withdrawal hands that key to everyone watching the chain.\n\npragma language_version 0.23;\n\nimport CompactStandardLibrary;\n\nexport ledger owner: Bytes<32>;\nexport ledger withdrawals: Counter;\n\nwitness secretKey(): Bytes<32>;\n\nexport circuit claim(): [] {\n  assert(owner == default<Bytes<32>>, \"already claimed\");\n  owner = disclose(secretKey());\n}\n\nexport circuit withdraw(): [] {\n  assert(owner == disclose(secretKey()), \"not the owner\");\n  withdrawals.increment(1);\n}\n"
  },
  {
+  "id": "raffle-leaky",
+  "label": "Raffle",
+  "note": "constructor seals hash(number)",
+  "source": "// Tell leak zoo: a guessable hash written by the constructor.\n// Copyright (C) 2026 Rohan Borade\n// SPDX-License-Identifier: Apache-2.0\n//\n// The organiser seals the winning number at deploy time and opens it after\n// the draw closes. The seal is hash(number), and the number is one of 10,000\n// tickets, so anyone who reads the contract's initial state can hash every\n// ticket and know the winner before a single ticket is sold.\n\npragma language_version 0.23;\n\nimport CompactStandardLibrary;\n\nexport ledger sealedDraw: Bytes<32>;\nexport ledger drawn: Uint<16>;\nexport ledger open: Boolean;\n\nwitness winningNumber(): Uint<16>;\n\nexport pure circuit seal(n: Uint<16>): Bytes<32> {\n  return persistentHash<Vector<2, Bytes<32>>>([pad(32, \"raffle:seal\"), (n as Field) as Bytes<32>]);\n}\n\nconstructor() {\n  const n = winningNumber();\n  assert(n < 10000, \"tickets run from 0 to 9999\");\n  sealedDraw = disclose(seal(n));\n  open = false;\n}\n\nexport circuit reveal(n: Uint<16>): [] {\n  assert(!open, \"already drawn\");\n  assert(seal(n) == sealedDraw, \"that is not the sealed number\");\n  drawn = disclose(n);\n  open = true;\n}\n"
+ },
+ {
+  "id": "faucet-leaky",
+  "label": "Faucet",
+  "note": "shielded mint, public nonce",
+  "source": "// Tell leak zoo: a shielded mint with a public nonce.\n// Copyright (C) 2026 Rohan Borade\n// SPDX-License-Identifier: Apache-2.0\n//\n// A faucet mints a shielded coin to whoever calls `claim`. To keep nonces\n// unique it evolves one nonce kept in the ledger, the derived-nonce pattern.\n// A coin commitment is a hash of (nonce, color, value, recipient); the nonce\n// is public, the color and the amount are public, so the only unknown left\n// is the recipient. Anyone with a list of wallet keys can check, one hash per\n// key, which wallet received each coin.\n\npragma language_version 0.23;\n\nimport CompactStandardLibrary;\n\nexport ledger nonce: Bytes<32>;\nexport ledger claims: Counter;\n\nconstructor() {\n  nonce = pad(32, \"faucet:nonce:0\");\n}\n\nexport circuit claim(): [] {\n  const n = evolveNonce(claims.read() as Uint<128>, nonce);\n  nonce = n;\n  claims.increment(1);\n  mintShieldedToken(pad(32, \"faucet:token\"), 100, n, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));\n}\n"
+ },
+ {
+  "id": "deposit-leaky",
+  "label": "Deposit",
+  "note": "bid paid as an unshielded amount",
+  "source": "// Tell leak zoo: a sealed bid paid in the clear.\n// Copyright (C) 2026 Rohan Borade\n// SPDX-License-Identifier: Apache-2.0\n//\n// Bidders seal their bid in a salted commitment, which is done right. Then\n// each bidder locks exactly the bid amount in unshielded tokens, so the\n// deposit says what the commitment was meant to hide. Unshielded amounts are\n// in the public transcript of every transaction.\n\npragma language_version 0.23;\n\nimport CompactStandardLibrary;\n\nexport ledger bids: Map<Bytes<32>, Bytes<32>>;\n\nwitness bidderKey(): Bytes<32>;\nwitness bidAmount(): Uint<64>;\nwitness bidSalt(): Bytes<32>;\n\nexport pure circuit bidderTag(sk: Bytes<32>): Bytes<32> {\n  return persistentHash<Vector<2, Bytes<32>>>([pad(32, \"deposit:bidder\"), sk]);\n}\n\nexport circuit bid(): [] {\n  const tag = disclose(bidderTag(bidderKey()));\n  assert(!bids.member(tag), \"one bid per bidder\");\n  const amount = bidAmount();\n  bids.insert(tag, disclose(persistentCommit<Uint<64>>(amount, bidSalt())));\n  receiveUnshielded(nativeToken(), disclose(amount) as Uint<128>);\n}\n"
+ },
+ {
+  "id": "poll-leaky",
+  "label": "Poll (Ledger 9)",
+  "note": "hash(choice) in an event",
+  "source": "// Tell leak zoo (Ledger 9): a guessable hash in an event.\n// Copyright (C) 2026 Rohan Borade\n// SPDX-License-Identifier: Apache-2.0\n//\n// The ledger keeps each vote as a salted commitment, which is done right.\n// Then the contract emits a receipt event so voters can find their vote in\n// an indexer, and the receipt is hash(choice). Events are part of the public\n// transaction like ledger writes, and four hashes recover every vote.\n\npragma language_version >= 0.25.0;\n\nimport CompactStandardLibrary;\n\nexport ledger ballots: Map<Bytes<32>, Bytes<32>>;\n\nwitness voterKey(): Bytes<32>;\nwitness choice(): Uint<8>;\nwitness ballotSalt(): Bytes<32>;\n\nexport pure circuit voterTag(sk: Bytes<32>): Bytes<32> {\n  return persistentHash<Vector<2, Bytes<32>>>([pad(32, \"poll:voter\"), sk]);\n}\n\nexport pure circuit receipt(c: Uint<8>): Bytes<32> {\n  return persistentHash<Vector<2, Bytes<32>>>([pad(32, \"poll:receipt\"), (c as Field) as Bytes<32>]);\n}\n\nexport circuit vote(): [] {\n  const tag = disclose(voterTag(voterKey()));\n  assert(!ballots.member(tag), \"already voted\");\n  const c = choice();\n  assert(c < 4, \"four options\");\n  ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, ballotSalt())));\n  emit(Misc { name: disclose(receipt(c)), payload: pad(256, \"poll:voted\") });\n}\n"
+ },
+ {
   "id": "election",
   "label": "Midnight example: election",
   "note": "official example",

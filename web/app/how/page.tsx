@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { PageHead } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -69,13 +70,15 @@ const CHANGELOG = [
 
 export default function HowPage() {
   return (
-    <div className="mx-auto max-w-[1180px] px-4 pb-10 pt-10 sm:px-6">
-      <h1 className="text-[34px] font-semibold leading-tight tracking-[-0.015em] sm:text-[46px]">How Tell works</h1>
-      <p className="mt-3 max-w-[66ch] text-[17px] text-[var(--graphite)]">
-        Midnight proves a circuit ran correctly over private inputs. The proof hides the inputs, but the transaction still carries a public transcript: every
-        ledger read and write, with its operands. Tell asks one question of each contract: what can someone reading that transcript work out about the
-        private inputs?
-      </p>
+    <>
+      <PageHead kicker="How it works" title="How Tell works">
+        <p>
+          Midnight proves a circuit ran correctly over private inputs. The proof hides the inputs, but the transaction still carries a public transcript: every
+          ledger read and write, with its operands. Tell asks one question of each contract: what can someone reading that transcript work out about the
+          private inputs?
+        </p>
+      </PageHead>
+    <div className="wrap pb-16 pt-12 sm:pt-14">
 
       <ol className="mt-12 space-y-0">
         {STEPS.map((s, i) => (
@@ -197,5 +200,6 @@ seeds.insert(slot, s); // tell:allow published`}
         </p>
       </section>
     </div>
+    </>
   );
 }

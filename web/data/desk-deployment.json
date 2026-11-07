@@ -1,0 +1,30 @@
+{
+  "network": "preprod",
+  "contract": "tell-desk",
+  "steps": [
+    {
+      "txId": "007d555f89251720c5be1ef9dd18da58ad13653c0ab7b801d58fd28155d996473f",
+      "result": [],
+      "step": "register maintainer",
+      "at": "2026-11-07T06:07:02.612Z"
+    },
+    {
+      "txId": "00c3c2531561a2b624b30f46d2bf25711a3f178c61399aa743983338625e408ccf",
+      "id": "f901357fd04014ca029ecc5ddc096de1a488f5699c583d014ba8206208ca2a85",
+      "step": "seal ballot",
+      "at": "2026-11-07T06:08:26.412Z"
+    }
+  ],
+  "reports": {
+    "ballot": {
+      "id": "f901357fd04014ca029ecc5ddc096de1a488f5699c583d014ba8206208ca2a85",
+      "revealed": false
+    }
+  },
+  "grades": [],
+  "address": "c3b70e8eb95761e88bd7f2d12532964a5abe753e9af93c1330b6c66cf88943d6",
+  "deployTx": "0054305347e45b281698bf849ed73ad25327244c81e83da5c9b88ea651cd07be4f",
+  "attesterHash": "5e21cbbff1ed6e910e5b22a038606e4bd3f7e6b9f0d704758f4294d3267b905a",
+  "embargoSeconds": 7776000,
+  "rulesVersion": 100
+}

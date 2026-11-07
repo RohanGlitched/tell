@@ -81,10 +81,10 @@ What Desk does not hide:
 
 ```
 $ npx tsx engine/src/cli.ts desk/contracts/desk.compact
-desk/contracts/desk.compact  grade A  compact 0.31.1, 9 circuits  25 info
+desk/contracts/desk.compact  grade A  compact 0.31.1, 10 circuits  27 info
 ```
 
-Grade A with no suppressions: all 25 findings are info, each a circuit argument written on purpose (report ids, times, the reveal's opening, grades, the credential leaf). CI fails if anything at low or above appears. The contract compiles with Compact 0.31.1 (the ledger live today), 0.35.0 and 0.36.0.
+Grade A with no suppressions: all 27 findings are info, each a circuit argument written on purpose (report ids, times, the reveal's opening, grades, the credential leaf). CI fails if anything at low or above appears. The contract compiles with Compact 0.31.1 (the ledger live today), 0.35.0 and 0.36.0.
 
 ## Tests
 

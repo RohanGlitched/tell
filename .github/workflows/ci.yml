@@ -47,6 +47,17 @@ jobs:
         run: npm test -w vscode
       - name: Typecheck
         run: npm run typecheck -w mcp && npm run typecheck -w vscode
+  radar:
+    # Chain-only scan: hashing matches the Compact runtime, and the cached Preprod
+    # snapshot of the ballots gives 6 of 6 votes from the leaky one, 0 from the fixed one.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci --no-audit --no-fund --workspace radar --include-workspace-root
+      - name: Radar tests
+        run: npm test -w radar
   compilers:
     # Every zoo contract, checked on its own, under every compiler Tell supports: each leaky
     # contract must have a finding at medium or worse, each fix none. Catches IR format changes.

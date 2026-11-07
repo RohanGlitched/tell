@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { unzipSync } from 'fflate';
 
-const VERSIONS = ['0.35.0', '0.34.0', '0.31.1', '0.30.0', '0.29.0'];
+const VERSIONS = ['0.36.0', '0.35.0', '0.34.0', '0.31.1', '0.30.0', '0.29.0'];
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', 'bin');
 
 for (const v of VERSIONS) {

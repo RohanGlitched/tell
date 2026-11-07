@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   outputFileTracingRoot: __dirname,
-  outputFileTracingIncludes: { '/api/scan': ['./bin/**/*'], '/api/live': ['./node_modules/@midnight-ntwrk/**/*.wasm', '../node_modules/@midnight-ntwrk/**/*.wasm'] },
+  outputFileTracingIncludes: { '/api/scan': ['./bin/**/*'], '/api/badge/**': ['./bin/**/*'], '/api/live': ['./node_modules/@midnight-ntwrk/**/*.wasm', '../node_modules/@midnight-ntwrk/**/*.wasm'], '/api/desk': ['./node_modules/@midnight-ntwrk/**/*.wasm', '../node_modules/@midnight-ntwrk/**/*.wasm'] },
   // Midnight's runtimes load .wasm files next to their JS: keep them as real node_modules.
   serverExternalPackages: [
     'tar',

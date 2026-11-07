@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import LiveBoard from '@/components/LiveBoard';
 import deployments from '@/data/deployments.json';
 import { NETWORKS, type NetworkName } from '@/lib/networks';
+import { PageHead } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Live on Midnight',
@@ -13,13 +14,14 @@ export default function LivePage() {
   const deployed = Object.keys(dep.contracts ?? {}).length > 0;
   const net = NETWORKS[dep.network ?? 'preprod'].label;
   return (
-    <div className="mx-auto max-w-[1180px] px-4 pb-10 pt-10 sm:px-6">
-      <p className="label">{net} network</p>
-      <h1 className="mt-2 max-w-[20ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Same votes. Two contracts. One gives them away.</h1>
-      <p className="mt-4 max-w-[66ch] text-[17px] text-[var(--graphite)]">
-        Both ballots from the leak zoo are deployed on {net}, and the same voters voted the same way in each. This page reads both contracts’ public
-        state straight from Midnight’s indexer and runs the attack Tell predicted: hash the four candidates, match the ballots. No private data is used.
-      </p>
+    <>
+      <PageHead kicker={`${net} network`} title="Same votes. Two contracts. One gives them away.">
+        <p>
+          Both ballots from the leak zoo are deployed on {net}, and the same voters voted the same way in each. This page reads both contracts’ public
+          state straight from Midnight’s indexer and runs the attack Tell predicted: hash the four candidates, match the ballots. No private data is used.
+        </p>
+      </PageHead>
+    <div className="wrap pb-16 pt-12 sm:pt-14">
       {deployed ? (
         <LiveBoard />
       ) : (
@@ -29,5 +31,6 @@ export default function LivePage() {
         </div>
       )}
     </div>
+    </>
   );
 }

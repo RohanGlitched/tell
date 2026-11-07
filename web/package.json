@@ -8,26 +8,29 @@
     "dev": "next dev -p 3210",
     "build": "next build",
     "start": "next start -p 3210",
-    "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/vendor-engine.mjs && node scripts/samples.mjs && node scripts/contracts.mjs && node scripts/fetch-compilers.mjs"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p e2e",
+    "prebuild": "node scripts/vendor-engine.mjs && node scripts/samples.mjs && node scripts/contracts.mjs && node scripts/fetch-compilers.mjs",
+    "e2e": "playwright test",
+    "adoption": "node scripts/adoption.mjs"
   },
   "dependencies": {
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "fflate": "^0.8.2",
     "next": "15.5.27",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "tar": "^7.4.3",
-    "fflate": "^0.8.2",
-    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
-    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
-    "@midnight-ntwrk/midnight-js-protocol": "4.1.1"
+    "tar": "^7.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.55.0",
     "@tailwindcss/postcss": "^4.1.13",
-    "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.3",
     "@types/node": "^22.0.0",
     "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0"
+    "@types/react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "@midnight-ntwrk/wallet-sdk": "1.2.0",

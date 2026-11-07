@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Sans, JetBrains_Mono, Newsreader, Schibsted_Grotesk } from 'next/font/google';
+import localFont from 'next/font/local';
 import Link from 'next/link';
 import './globals.css';
-import { Mark } from '@/components/Mark';
+import { BrandMark } from '@/components/brand';
+import SiteNav from '@/components/SiteNav';
 
-const sans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-plex-sans', display: 'swap' });
-const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-jetbrains', display: 'swap' });
-const display = Schibsted_Grotesk({ subsets: ['latin'], weight: ['500', '700', '800', '900'], variable: '--font-schibsted', display: 'swap' });
-const hand = Newsreader({ subsets: ['latin'], style: ['italic'], weight: ['400', '500'], variable: '--font-newsreader', display: 'swap' });
+// Self-hosted (SIL Open Font License, see app/fonts/README.md): the build no longer depends on
+// reaching Google Fonts.
+const serif = localFont({ src: './fonts/source-serif-4-latin.woff2', weight: '400 600', variable: '--font-source-serif', display: 'swap' });
+const sans = localFont({ src: './fonts/schibsted-grotesk-latin.woff2', weight: '400 700', variable: '--font-schibsted', display: 'swap' });
+const mono = localFont({
+  src: [
+    { path: './fonts/dm-mono-400-latin.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/dm-mono-500-latin.woff2', weight: '500', style: 'normal' },
+  ],
+  variable: '--font-dm-mono',
+  display: 'swap',
+});
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tell-midnight.vercel.app';
 
@@ -25,42 +34,22 @@ export const metadata: Metadata = {
   icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }] },
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f6f8' },
-    { media: '(prefers-color-scheme: dark)', color: '#0f1320' },
-  ],
-};
-
-const NAV = [
-  ['/scan', 'Scan', 'Scan'],
-  ['/survey', 'Survey', 'Survey'],
-  ['/zoo', 'Leak zoo', 'Zoo'],
-  ['/live', 'Live on Midnight', 'Live'],
-  ['/how', 'How it works', 'How'],
-] as const;
+export const viewport: Viewport = { themeColor: '#1A1446' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} ${hand.variable} ${display.variable}`}>
+    <html lang="en" className={`${serif.variable} ${sans.variable} ${mono.variable}`}>
       <body>
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:bg-[var(--sheet)] focus:px-3 focus:py-2">
+        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2">
           Skip to content
         </a>
-        <header className="sticky top-0 z-40 border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--paper)_88%,transparent)] backdrop-blur">
-          <div className="mx-auto flex max-w-[1180px] items-center gap-6 px-4 py-1.5 sm:px-6">
-            <Link href="/" className="flex min-h-[44px] items-center gap-2 no-underline" aria-label="Tell home">
-              <Mark />
-              <span className="display text-[21px] font-extrabold tracking-[-0.03em]">Tell</span>
+        <header className="site-header sticky top-0 z-40 bg-[var(--indigo)] text-white">
+          <div className="wrap flex h-[60px] items-center gap-7 lg:h-[66px]">
+            <Link href="/" className="flex min-h-[44px] items-center gap-2.5 font-[family-name:var(--serif)] text-[22px] font-semibold no-underline" aria-label="Tell home">
+              <BrandMark />
+              Tell
             </Link>
-            <nav className="no-scrollbar ml-auto flex items-center gap-1 overflow-x-auto text-[14px] sm:gap-2" aria-label="Main">
-              {NAV.map(([href, label, short]) => (
-                <Link key={href} href={href} className="inline-flex min-h-[44px] items-center whitespace-nowrap rounded px-2 text-[var(--graphite)] no-underline hover:bg-[var(--sheet)] hover:text-[var(--ink)]">
-                  <span className="hidden sm:inline">{label}</span>
-                  <span className="sm:hidden">{short}</span>
-                </Link>
-              ))}
-            </nav>
+            <SiteNav />
           </div>
         </header>
         <main id="main" tabIndex={-1} className="outline-none">
@@ -74,47 +63,64 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function Footer() {
   return (
-    <footer className="mt-24 border-t border-[var(--rule)] bg-[var(--sheet)]">
-      <div className="mx-auto grid max-w-[1180px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-        <div>
-          <div className="flex items-center gap-2">
-            <Mark />
-            <span className="font-semibold">Tell</span>
+    <footer className="site-footer bg-[var(--indigo)] pb-7 pt-16 text-[14px] text-[var(--on-indigo)]">
+      <div className="wrap">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-[1.6fr_repeat(4,1fr)]">
+          <div className="col-span-2 md:col-span-4 lg:col-span-1">
+            <Link href="/" className="flex items-center gap-2.5 font-[family-name:var(--serif)] text-[22px] font-semibold text-white no-underline">
+              <BrandMark />
+              Tell
+            </Link>
+            <p className="mt-3 max-w-[34ch]">A privacy leak scanner for Midnight. It reads source code and public state, never your users’ data.</p>
+            <p className="mt-3 max-w-[34ch] text-[13px] text-[var(--on-indigo-2)]">Built for the Midnight Buildathon on AKINDO, Waves 2 and 3, October and November 2026.</p>
+            <div className="mt-5 flex gap-1.5" aria-hidden="true">
+              <span className="h-2 w-[60px] rounded-[2px] bg-[var(--indigo-3)]" />
+              <span className="h-2 w-[28px] rounded-[2px] shadow-[inset_0_0_0_1.5px_var(--marker)]" />
+              <span className="h-2 w-[90px] rounded-[2px] bg-[var(--indigo-3)]" />
+            </div>
           </div>
-          <p className="mt-3 max-w-[38ch] text-[14px] text-[var(--graphite)]">
-            A privacy leak scanner for Midnight. Built for the Midnight Buildathon on AKINDO, Wave 2, October 2026. Open source under Apache-2.0.
-          </p>
+          <FooterCol
+            title="Product"
+            links={[
+              ['/scan', 'Web scanner'],
+              ['/how#cli', 'Command line'],
+              ['/how#ci', 'GitHub Action'],
+              ['/scan', 'README badge'],
+              ['/desk', 'Tell Desk'],
+            ]}
+          />
+          <FooterCol
+            title="Evidence"
+            links={[
+              ['/survey', 'Buildathon survey'],
+              ['/zoo', 'Leak zoo'],
+              ['/live', 'Live on Preprod'],
+              ['/adoption', 'Adoption'],
+            ]}
+          />
+          <FooterCol
+            title="Read"
+            links={[
+              ['/how', 'How it works'],
+              ['/how#limits', 'What Tell cannot see'],
+              ['/how#suppress', 'Mark a finding intended'],
+              ['/how#changelog', 'Changelog'],
+            ]}
+          />
+          <FooterCol
+            title="Tell"
+            links={[
+              ['/wave3', 'Wave 3: you said, we did'],
+              ['/teams', 'For teams'],
+              ['https://github.com/RohanGlitched/tell', 'GitHub'],
+              ['https://midnight.network', 'Midnight'],
+            ]}
+          />
         </div>
-        <FooterCol
-          title="Use it"
-          links={[
-            ['/scan', 'Scan a contract'],
-            ['/how#cli', 'Command line'],
-            ['/how#ci', 'GitHub Action'],
-            ['/how#suppress', 'Mark a finding intended'],
-          ]}
-        />
-        <FooterCol
-          title="Evidence"
-          links={[
-            ['/survey', 'Buildathon survey'],
-            ['/zoo', 'Leak zoo and attack tests'],
-            ['/live', 'Live attack on Midnight Preprod'],
-            ['/how#limits', 'What Tell cannot see'],
-          ]}
-        />
-        <FooterCol
-          title="Project"
-          links={[
-            ['https://github.com/RohanGlitched/tell', 'Source on GitHub'],
-            ['/how', 'How it works'],
-            ['/how#changelog', 'Changelog'],
-            ['https://midnight.network', 'Midnight'],
-          ]}
-        />
-      </div>
-      <div className="border-t border-[var(--rule)] px-4 py-4 text-center text-[14px] text-[var(--faint)] sm:px-6">
-        Findings are produced by static analysis of what the Compact compiler builds. They describe what the public transcript can reveal, not proof that anyone has read it.
+        <div className="mt-12 flex flex-wrap justify-between gap-4 border-t border-[var(--indigo-3)] pt-5 text-[13px] text-[var(--on-indigo-2)]">
+          <span>Apache-2.0. Built for Midnight.</span>
+          <span>Static analysis of what the Compact compiler builds: what the public transcript can reveal, not proof that anyone has read it.</span>
+        </div>
       </div>
     </footer>
   );
@@ -123,11 +129,11 @@ function Footer() {
 function FooterCol({ title, links }: { title: string; links: [string, string][] }) {
   return (
     <div>
-      <h2 className="text-[14px] font-semibold text-[var(--graphite)]">{title}</h2>
-      <ul className="mt-2 text-[14px] sm:mt-3 sm:space-y-2">
+      <h2 className="mb-3 font-[family-name:var(--sans)] text-[13px] font-semibold text-white">{title}</h2>
+      <ul className="grid gap-0.5 sm:gap-2">
         {links.map(([href, label]) => (
-          <li key={href}>
-            <a href={href} className="inline-flex min-h-[44px] items-center no-underline hover:underline sm:min-h-0">
+          <li key={href + label}>
+            <a href={href} className="inline-flex min-h-[40px] items-center no-underline hover:text-white sm:min-h-0">
               {label}
             </a>
           </li>

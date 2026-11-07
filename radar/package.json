@@ -1,0 +1,19 @@
+{
+  "name": "@tell/radar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "bin": { "radar": "./src/cli.ts" },
+  "scripts": {
+    "radar": "tsx src/cli.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/onchain-runtime-v3": "3.0.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.0"
+  },
+  "devDependencies": { "tsx": "^4.20.0", "typescript": "^5.9.3", "vitest": "^3.2.0", "@types/node": "^22.0.0" }
+}
