@@ -18,7 +18,7 @@ type Dep = {
   address?: string;
   deployTx?: string;
   steps?: { step: string; txId: string; at: string }[];
-  reports?: Record<string, { id: string; text?: string; digest: string; revealed: boolean; repo?: string }>;
+  reports?: Record<string, { id: string; text?: string; digest?: string; revealed: boolean; repo?: string }>; // digest only once revealed
   grades?: { contract: string; address?: string; codeHash: string; grade: string; selfReported: boolean }[];
 };
 const DEP = deployment as Dep;
