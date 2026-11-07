@@ -1,18 +1,125 @@
 {
   "_readme": "Outreach that scripts/adoption.mjs tracks. Fields: id (stable); label (what the page shows, e.g. 'Project A'; never a team name); sector (shown in brackets: 'supply chain'); kind ('issue' | 'pr' | 'note'); url (GitHub issue or PR URL; read by the script, NEVER rendered unless the repository owner is midnightntwrk); sentAt (ISO date, for notes without a URL); fixCommit (URL of the commit that fixed it, when the team made one); topic (short and generic). To keep team URLs out of this public file, put them in outreach.local.json (git-ignored) as { \"<id>\": { \"url\": \"...\", \"fixCommit\": \"...\" } }; the script merges it.",
   "entries": [
-    { "id": "a", "label": "Project A", "sector": "supply chain", "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": "guessable hash" },
-    { "id": "b", "label": "Project B", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "c", "label": "Project C", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "d", "label": "Project D", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "e", "label": "Project E", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "f", "label": "Project F", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "g", "label": "Project G", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "h", "label": "Project H", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "i", "label": "Project I", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "j", "label": "Project J", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "k", "label": "Project K", "sector": null, "kind": "note", "url": null, "sentAt": null, "fixCommit": null, "topic": null },
-    { "id": "mn-election", "label": "example-election", "sector": "governance", "kind": "issue", "url": null, "sentAt": null, "fixCommit": null, "topic": "votes revealed through a branch" },
-    { "id": "mn-zkloan", "label": "example-zkloan", "sector": "finance", "kind": "issue", "url": null, "sentAt": null, "fixCommit": null, "topic": "yes/no facts about the loan published" }
+    {
+      "id": "a",
+      "label": "Project A",
+      "sector": "supply chain",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "guessable hash"
+    },
+    {
+      "id": "b",
+      "label": "Project B",
+      "sector": "lending",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "transcript shape reveals a count"
+    },
+    {
+      "id": "c",
+      "label": "Project C",
+      "sector": "gaming",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "d",
+      "label": "Project D",
+      "sector": "invoicing",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "e",
+      "label": "Project E",
+      "sector": "trading",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "f",
+      "label": "Project F",
+      "sector": "supply-chain finance",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "g",
+      "label": "Project G",
+      "sector": "identity",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "wallet key in public state"
+    },
+    {
+      "id": "h",
+      "label": "Project H",
+      "sector": "commerce",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "i",
+      "label": "Project I",
+      "sector": "trading",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "j",
+      "label": "Project J",
+      "sector": "marketplace",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "k",
+      "label": "Project K",
+      "sector": "lending",
+      "kind": "issue",
+      "url": null,
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "same tag on every action"
+    },
+    {
+      "id": "mn-election",
+      "label": "example-election",
+      "sector": "governance",
+      "kind": "issue",
+      "url": "https://github.com/midnightntwrk/midnight-examples/issues/90",
+      "sentAt": "2026-11-07",
+      "fixCommit": null,
+      "topic": "each revealed vote tied to the voter's registration key"
+    }
   ]
 }

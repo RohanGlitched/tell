@@ -17,7 +17,7 @@
       "need": "A fast, repeatable map of every disclosure, per circuit and field, to start a review and to attach to a report.",
       "gets": "Bulk scanning, the per-circuit disclosure map, and reports in SARIF and Markdown to cite in a review.",
       "pays": "An annual license per firm.",
-      "status": "planned"
+      "status": "in progress"
     },
     {
       "id": "foundation",
@@ -51,9 +51,17 @@
     {
       "id": "oss",
       "name": "Open-source core",
-      "for": ["teams", "auditors", "agents"],
+      "for": [
+        "teams",
+        "auditors",
+        "agents"
+      ],
       "what": "The analyzer, every rule, the CLI, the GitHub Action, the web scanner, the leak zoo and the README badge.",
-      "includes": ["Apache-2.0", "SARIF for GitHub code scanning", "Public repositories, unlimited"],
+      "includes": [
+        "Apache-2.0",
+        "SARIF for GitHub code scanning",
+        "Public repositories, unlimited"
+      ],
       "status": "live",
       "price": "Free",
       "priceNote": "Always free. Public repositories never pay."
@@ -61,53 +69,113 @@
     {
       "id": "pr-bot",
       "name": "Hosted pull-request bot",
-      "for": ["teams", "agents"],
+      "for": [
+        "teams",
+        "agents"
+      ],
       "what": "Tell as a GitHub App on private repositories: a comment on each pull request with the findings, the verified fix and the grade change, plus history per contract.",
-      "includes": ["Private repositories", "Fix suggestions on the pull request", "Grade history per contract"],
+      "includes": [
+        "Private repositories",
+        "Fix suggestions on the pull request",
+        "Grade history per contract"
+      ],
       "status": "pilot",
-      "price": null,
-      "priceNote": null
+      "price": "$20 per contributor a month",
+      "priceNote": "Pilot price we are testing; public repositories stay free."
     },
     {
       "id": "audit-license",
       "name": "Audit-firm license",
-      "for": ["auditors"],
+      "for": [
+        "auditors"
+      ],
       "what": "Bulk scans, a privacy section ready to drop into a review, and early access to new rules.",
-      "includes": ["Bulk and private scans", "Report templates", "Rule updates for each compiler release"],
+      "includes": [
+        "Bulk and private scans",
+        "Report templates",
+        "Rule updates for each compiler release"
+      ],
       "status": "planned",
-      "price": null,
-      "priceNote": null
+      "price": "$3,000 to $6,000 a year per firm",
+      "priceNote": "Pilot price we are testing; the first engagement is free."
     },
     {
       "id": "sponsorship",
       "name": "Ecosystem sponsorship",
-      "for": ["foundation"],
+      "for": [
+        "foundation"
+      ],
       "what": "Funds rule research, support for each compiler release and a Tell check in Midnight's templates. Everything it produces stays open source.",
-      "includes": ["Compiler release tracking", "Template integration", "Public survey reruns"],
+      "includes": [
+        "Compiler release tracking",
+        "Template integration",
+        "Public survey reruns"
+      ],
       "status": "in progress",
-      "price": null,
-      "priceNote": null
+      "price": "By agreement",
+      "priceNote": "A 12-month maintenance grant; everything it pays for stays open source."
     },
     {
       "id": "registry",
       "name": "Grade attestations (Tell Desk)",
-      "for": ["teams", "wallets"],
+      "for": [
+        "teams",
+        "wallets"
+      ],
       "what": "A team files a sealed report and an on-chain grade for a contract; wallets and stores read it.",
-      "includes": ["Sealed report commitment", "On-chain grade by contract address", "Free reads"],
+      "includes": [
+        "Sealed report commitment",
+        "On-chain grade by contract address",
+        "Free reads"
+      ],
       "status": "planned",
-      "price": null,
-      "priceNote": null
+      "price": "Free to read",
+      "priceNote": "Writing grades is part of the audit and pull-request offers."
     }
   ],
   "numbers": [
-    { "label": "Teams building on Midnight", "value": null, "source": null },
-    { "label": "Public buildathon repositories we surveyed", "value": "111", "source": "/survey" },
-    { "label": "Pilot users of the pull-request bot", "value": null, "source": null }
+    {
+      "label": "Monthly active Midnight developers in 2026 (Electric Capital)",
+      "value": "~150",
+      "source": "https://midnight.network/blog/electric-capital-report"
+    },
+    {
+      "label": "Public repositories tagged midnightntwrk created since Aug 1, 2026",
+      "value": "288",
+      "source": "https://github.com/search?q=topic%3Amidnightntwrk&type=repositories"
+    },
+    {
+      "label": "Public buildathon repositories we surveyed",
+      "value": "111",
+      "source": "/survey"
+    },
+    {
+      "label": "Audit firms asked for a pilot (Nov 7)",
+      "value": "2",
+      "source": "/adoption"
+    },
+    {
+      "label": "Pilot users of the pull-request bot",
+      "value": null,
+      "source": null
+    }
   ],
   "principles": [
-    { "title": "Public code is always free", "text": "Every rule, the CLI, the Action and the scanner stay Apache-2.0. A paid tier never hides a finding from a public repository." },
-    { "title": "Pay for the hosting, not the analyzer", "text": "Money comes from things that cost us to run, like private repositories, history and bulk scans. It does not come from locking the analysis." },
-    { "title": "Honest labels", "text": "Every offer on this page says whether it is live, in a pilot or planned. Prices appear once they are set." }
+    {
+      "title": "Public code is always free",
+      "text": "Every rule, the CLI, the Action and the scanner stay Apache-2.0. A paid tier never hides a finding from a public repository."
+    },
+    {
+      "title": "Pay for the hosting, not the analyzer",
+      "text": "Money comes from things that cost us to run, like private repositories, history and bulk scans. It does not come from locking the analysis."
+    },
+    {
+      "title": "Honest labels",
+      "text": "Every offer on this page says whether it is live, in a pilot or planned. Prices appear once they are set."
+    }
   ],
-  "contact": { "repo": "RohanGlitched/tell", "label": "interest" }
+  "contact": {
+    "repo": "RohanGlitched/tell",
+    "label": "interest"
+  }
 }
