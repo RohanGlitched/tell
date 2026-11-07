@@ -38,7 +38,17 @@ npm test -w radar
 - A domain separator Radar's word list cannot build (an unusual word, a version suffix, a different separator) hides a small domain from the brute force. The repeated-value check still sees it when values repeat.
 - Tuples, structs and vectors other than `[Bytes<32>, value]`, and `transientHash` (Poseidon, about 700 a second in the runtime), are not searched yet.
 - Only the most recent calls (`--actions`, 100 by default) of each contract are decoded.
-- Coverage depends on finding the contracts. The indexer has no list of contracts; `crawl` reads blocks, 50 per request (the indexer's complexity limit). See the coverage note in the report for the window actually read.
+- Coverage depends on finding the contracts. See below.
+
+## Finding every contract
+
+The indexer (Blockfrost-hosted for Preprod) has no query that lists contracts. `contract(address)` and the `contractActions` subscription both need an address, and `contractEvents` needs one too. The only complete route is reading every block:
+
+- One request can ask for 50 blocks with the contract addresses in their transactions; 62 is rejected as "Query is too complex".
+- Preprod's tip was block 3,315,086 on 7 November 2026, so the whole history is about 66,300 requests. Blockfrost's free tier is 50,000 requests a day, shared with Tell's live site, so a full crawl has to be spread over two or more days (`crawl` resumes where it stopped and `--budget` caps each run).
+- A sample of 500 blocks spread over the whole history had 71 blocks with transactions and 65 contract actions: roughly 430,000 contract actions in all.
+
+The scan in `out/report.json` covers the last 14 days of blocks (201,601 blocks, about 4,000 requests) plus every 64-hex string in the 111 public buildathon repositories that turned out to be a Preprod contract (`discover`, about 90 requests for 3,445 candidates).
 
 ## Ethics
 

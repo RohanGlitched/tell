@@ -100,11 +100,22 @@ async function main() {
       log(`scanning ${list.length} contracts (up to ${limit} recent actions each)`);
       const records: Digested[] = [];
       let missing = 0;
+      // Decoding proofs-carrying transactions is the slow part; keep each contract's digest.
+      const digestDir = path.join(HOME, 'digest', network);
+      fs.mkdirSync(digestDir, { recursive: true });
       for (const [i, a] of list.entries()) {
         try {
+          const df = path.join(digestDir, `${a}-${limit}.json`);
+          if (!flags.refresh && fs.existsSync(df)) {
+            records.push(JSON.parse(fs.readFileSync(df, 'utf8')) as Digested);
+            continue;
+          }
           const r = await fetchContract(ix, a, limit);
-          if (r) records.push(digest(r));
-          else missing++;
+          if (r) {
+            const d = digest(r);
+            fs.writeFileSync(df, JSON.stringify(d));
+            records.push(d);
+          } else missing++;
         } catch (e) {
           if (e instanceof BudgetExceeded) { log(`stopped fetching after ${i} contracts: ${e.message}`); break; }
           log(`  ${a.slice(0, 8)}…: ${(e as Error).message.slice(0, 120)}`);
