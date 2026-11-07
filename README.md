@@ -391,7 +391,7 @@ Counts from a run on November 7, 2026 (Node 24, WSL), one suite at a time with `
 | `radar` | 3 | 18 | all pass |
 | **Total** | 14 | **337** | |
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. The website has Playwright tests (`npm run e2e -w web`).
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. It also compiles and tests Desk under 0.35 and 0.36 ([`desk/compat`](desk/compat)), builds Desk's proving keys and runs its offline dry run, and builds the website and runs its Playwright suite (`npm run e2e -w web`, browser and API tests) against `next start`. Compiler installs are retried, then fetched from the release page ([`install-compact.sh`](.github/scripts/install-compact.sh)); one job forces that fallback. A daily workflow ([`smoke.yml`](.github/workflows/smoke.yml)) reads the live site's Preprod APIs: 6 of 6 votes recovered from the leaky ballot, 0 of 6 from the fixed one, and Tell Desk's state decoding.
 
 ## Limits
 
