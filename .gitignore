@@ -8,6 +8,7 @@ managed
 secrets
 .tell-cache
 zoo/keys
+desk/keys
 web/bin
 web/.next
 
