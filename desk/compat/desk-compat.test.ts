@@ -104,8 +104,8 @@ async function world() {
   const maintainerB: DeskPrivateState = { maintainerSecret: randomBytes32(), openings: {} };
   const projectA = await projectId(REPO_A);
   const projectB = await projectId(REPO_B);
-  await sim.call(tell, 'registerMaintainer', Desk.pureCircuits.maintainerLeaf(maintainerA.maintainerSecret!, projectA));
-  await sim.call(tell, 'registerMaintainer', Desk.pureCircuits.maintainerLeaf(maintainerB.maintainerSecret!, projectB));
+  await sim.call(tell, 'registerMaintainer', Desk.pureCircuits.maintainerKey(maintainerA.maintainerSecret!), projectA);
+  await sim.call(tell, 'registerMaintainer', Desk.pureCircuits.maintainerKey(maintainerB.maintainerSecret!), projectB);
   const now = () => BigInt(sim.time);
   const seal = async (who: DeskPrivateState, text: string, repo: string, to?: DeskPrivateState) => {
     const opening: Opening = { finding: { digest: await reportDigest(text), project: await projectId(repo) }, nonce: randomBytes32() };
@@ -170,7 +170,7 @@ describe('Desk on the newer runtime', () => {
     expect(w.sim.ledger.grades.lookup(code).grade).toBe(gradeToNumber('A'));
     await expect(w.sim.call(w.tell, 'attest', code, gradeToNumber('F'), 4n, 9n)).rejects.toThrow(/later scan/);
     await w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, gradeToNumber('B'), 4n, 1n);
-    expect(w.sim.ledger.selfGrades.lookup(code).selfReported).toBe(true);
+    expect(w.sim.ledger.selfGrades.lookup(Desk.pureCircuits.selfGradeKey(code, w.projectA)).selfReported).toBe(true);
   });
 
   it('an attacker reading only public data never sees the secrets or the pending report', async () => {
