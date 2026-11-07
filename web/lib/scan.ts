@@ -72,7 +72,7 @@ export type ScanResponse = {
 
 // The cheap checks on a pasted contract, before any compiler runs. Throws a UserError.
 export function checkSource(source: string) {
-  if (source.length > MAX_SOURCE) throw new UserError(`That contract is ${Math.round(source.length / 1000)} kB; the limit is 200 kB.`);
+  if (source.length > MAX_SOURCE) throw new UserError(`That contract is ${Math.round(source.length / 1000)} kB; the limit is 200 kB.`, 413);
   if (!/pragma\s+language_version/.test(source)) throw new UserError('Paste a whole Compact contract, starting with `pragma language_version …;`.');
   if (unsafeRefs(source, '', null).length)
     throw new UserError('A pasted contract cannot include or import other files. Scan its GitHub repository instead, or paste it with the included code inlined.');
@@ -126,10 +126,10 @@ export async function scanRepo(input: string, opts: { fixes?: boolean } = {}): P
   }
   const url = `https://codeload.github.com/${r.owner}/${r.name}/tar.gz/${sha ?? r.ref ?? 'HEAD'}`;
   const res = await fetch(url, { redirect: 'follow' });
-  if (res.status === 404) throw new UserError(`github.com/${r.owner}/${r.name} was not found, or it is private.`);
-  if (!res.ok || !res.body) throw new UserError(`GitHub answered ${res.status} for that repository. Try again in a minute.`);
+  if (res.status === 404) throw new UserError(`github.com/${r.owner}/${r.name} was not found, or it is private.`, 404);
+  if (!res.ok || !res.body) throw new UserError(`GitHub answered ${res.status} for that repository. Try again in a minute.`, 502);
   const len = Number(res.headers.get('content-length') ?? 0);
-  if (len > MAX_TARBALL) throw new UserError('That repository is over 25 MB; scan it with the CLI instead.');
+  if (len > MAX_TARBALL) throw new UserError('That repository is over 25 MB; scan it with the CLI instead.', 413);
 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-repo-'));
   try {
@@ -137,7 +137,7 @@ export async function scanRepo(input: string, opts: { fixes?: boolean } = {}): P
     const body = Readable.fromWeb(res.body as never);
     body.on('data', (c: Buffer) => {
       seen += c.length;
-      if (seen > MAX_TARBALL) body.destroy(new UserError('That repository is over 25 MB; scan it with the CLI instead.'));
+      if (seen > MAX_TARBALL) body.destroy(new UserError('That repository is over 25 MB; scan it with the CLI instead.', 413));
     });
     // Only Compact sources matter; skip everything else while extracting.
     // Regular files and folders only: a symlink in the archive could point anywhere on this server.
@@ -179,4 +179,14 @@ export async function scanRepo(input: string, opts: { fixes?: boolean } = {}): P
   }
 }
 
-export class UserError extends Error {}
+// A problem with the request, told to the visitor as is. `status` is the HTTP status the API
+// answers with: 400 for input that is not a contract or a repository, 404 for a repository that
+// does not exist, 413 for one too large, 502 when GitHub fails.
+export class UserError extends Error {
+  constructor(
+    message: string,
+    readonly status = 400,
+  ) {
+    super(message);
+  }
+}

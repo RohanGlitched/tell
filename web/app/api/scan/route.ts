@@ -43,18 +43,29 @@ function tooMany(wait: number) {
 export function GET() {
   return NextResponse.json({
     usage: 'POST JSON to this URL: { "source": "<Compact contract>" } or { "repo": "owner/name" }.',
+    status: {
+      200: 'scanned: a report for each contract',
+      400: 'not JSON, no contract or repository, or not a Compact contract',
+      404: 'no such public repository',
+      413: 'the contract or repository is too large',
+      422: 'the contract did not compile: the result carries the compiler message, also in `error`',
+      429: 'too many scans from one address',
+      502: 'GitHub did not answer',
+    },
     docs: 'https://github.com/RohanGlitched/tell',
   });
 }
 
 export async function POST(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
-  let body: { source?: unknown; repo?: unknown; name?: unknown };
+  let body: { source?: unknown; repo?: unknown; name?: unknown } | null = null;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Send JSON: { "source": "…" } or { "repo": "owner/name" }.' }, { status: 400 });
+    // not JSON: answered below like any other body that is not an object
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return NextResponse.json({ error: 'Send JSON: { "source": "…" } or { "repo": "owner/name" }.' }, { status: 400 });
   try {
     let out: ScanResponse;
     if (typeof body.repo === 'string' && body.repo.trim()) {
@@ -77,11 +88,16 @@ export async function POST(req: Request) {
     } else {
       return NextResponse.json({ error: 'Send a contract (`source`) or a repository (`repo`).' }, { status: 400 });
     }
-    return new NextResponse(JSON.stringify(out, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)), {
+    // A pasted contract that did not compile: 422, with the result (the report shows the compiler's
+    // message) and the message itself in `error`, as every other error answer has it.
+    const failed = out.kind === 'source' && out.contracts.length === 1 && !out.contracts[0].ok ? out.contracts[0] : null;
+    const answer = failed ? { ...out, error: (failed.error ?? 'The contract did not compile.').replace(/^Exception:\s*/gm, '') } : out;
+    return new NextResponse(JSON.stringify(answer, (_k, v) => (typeof v === 'bigint' ? v.toString() : v)), {
+      status: failed ? 422 : 200,
       headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
   } catch (e) {
-    if (e instanceof UserError) return NextResponse.json({ error: e.message }, { status: 422 });
+    if (e instanceof UserError) return NextResponse.json({ error: e.message }, { status: e.status });
     console.error('scan failed', e);
     return NextResponse.json({ error: 'The scan failed on our side. Try again, or run the CLI from github.com/RohanGlitched/tell.' }, { status: 500 });
   }

@@ -84,7 +84,7 @@ $ npx tsx engine/src/cli.ts desk/contracts/desk.compact
 desk/contracts/desk.compact  grade A  compact 0.31.1, 10 circuits  27 info
 ```
 
-Grade A with no suppressions: all 27 findings are info, each a circuit argument written on purpose (report ids, times, the reveal's opening, grades, the credential leaf). CI fails if anything at low or above appears. The contract compiles with Compact 0.31.1 (the ledger live today), 0.35.0 and 0.36.0.
+Grade A with no suppressions: all 27 findings are info, each a circuit argument written on purpose (report ids, times, the reveal's opening, grades, the credential leaf). CI fails if anything at low or above appears. The contract compiles with Compact 0.31.1 (the ledger live today), 0.35.0 and 0.36.0; CI checks the later two in the `desk-compilers` job: it compiles Desk with each, runs [`compat/`](compat) on the runtime that compiler targets (compact-runtime 0.20 and 0.21, where circuits are async), and scans it at grade A with the same compiler.
 
 ## Tests
 
@@ -93,6 +93,8 @@ Grade A with no suppressions: all 27 findings are info, each a circuit argument 
 - **Lifecycle (10):** seal; seal → acknowledge → fix → reveal with the reveal checked against the text; either side reveals; reveal after the embargo; retract; credentials survive later registrations; attestations and their scan order; self-reported grades; attester hand-over; canonical project ids.
 - **Rejections (15):** a maintainer of another project, an unregistered one, a dishonest prover with someone else's tree path or an invented one, the opening of another report, out-of-order status changes, a wrong nonce, digest or project at reveal, a second reveal, a reveal under embargo, a duplicate seal, future or back-dated seal times, retraction by someone else, every attester circuit called by a non-attester, grades outside A to F, self-grade squatting.
 - **Attacker (8):** listed under the threat model above, plus a control showing the attacker's scanner does find what is public.
+
+`compat/desk-compat.test.ts`: 5 tests of the same contract built with Compact 0.35.0 or 0.36.0, on a simulator for the newer runtime's API: the lifecycle with the reveal checked against the seal, the embargo, rejections (another project's maintainer, a second acknowledgement, an impostor attester), grades and self-grades, and the public-data attacker. The commands are at the top of the file. CI also builds the proving keys and runs the offline dry run (`npm run dry-run -w desk`) on every push.
 
 `npm run dry-run -w desk` runs the Preprod demo offline: it loads the proving keys, computes Desk's code hash, grades the sources with the engine, runs the same lifecycle in the simulator and checks the revealed report against its text.
 

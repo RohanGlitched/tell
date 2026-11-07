@@ -1,0 +1,35 @@
+# Daily on-chain smoke test of the live site: the two ballots and Tell Desk on Midnight Preprod,
+# read through https://tell-midnight.vercel.app/api/live and /api/desk. Fails (and GitHub emails
+# the maintainers) if the leaky ballot stops giving up 6 of 6 votes, the fixed one gives up any,
+# or Desk's state stops decoding. Contract addresses come from the API, so a redeploy needs no
+# change here. Script: .github/scripts/smoke.mjs (also runs locally: node .github/scripts/smoke.mjs).
+name: smoke
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      base-url:
+        description: 'Site to check'
+        required: false
+        default: 'https://tell-midnight.vercel.app'
+  # and whenever the smoke test itself changes
+  push:
+    paths: ['.github/scripts/smoke.mjs', '.github/workflows/smoke.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  preprod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Ballots and Tell Desk on Preprod, through the live site
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base-url || 'https://tell-midnight.vercel.app' }}
+        run: node .github/scripts/smoke.mjs

@@ -1,0 +1,8 @@
+{
+  "name": "@tell/desk-compat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "Tell Desk compiled with a newer Compact compiler (0.35 or 0.36) and run on the compact-runtime that compiler targets (0.20 or 0.21). CI installs the runtime per compiler; see README.md."
+}

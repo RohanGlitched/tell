@@ -37,7 +37,7 @@ inputs:
     required: false
     default: 'medium'
   github-token:
-    description: 'Token used to post pull request comments'
+    description: 'Token used to post pull request comments and to read the Compact release list'
     required: false
     default: ${{ github.token }}
 
@@ -55,9 +55,20 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
+    # The compiler install asks the GitHub API for the release list, which a shared runner is
+    # sometimes refused: the token authenticates those calls, and install-compact.sh retries with
+    # backoff, then downloads the release zip directly.
     - uses: midnightntwrk/setup-compact-action@v1
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       with:
         compact-version: ${{ inputs.compact-version }}
+    - name: Compact ${{ inputs.compact-version }}, retried
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: bash "${{ github.action_path }}/.github/scripts/install-compact.sh" "${{ inputs.compact-version }}"
     - name: Install Tell
       shell: bash
       run: |

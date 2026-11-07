@@ -21,8 +21,7 @@ const MAX_SOURCE = 200_000;
 const behavior = (): ScrollBehavior => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
 
 // The API answers JSON; a platform error in front of it (413, 504) may not.
-async function readError(res: Response): Promise<string> {
-  const json = await res.json().catch(() => null);
+function errorText(res: Response, json: { error?: string } | null): string {
   if (json?.error) return json.error;
   if (res.status === 413) return 'That request is too large. The limit for a pasted contract is 200 kB.';
   if (res.status === 504) return 'The scan took too long. Large repositories are best scanned with the CLI from github.com/RohanGlitched/tell.';
@@ -58,10 +57,11 @@ export default function Scanner({ samples, sample }: { samples: Sample[]; sample
     setBusy(true);
     try {
       const res = await fetch('/api/scan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error(await readError(res));
-      const json = (await res.json().catch(() => {
-        throw new Error('The scanner sent back something unreadable. Try again in a moment.');
-      })) as ScanResponse;
+      const answer = (await res.json().catch(() => null)) as (ScanResponse & { error?: string }) | null;
+      // 422 with a result: the contract did not compile, and the report shows the compiler's message
+      if (!res.ok && !(res.status === 422 && Array.isArray(answer?.contracts))) throw new Error(errorText(res, answer));
+      if (!answer) throw new Error('The scanner sent back something unreadable. Try again in a moment.');
+      const json = answer as ScanResponse;
       setResult(json);
       setScanned(text);
       setLastBody(body);
