@@ -21,3 +21,6 @@ web/data/outreach.local.json
 web/e2e/screenshots
 web/test-results
 web/playwright-report
+
+# Desk deployment record: holds sealed report digests until they are revealed (public copy: web/data/desk-deployment.json)
+chain/desk-preprod.json
