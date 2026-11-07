@@ -1363,6 +1363,54 @@
       "findings": []
     },
     {
+      "id": "zoo/club-fixed.compact",
+      "status": "complete",
+      "note": "2 diagnostics: Ledger operation insert is modeled as an opaque effect. | Ledger operation increment is modeled as an opaque effect.",
+      "findings": []
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "complete",
+      "note": "1 diagnostics: Ledger operation increment is modeled as an opaque effect.",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "complete",
+      "note": "2 diagnostics: Standard-library nativeToken is modeled conservatively; semantics require review. | No implementation or standard-library model for receiveUnshielded.",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "complete",
+      "note": "2 diagnostics: Standard-library nativeToken is modeled conservatively; semantics require review. | No implementation or standard-library model for receiveUnshielded.",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "complete",
+      "note": "4 diagnostics: Ledger operation read is modeled as an opaque effect. | No implementation or standard-library model for evolveNonce.",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "complete",
+      "note": "4 diagnostics: Ledger operation read is modeled as an opaque effect. | No implementation or standard-library model for evolveNonce.",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "complete",
+      "note": "2 diagnostics: No implementation or standard-library model for degradeToTransient. | No implementation or standard-library model for ecMulGenerator.",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "complete",
+      "note": "2 diagnostics: No implementation or standard-library model for degradeToTransient. | No implementation or standard-library model for ecMulGenerator.",
+      "findings": []
+    },
+    {
       "id": "zoo/payband-fixed.compact",
       "status": "complete",
       "note": "",
@@ -1373,6 +1421,29 @@
       "status": "complete",
       "note": "",
       "findings": []
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "note": "",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
+      "status": "complete",
+      "note": "",
+      "findings": [
+        {
+          "rule": "CG002",
+          "severity": "medium",
+          "native": "warning",
+          "line": 21,
+          "circuit": "seal",
+          "message": "Hash input has a domain bounded by 2^16; exhaustive guessing may recover its private value. [Entry circuits: <constructor>, reveal, seal. seal; tuple: constant \"raffle:seal\", argument seal.n; domain <= 2^16 | <constructor> -> seal; tuple: constant \"raffle:seal\", witness winningNumber; domain <= 2^16 | reveal -> seal; tuple: constant \"raffle:seal\", argument reveal.n; domain <= 2^16]",
+          "quantity": "2^16",
+          "privacy": true
+        }
+      ]
     },
     {
       "id": "zoo/reserve-fixed.compact",
@@ -1399,7 +1470,7 @@
       "findings": []
     }
   ],
-  "seconds": 13,
+  "seconds": 3,
   "corpus": {
     "sets": [
       "zoo",

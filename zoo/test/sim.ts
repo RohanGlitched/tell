@@ -25,6 +25,10 @@ export class Sim<PS> {
   // token inputs and outputs, mints. Part of the transaction anyone can read.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly effects: any[] = [];
+  // Each call's public transcript: the ledger operations the network replays, with their operands
+  // (a lookup's key included). Also part of the transaction.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly transcripts: any[] = [];
   constructor(
     readonly mod: { Contract: new (w: unknown) => AnyContract; ledger: (s: unknown) => AnyContract },
     readonly witnesses: Record<string, (ctx: { privateState: PS }, ...a: unknown[]) => [PS, unknown]>,
@@ -50,9 +54,10 @@ export class Sim<PS> {
   // Calls from a wallet with the given coin public key (hex): what ownPublicKey() returns.
   callAs(coinPublicKey: string, who: PS, circuit: string, ...args: unknown[]): PS {
     const ctx = createCircuitContext(this.address, coinPublicKey, this.state as never, who);
-    const { context } = this.contract.impureCircuits[circuit](ctx, ...args);
+    const { context, proofData } = this.contract.impureCircuits[circuit](ctx, ...args);
     this.state = context.currentQueryContext.state;
     this.effects.push(context.currentQueryContext.effects);
+    this.transcripts.push(proofData?.publicTranscript ?? []);
     return context.currentPrivateState as PS;
   }
 }

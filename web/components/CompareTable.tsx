@@ -12,7 +12,7 @@ export default function CompareTable() {
   const rows = compare.rows as Row[];
   return (
     <div data-testid="compare-table">
-      <p className="mb-3 inline-block rounded-md border border-[var(--marker)] px-2.5 py-1 text-[13px] font-semibold text-[var(--marker-ink)]" data-testid="compare-engine">
+      <p className="mb-3 text-[13px] text-[var(--graphite)]" data-testid="compare-engine">
         {compare.engineNote}
       </p>
       <div className="overflow-x-auto rounded-lg border border-[var(--rule)] bg-white">
@@ -59,7 +59,7 @@ export default function CompareTable() {
         </table>
       </div>
       <p className="mt-3 max-w-[90ch] text-[13px] text-[var(--graphite)]">
-        {compare.corpus}. Medium and above, labelled set; run {compare.runAt} with the {compare.engine}. {compare.caveat} Method and every per-file result:{' '}
+        {compare.corpus}. Medium and above, labelled set; run {compare.runAt} with the {compare.engine}. {compare.caveat} {compare.alsoRun} Method and every per-file result:{' '}
         <a href="https://github.com/RohanGlitched/tell/blob/main/bench/RESULTS.md">bench/RESULTS.md</a>.
       </p>
     </div>

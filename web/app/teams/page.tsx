@@ -173,9 +173,9 @@ export default function TeamsPage() {
       <Section
         id="compare"
         note="Benchmark"
-        noteText={`Five tools, 69 Compact files, every number reproducible from bench/. Tell measured with the ${compare.engine}.`}
+        noteText={`Five tools, ${compare.corpus.split(':')[0]}, every number reproducible from bench/. Tell measured with the ${compare.engine}.`}
         title="How Tell compares"
-        intro={`The other analyzers a Midnight team can run today, on the same files: ${compare.corpus.replace(/^69 Compact files: /, '')}.`}
+        intro={`The other analyzers a Midnight team can run today, on the same files: ${compare.corpus.replace(/^\d+ Compact files: /, '')}.`}
       >
         <CompareTable />
       </Section>

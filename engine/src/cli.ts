@@ -10,6 +10,8 @@
 //   tell [path…] --all              also print info-level disclosures
 //   tell [path…] --fix-dry-run      print verified fixes as a unified diff; change nothing
 //   tell [path…] --fix              apply verified fixes to the files, then report what is left
+//   tell [path…] --policy <file>    declared intent (default: the nearest tell.json or .tellrc.json)
+//   tell [path…] --no-policy        ignore policy files
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,7 +26,7 @@ const opt = (n: string) => {
   const i = args.indexOf(n);
   return i >= 0 ? args[i + 1] : undefined;
 };
-const VALUED = ['--sarif', '--fail-on', '--json-out'];
+const VALUED = ['--sarif', '--fail-on', '--json-out', '--policy'];
 const paths = args.filter((a, i) => !a.startsWith('--') && !VALUED.includes(args[i - 1] ?? ''));
 if (paths.length === 0) paths.push('.');
 
@@ -39,8 +41,13 @@ const COLOR: Record<Severity, (s: string) => string> = { critical: c('1;31'), hi
 const applyFixes = flag('--fix');
 const wantFixes = applyFixes || flag('--fix-dry-run');
 
+const scanOpts = flag('--no-policy') ? { policyFile: null } : opt('--policy') ? { policyFile: path.resolve(opt('--policy')!) } : {};
+if (scanOpts.policyFile && !fs.existsSync(scanOpts.policyFile)) {
+  console.error(`tell: no such policy file: ${scanOpts.policyFile}`);
+  process.exit(2);
+}
 let results: ContractResult[] = [];
-for (const p of paths) results.push(...(await scanPath(path.resolve(p))));
+for (const p of paths) results.push(...(await scanPath(path.resolve(p), scanOpts)));
 
 const plans = new Map<string, FilePlan>();
 if (wantFixes) {
@@ -72,7 +79,7 @@ if (flag('--json')) {
     const rep = r.report!;
     const live = rep.findings.filter((f) => !f.suppressed);
     const counts = SEVERITIES.filter((s) => r.counts![s]).map((s) => COLOR[s](`${r.counts![s]} ${s}`));
-    console.log(`\n${bold(rel)}  grade ${bold(r.grade!)}  ${dim(`compact ${r.compiler}, ${rep.circuits.length} circuits`)}  ${counts.join(', ')}`);
+    console.log(`\n${bold(rel)}  grade ${bold(r.grade!)}  ${dim(`compact ${r.compiler}, ${rep.circuits.length} circuits${rep.policy ? `, policy ${path.relative(process.cwd(), rep.policy) || rep.policy}` : ''}`)}  ${counts.join(', ')}`);
     for (const circ of rep.circuits) {
       const fs_ = live.filter((f) => f.circuit === circ.name && (showInfo || f.severity !== 'info'));
       if (fs_.length === 0) continue;
@@ -101,7 +108,7 @@ if (applyFixes) {
   }
   if (written) {
     const compilers = await findCompilers();
-    results = await Promise.all(results.map((r) => (plans.get(r.file)?.combined ? scanFile(r.file, compilers) : r)));
+    results = await Promise.all(results.map((r) => (plans.get(r.file)?.combined ? scanFile(r.file, compilers, scanOpts) : r)));
   }
   if (!written) log('No verified fixes to apply.');
 }

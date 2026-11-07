@@ -9,6 +9,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { RULES, ruleById, ruleMarkdown } from './rules.js';
 import { compareResults, scan, summarize } from './tell.js';
+import type { Policy } from '@tell/engine';
 import { reportText } from './format.js';
 
 export const VERSION = '0.1.0';
@@ -23,6 +24,13 @@ const compilerArg = z
   .describe('Compact compiler version, for example "0.31.1". Default: the version the pragma accepts, preferring 0.31.1 for Ledger 8 and 0.36.0 for Ledger 9 (mainnet since Nov 6, 2026).');
 
 const RULE_IDS = RULES.map((r) => r.id) as [string, ...string[]];
+
+const policyArg = z
+  .record(z.string(), z.unknown())
+  .optional()
+  .describe(
+    'Declared intent, the same JSON a tell.json holds: {"witnesses": {"name": "secret" | "public"}, "arguments": {"circuit.arg": "secret" | "public"}, "circuits": {"name": {"once": true, "caller": "identified"}}, "caller": "anonymous" | "identified", "intended": [{"kind", "circuit", "field", "source", "reason"}]}. Default: the nearest tell.json above `path`, if any.',
+  );
 
 export function createServer(): McpServer {
   const server = new McpServer(
@@ -44,14 +52,15 @@ export function createServer(): McpServer {
         path: z.string().min(1).optional().describe('A .compact file or a directory to scan. With `source`, where the contract lives, so includes resolve.'),
         compiler: compilerArg,
         includeInfo: z.boolean().optional().describe('Also list info-level findings: values published on purpose. Default false.'),
+        policy: policyArg,
       },
       annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
     },
-    async ({ source, path, compiler, includeInfo }) => {
+    async ({ source, path, compiler, includeInfo, policy }) => {
       if (source === undefined && path === undefined) return fail('Give `source` (Compact text) or `path` (a .compact file or directory).');
       let results;
       try {
-        results = await scan({ source, path, compiler });
+        results = await scan({ source, path, compiler, policy: policy as Policy | undefined });
       } catch (e) {
         return fail((e as Error).message);
       }
@@ -75,14 +84,15 @@ export function createServer(): McpServer {
         revised: z.string().min(1).describe('Compact source after the change.'),
         path: z.string().min(1).optional().describe('Where the contract lives, so includes resolve. Optional.'),
         compiler: compilerArg,
+        policy: policyArg,
       },
       annotations: { readOnlyHint: true, openWorldHint: false, idempotentHint: true },
     },
-    async ({ original, revised, path, compiler }) => {
+    async ({ original, revised, path, compiler, policy }) => {
       let before, after;
       try {
-        [before] = await scan({ source: original, path, compiler });
-        [after] = await scan({ source: revised, path, compiler });
+        [before] = await scan({ source: original, path, compiler, policy: policy as Policy | undefined });
+        [after] = await scan({ source: revised, path, compiler, policy: policy as Policy | undefined });
       } catch (e) {
         return fail((e as Error).message);
       }

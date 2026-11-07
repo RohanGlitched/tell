@@ -57,6 +57,7 @@ The comments are posted with the workflow's own `GITHUB_TOKEN` (the `github-toke
 | `comment` | `true` | on pull requests, post review comments on changed lines |
 | `suggest-fixes` | `true` | work out verified fixes and offer them in comments and the summary |
 | `comment-on` | `medium` | lowest severity that gets an inline comment |
+| `policy` | (empty) | a policy file with declared intent (see the README's "Declared intent" section); empty uses the nearest `tell.json` or `.tellrc.json` above each contract, `none` ignores them |
 | `github-token` | `${{ github.token }}` | token for the comments |
 
 Outputs: `sarif` (path of the SARIF file) and `results` (path of the JSON results, with the fixes when `suggest-fixes` is on).

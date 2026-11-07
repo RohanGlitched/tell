@@ -1,0 +1,99 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.13 () (Kernel)))
+  (public-ledger-declaration
+    ((%accountId.0 (0) (__compact_Cell (tbytes 32))) (%encKey.2 (1) (__compact_Cell (topaque "JubjubPoint")))
+      (%shareKey.12 (2) (__compact_Cell (topaque "JubjubPoint")))
+      (%ownerTag.6 (3) (__compact_Cell (tbytes 32)))
+      (%ownerKey.5 (4) (__compact_Cell (topaque "JubjubPoint")))
+      (%safeId.8 (5) (__compact_Cell (tbytes 32)))
+      (%safeKey.9 (6) (__compact_Cell (topaque "JubjubPoint")))
+      (%lastCheck.3
+        (7)
+        (__compact_Cell (topaque "JubjubPoint")))))
+  (native
+    %persistentHash.14
+    ((%value.15 (tvector 1 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentHash.16
+    ((%value.17 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %degradeToTransient.18
+    ((%x.19 (tbytes 32)))
+    (tfield))
+  (native
+    %ecMul.20
+    ((%a.21 (topaque "JubjubPoint")) (%b.22 (tfield)))
+    (topaque "JubjubPoint"))
+  (native
+    %ecMulGenerator.23
+    ((%b.24 (tfield)))
+    (topaque "JubjubPoint"))
+  (witness %seed.25 () (tbytes 32))
+  (witness %secretKey.26 () (tbytes 32))
+  (witness %otherSeed.27 () (tbytes 32))
+  (circuit %register.7 () (ttuple) (= #t %t.40 (call %seed.25))
+    (= #t %t.41 (tuple %t.40))
+    (= #t %id.28 (call %persistentHash.14 %t.41))
+    (= #t %t.42 (public-ledger %accountId.0 (0) write %id.28))
+    (= #t %t.43 (call %degradeToTransient.18 %id.28))
+    (= #t %tmp.33 (call %ecMulGenerator.23 %t.43))
+    (= #t %t.44 (public-ledger %encKey.2 (1) write %tmp.33))
+    (= #t %t.45 (tuple)) %t.45)
+  (circuit %share.11 () (ttuple) (= #t %t.46 (call %seed.25))
+    (= #t %t.47 (tuple %t.46))
+    (= #t %id.29 (call %persistentHash.14 %t.47))
+    (= #t
+       %t.48
+       (tuple
+         #vu8(115 104 97 114 101 58 107 101 121 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0)
+         %id.29))
+    (= #t %k.30 (call %persistentHash.16 %t.48))
+    (= #t %t.49 (call %degradeToTransient.18 %k.30))
+    (= #t %tmp.34 (call %ecMulGenerator.23 %t.49))
+    (= #t %t.50 (public-ledger %shareKey.12 (2) write %tmp.34))
+    (= #t %t.51 (tuple)) %t.51)
+  (circuit %own.4 () (ttuple) (= #t %t.52 (call %secretKey.26))
+    (= #t
+       %t.53
+       (tuple
+         #vu8(111 119 110 58 116 97 103 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0)
+         %t.52))
+    (= #t %tmp.35 (call %persistentHash.16 %t.53))
+    (= #t %t.54 (public-ledger %ownerTag.6 (3) write %tmp.35))
+    (= #t %t.55 (call %secretKey.26))
+    (= #t %t.56 (call %degradeToTransient.18 %t.55))
+    (= #t %tmp.36 (call %ecMulGenerator.23 %t.56))
+    (= #t %t.57 (public-ledger %ownerKey.5 (4) write %tmp.36))
+    (= #t %t.58 (tuple)) %t.58)
+  (circuit %separate.10 () (ttuple) (= #t %t.59 (call %otherSeed.27))
+    (= #t
+       %t.60
+       (tuple
+         #vu8(97 99 99 116 58 105 100 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0)
+         %t.59))
+    (= #t %tmp.37 (call %persistentHash.16 %t.60))
+    (= #t %t.61 (public-ledger %safeId.8 (5) write %tmp.37))
+    (= #t %t.62 (call %otherSeed.27))
+    (= #t
+       %t.63
+       (tuple
+         #vu8(97 99 99 116 58 101 110 99 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0)
+         %t.62))
+    (= #t %k.31 (call %persistentHash.16 %t.63))
+    (= #t %t.64 (call %degradeToTransient.18 %k.31))
+    (= #t %tmp.38 (call %ecMulGenerator.23 %t.64))
+    (= #t %t.65 (public-ledger %safeKey.9 (6) write %tmp.38))
+    (= #t %t.66 (tuple)) %t.66)
+  (circuit %check.1 ((%c.32 (tfield))) (ttuple)
+    (= #t %t.67 (public-ledger %encKey.2 (1) read))
+    (= #t %tmp.39 (call %ecMul.20 %t.67 %c.32))
+    (= #t %t.68 (public-ledger %lastCheck.3 (7) write %tmp.39))
+    (= #t %t.69 (tuple)) %t.69))
+tell-constructor:
+(constructor () (tuple))

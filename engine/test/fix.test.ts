@@ -95,8 +95,23 @@ describe('manual fixes where no rewrite is safe', () => {
     expect(m).toContain('SecretKey(): Bytes<32>;');
     expect(m).toContain('persistentHash<Vector<2, Bytes<32>>>');
   });
-  it('a secret returned from a circuit', () => {
-    expect(manualFor('case-return')[0]).toContain('Circuit results are public');
+  it('a secret returned from a circuit: low, so no fix is planned; the advice says where it goes', () => {
+    expect(manualFor('case-return')).toEqual([]);
+    const [f] = load('case-return').findings;
+    const p = propose(srcOf('case-return'), f, load('case-return'), 'case-return.compact');
+    expect(p.rule).toBeNull();
+    expect((p as { manual: string }).manual).toContain('not on chain');
+    expect((p as { manual: string }).manual).toContain('a contract that calls `leakKey`');
+  });
+  it('a public value used as a private key: manual, with the domain-separation fix', () => {
+    const f = load('case-derived-key').findings.find((x) => x.kind === 'derivable-secret')!;
+    const p = propose(srcOf('case-derived-key'), f, load('case-derived-key'), 'case-derived-key.compact');
+    expect(p.rule).toBeNull();
+    expect((p as { manual: string }).manual).toContain('domain separator');
+  });
+  it('a membership lookup: manual, pointing at a Merkle proof', () => {
+    const [m] = manualFor('case-member-lookup');
+    expect(m).toContain('checkRoot');
   });
   it('a branch inside a loop is not turned into an assert', () => {
     const src = `pragma language_version 0.23;
@@ -142,7 +157,8 @@ describe.runIf(hasCompiler())('verified patches', () => {
     ['payband', 'commit-hash', 'F', 'A'],
     ['reserve', 'assert-branch', 'C', 'A'],
     ['vault', 'hash-key', 'F', 'A'],
-    ['board', 'one-time-tag', 'C', 'B'],
+    // still C: the membership check looks the member's tag up (the zoo's Merkle version is the full fix)
+    ['board', 'one-time-tag', 'C', 'C'],
   ];
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-fix-test-'));
   for (const [name, rule, before, after] of EXPECT)
@@ -159,8 +175,10 @@ describe.runIf(hasCompiler())('verified patches', () => {
       fs.writeFileSync(file, plan.combined!.source);
       const again = await planFixes(await scanFile(file, compilers), { compilers });
       expect(again.grade).toBe(after);
-      expect(again.suggestions).toEqual([]);
+      expect(again.suggestions.filter((s) => s.patch)).toEqual([]);
       expect(again.combined).toBeUndefined();
+      // what is left is the board's membership lookup, with the Merkle proof as the manual fix
+      expect(again.suggestions.map((s) => s.manual ?? '')).toEqual(name === 'board' ? [expect.stringContaining('checkRoot')] : []);
     }, 120_000);
 
   it('fixed zoo contracts produce no patches', async () => {
@@ -242,5 +260,153 @@ export circuit raise(id: Bytes<32>): [] {
     expect(fix.stdout).toContain('grade F → A');
     expect(fix.status).toBe(0);
     expect(fs.readFileSync(file, 'utf8')).toContain('persistentHash<Vector<2, Bytes<32>>>');
+  }, 240_000);
+});
+
+// Review of the Wave 3 auto-fix (judges' notes): a constant salt is replaced, not wrapped; a salt
+// witness the contract already declares is reused; a branch rated low still gets its fix, and when
+// no rewrite applies the manual text says why; a one-line patch is a one-click suggestion.
+const BALLOT = `pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger ballots: Map<Bytes<32>, Bytes<32>>;
+witness voterKey(): Bytes<32>;
+witness choice(): Uint<8>;
+witness ballotSalt(): Bytes<32>;
+export circuit vote(): [] {
+  const tag = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "ballot:voter"), voterKey()]));
+  const c = choice();
+  assert(c < 4, "there are four candidates");
+  ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, pad(32, "salt"))));
+}
+`;
+const commitFinding = (over: Partial<Finding> = {}): Finding =>
+  ({ circuit: 'vote', kind: 'guessable-hash', severity: 'critical', field: 'ballots', op: 'insert', sources: [{ name: 'choice', kind: 'witness', type: 'Uint<8>', bits: 2 }], bits: 2, via: 'persistentCommit', title: '', detail: '', fix: 'Use a fresh salt.', line: 11, ...over }) as Finding;
+
+describe('constant or public commitment randomness', () => {
+  it('replaces the salt with a nonce witness instead of committing a second time', () => {
+    const p = propose(BALLOT, commitFinding(), undefined, 'ballot.compact');
+    if (p.rule === null) throw new Error(p.manual);
+    const out = applyEdits(BALLOT, p.edits);
+    expect(out).toContain('ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, ballotSalt())));');
+    expect(out).not.toContain('persistentCommit<Bytes<32>>(persistentCommit');
+    expect(out).not.toContain('pad(32, "salt")');
+  });
+  it('reuses the salt witness the contract declares, adding no new one', () => {
+    const p = propose(BALLOT, commitFinding(), undefined, 'ballot.compact');
+    if (p.rule === null) throw new Error(p.manual);
+    const out = applyEdits(BALLOT, p.edits);
+    expect(p.witness).toBe('ballotSalt');
+    expect(out.match(/^witness /gm)).toHaveLength(3);
+    expect(p.notes[0]).toContain('already declares');
+    // the patch touches one line only
+    expect(changedRange(BALLOT, out)).toMatchObject({ start: 11, end: 11 });
+  });
+  it('declares a fresh witness when the only salt witness is already used in the circuit', () => {
+    const src = BALLOT.replace('const c = choice();', 'const c = choice();\n  const unused = ballotSalt();');
+    const p = propose(src, commitFinding({ line: 12 }), undefined, 'ballot.compact');
+    if (p.rule === null) throw new Error(p.manual);
+    const out = applyEdits(src, p.edits);
+    expect(p.witness).toBe('ballotsNonce');
+    expect(out).toContain('witness ballotsNonce(): Bytes<32>;');
+    expect(out).toContain('persistentCommit<Uint<8>>(c, ballotsNonce())');
+  });
+  it('a commitment bound to a const, and a transient one, get their randomness replaced in place', () => {
+    const src = BALLOT.replace(
+      '  ballots.insert(tag, disclose(persistentCommit<Uint<8>>(c, pad(32, "salt"))));',
+      '  const cm = transientCommit<Uint<8>>(c, 7);\n  ballots.insert(tag, disclose(cm));',
+    );
+    const p = propose(src, commitFinding({ via: 'transientCommit', line: 12 }), undefined, 'ballot.compact');
+    if (p.rule === null) throw new Error(p.manual);
+    const out = applyEdits(src, p.edits);
+    expect(out).toContain('const cm = transientCommit<Uint<8>>(c, degradeToTransient(ballotSalt()));');
+  });
+  it('a guessable hash (not a commitment) still becomes a commitment, with the declared salt', () => {
+    const src = BALLOT.replace('persistentCommit<Uint<8>>(c, pad(32, "salt"))', 'persistentHash<Uint<8>>(c)');
+    const p = propose(src, commitFinding({ via: 'persistentHash' }), undefined, 'ballot.compact');
+    if (p.rule === null) throw new Error(p.manual);
+    expect(applyEdits(src, p.edits)).toContain('disclose(persistentCommit<Bytes<32>>(persistentHash<Uint<8>>(c), ballotSalt()))');
+  });
+});
+
+describe('branches: a fix when one applies, and why not when it does not', () => {
+  const branch = (over: Partial<Finding> = {}): Finding =>
+    ({ circuit: 'check', kind: 'branch', severity: 'low', field: 'rich', op: 'increment', sources: [{ name: 'balance', kind: 'witness', type: 'Uint<64>', bits: 64 }], bits: 1, title: '', detail: 'anonymous choices', fix: 'Touch both.', line: 8, ...over }) as Finding;
+  const BRANCH = `pragma language_version 0.23;
+import CompactStandardLibrary;
+export ledger rich: Counter;
+export ledger poor: Counter;
+witness balance(): Uint<64>;
+export circuit check(): [] {
+  if (disclose(balance() > 5000)) {
+    rich.increment(1);
+  } else {
+    poor.increment(1);
+  }
+}
+`;
+  it('if (disclose(b > 5000)) { … } else { … } becomes an assert', () => {
+    const p = propose(BRANCH, branch());
+    if (p.rule === null) throw new Error(p.manual);
+    expect(applyEdits(BRANCH, p.edits)).toContain('assert(balance() > 5000, "this call does not meet the condition");\n  rich.increment(1);\n}');
+  });
+  it('a conditional expression gets an explicit manual fix', () => {
+    const src = BRANCH.replace(/  if [\s\S]*?\n  }\n}/, '  rich.increment(disclose(balance() > 5000) ? 1 : 0);\n}');
+    const p = propose(src, branch({ line: 7 }));
+    expect(p.rule).toBeNull();
+    if (p.rule === null) {
+      expect(p.manual).toContain('not a braced `if { } else { }` block');
+      expect(p.manual).toContain('assert()');
+    }
+  });
+  it('a branch in a loop says why it is not rewritten and how to pad the loop', () => {
+    const src = BRANCH.replace('witness balance(): Uint<64>;', 'witness balances(): Vector<2, Uint<64>>;').replace(
+      /  if [\s\S]*?\n  }\n}/,
+      '  for (const b of balances()) {\n    if (disclose(b > 5000)) {\n      rich.increment(1);\n    }\n  }\n}',
+    );
+    const p = propose(src, branch({ line: 9, sources: [{ name: 'balances', kind: 'witness', type: 'Vector<2, Uint<64>>', bits: 128 }] }));
+    expect(p.rule).toBeNull();
+    if (p.rule === null) expect(p.manual).toContain('Pad the loop');
+  });
+});
+
+describe.runIf(hasCompiler())('the pull-request demo, end to end', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tell-fix-demo-'));
+  it('a constant salt in demo/ballot.compact: verified, one line, reuses ballotSalt, and posts as a suggestion', async () => {
+    const { commentableLines, desiredComments } = await import('../src/review.js');
+    const demo = fs.readFileSync(path.join(__dirname, '..', '..', 'demo', 'ballot.compact'), 'utf8');
+    const leaky = demo.replace('persistentCommit<Uint<8>>(c, ballotSalt())', 'persistentCommit<Uint<8>>(c, pad(32, "salt"))');
+    expect(leaky).not.toBe(demo);
+    const file = path.join(tmp, 'ballot.compact');
+    fs.writeFileSync(file, leaky);
+    const compilers = await findCompilers();
+    const r = await scanFile(file, compilers);
+    const plan = await planFixes(r, { compilers, root: tmp });
+    const s = plan.suggestions.find((x) => x.finding.kind === 'guessable-hash')!;
+    expect(s.patch).toBeDefined();
+    expect(s.verification).toMatchObject({ ok: true, compiles: true, gone: true, newFindings: [] });
+    expect(s.patch!.source).toBe(demo); // exactly the original line back
+    expect(s.patch!.range.start).toBe(s.patch!.range.end);
+    // the pull request changed only that line
+    const L = leaky.split('\n');
+    const line = L.findIndex((l) => l.includes('pad(32, "salt")')) + 1;
+    const pr = { filename: 'ballot.compact', status: 'modified', patch: `@@ -${line - 1},3 +${line - 1},3 @@\n ${L[line - 2]}\n-${demo.split('\n')[line - 1]}\n+${L[line - 1]}\n ${L[line]}` };
+    expect(commentableLines(pr.patch).has(line)).toBe(true);
+    const { comments } = desiredComments([{ ...r, fixes: plan }], [pr], { root: tmp });
+    const c = comments.find((x) => x.finding.kind === 'guessable-hash')!;
+    expect(c.line).toBe(line);
+    expect(c.body).toContain('```suggestion\n' + demo.split('\n')[line - 1] + '\n```');
+  }, 240_000);
+  it('a branch on a private balance, rated low, still gets a verified fix', async () => {
+    const file = path.join(tmp, 'branch.compact');
+    fs.writeFileSync(
+      file,
+      `pragma language_version 0.23;\nimport CompactStandardLibrary;\nexport ledger rich: Counter;\nexport ledger poor: Counter;\nwitness balance(): Uint<64>;\nexport circuit check(): [] {\n  const b = balance();\n  if (disclose(b > 5000)) {\n    rich.increment(1);\n  } else {\n    poor.increment(1);\n  }\n}\n`,
+    );
+    const compilers = await findCompilers();
+    const r = await scanFile(file, compilers);
+    expect(r.report!.findings.find((f) => f.kind === 'branch')!.severity).toBe('low');
+    const plan = await planFixes(r, { compilers, root: tmp });
+    expect(plan.suggestions).toHaveLength(1);
+    expect(plan.suggestions[0]).toMatchObject({ rule: 'assert-branch', verification: { ok: true, gradeBefore: 'B', gradeAfter: 'A' } });
   }, 240_000);
 });

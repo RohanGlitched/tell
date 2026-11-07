@@ -20,8 +20,14 @@
     {
       "name": "maintainers",
       "type": "HistoricMerkleTree<10, Bytes<32>>",
-      "holds": "Credential leaves, persistentHash(\"tell-desk:maintainer\", secret, project), registered by Tell. A historic tree keeps past roots valid, so a proof made against an older root still checks. Proofs disclose only the root",
-      "who": "Anyone; hides the secret and the project"
+      "holds": "Credential leaves, persistentHash(\"tell-desk:maintainer\", key, project), where key = persistentHash(\"tell-desk:maintainer-key\", secret). Tell registers a key and a project after checking off chain that the key’s holder controls the repository; the circuit builds the leaf. Proofs disclose only a root",
+      "who": "Anyone; hides the key, the secret and the project"
+    },
+    {
+      "name": "selfGrades",
+      "type": "Map<Bytes<32>, Grade>",
+      "holds": "persistentHash(\"tell-desk:self-grade\", code hash, project) → a maintainer’s own grade. One slot per project and code, so no project can take another’s",
+      "who": "Anyone; a self-report names its project on purpose"
     },
     {
       "name": "openings",
@@ -38,7 +44,7 @@
     {
       "name": "attester",
       "type": "Bytes<32>",
-      "holds": "persistentHash(\"tell-desk:attester\", secret): the officer key that attests grades and registers maintainers",
+      "holds": "persistentHash(\"tell-desk:attester\", secret): the officer key that attests grades and registers maintainers. A hand-over only proposes the next key (nextAttester); it takes effect when that key’s holder accepts",
       "who": "Anyone"
     }
   ],
@@ -64,7 +70,7 @@
     {
       "name": "maintainer secret",
       "type": "Bytes<32>",
-      "holds": "The credential behind a leaf, plus the Merkle path to it built from the public tree",
+      "holds": "The credential. Only its hash, the maintainer key, ever goes to Tell; the proof rebuilds the leaf from the secret. Plus the Merkle path, built from the public tree",
       "who": "The maintainer"
     }
   ],
@@ -90,9 +96,19 @@
       "discloses": "Which report; the proof shows the tag is theirs without naming them"
     },
     {
+      "name": "registerMaintainer",
+      "does": "Tell registers a maintainer key for a project, after checking off chain that the key’s holder controls the repository. The circuit builds the leaf",
+      "discloses": "The leaf only; the key and the project are inputs, which a transaction carries only inside a hiding commitment"
+    },
+    {
       "name": "attest, selfGrade",
-      "does": "Tell records a grade for a code hash; a registered maintainer may self-report one, flagged",
+      "does": "Tell records a grade for a code hash; a registered maintainer may self-report one for their own project, in that project’s slot",
       "discloses": "The grade, rules version and scan; a self-report names its project"
+    },
+    {
+      "name": "handOver, acceptHandOver",
+      "does": "Tell proposes the next officer key; the role moves only when its holder accepts",
+      "discloses": "The proposed key hash"
     }
   ],
   "flow": [
@@ -106,7 +122,7 @@
     },
     {
       "step": "Fix",
-      "text": "Same proof again once the fix is out. Status: fixed. The chain never said which project it was."
+      "text": "Same proof again once the fix is out. Status: fixed. The chain never said which project it was: the proof hides among every registered maintainer credential, counted live below."
     },
     {
       "step": "Reveal",

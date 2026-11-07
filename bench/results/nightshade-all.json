@@ -6,98 +6,6 @@
   "command": "nightshade <file> --compiler-version <profile> --json --detectors <ids> --profile hygiene",
   "files": [
     {
-      "id": "zoo/ballot-fixed.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
-      "findings": []
-    },
-    {
-      "id": "zoo/ballot-leaky.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations",
-      "findings": []
-    },
-    {
-      "id": "zoo/board-fixed.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Expression budget exhausted; results are incomplete",
-      "findings": [
-        {
-          "rule": "merkle-insert-without-dedupe",
-          "severity": "info",
-          "native": "info/medium",
-          "line": 26,
-          "circuit": "join",
-          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
-          "quantity": null,
-          "privacy": false
-        }
-      ]
-    },
-    {
-      "id": "zoo/board-leaky.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
-      "findings": []
-    },
-    {
-      "id": "zoo/payband-fixed.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
-      "findings": []
-    },
-    {
-      "id": "zoo/payband-leaky.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
-      "findings": []
-    },
-    {
-      "id": "zoo/reserve-fixed.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/reserve-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": []
-    },
-    {
-      "id": "zoo/vault-fixed.compact",
-      "status": "incomplete",
-      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
-      "findings": []
-    },
-    {
-      "id": "zoo/vault-leaky.compact",
-      "status": "complete",
-      "note": "profile compact-0.31.1-zkir2",
-      "findings": [
-        {
-          "rule": "unconstrained-witness-to-state",
-          "severity": "medium",
-          "native": "medium/low",
-          "line": 19,
-          "circuit": "claim",
-          "message": "Raw witness value reaches ledger state without a value-specific assertion. claim writes raw output of secretKey into owner on a modeled successful history without an assertion depending on that witness leaf. Disclosure permits publication; it does not validate the value. An unrelated caller guard or a witness attestation about the value supplies no circuit validation. Public registration and prover-chosen metadata can be intentional; review the required application relation.",
-          "quantity": null,
-          "privacy": false
-        },
-        {
-          "rule": "spoofable-authorization",
-          "severity": "high",
-          "native": "high/high",
-          "line": 23,
-          "circuit": "withdraw",
-          "message": "Raw witness check gates a privileged effect. withdraw requires raw witness data from secretKey to equal ledger owner on every modeled successful reach. The guard covers 1 effect site: ledger-write withdrawals. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
-          "quantity": null,
-          "privacy": false
-        }
-      ]
-    },
-    {
       "id": "cases/L01-assert-bound-hash.compact",
       "status": "incomplete",
       "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
@@ -1595,9 +1503,246 @@
       "status": "incomplete",
       "note": "profile compact-0.35.0-zkir2; unresolved-type: Unknown type Secp256k1Point",
       "findings": []
+    },
+    {
+      "id": "zoo/ballot-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/ballot-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations",
+      "findings": []
+    },
+    {
+      "id": "zoo/board-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Expression budget exhausted; results are incomplete",
+      "findings": [
+        {
+          "rule": "merkle-insert-without-dedupe",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 26,
+          "circuit": "join",
+          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/board-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/club-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; analysis-budget: Analysis step budget exhausted; results are incomplete; analysis-budget: Expression budget exhausted; results are incomplete; analysis-budget: Higher-order call path budget exceeded",
+      "findings": [
+        {
+          "rule": "merkle-insert-without-dedupe",
+          "severity": "info",
+          "native": "info/medium",
+          "line": 26,
+          "circuit": "join",
+          "message": "Bounded Merkle insertion lacks an exact surviving duplicate check. join sequentially inserts into members without a modeled preceding enforced absence check for that exact value and a surviving insertion into the checked persistent collection. Review whether repeated values should be rejected; intentional repeated leaves, external protocol invariants or indexed updates have different contracts.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/club-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; initialization-effect-unsupported: Consecutive invocation analysis does not carry transaction/context effects; initialization review is incomplete; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/deposit-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; capacity-evidence-unavailable: Capacity review needs a represented constructor and exact uncompressed collection/predicate observations; capacity-constraint-unavailable: Complete isolated constructor-to-entry capacity evidence is unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/faucet-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 21,
+          "circuit": null,
+          "message": "Shielded mint metadata is discarded. The canonical shielded mint result is discarded by this source use. Review whether the caller needs the returned coin metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 21,
+          "circuit": "claim",
+          "message": "Token operation has no required caller-input constraint. claim reaches mintShieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/faucet-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; runtime-width-profile-unavailable: Shielded coin width review requires Compact 0.34.0/ZKIR2 and the explicitly assumed reference runtime 0.19.0 descriptor; this profile is unavailable",
+      "findings": [
+        {
+          "rule": "transient-digest-to-ledger",
+          "severity": "low",
+          "native": "low/high",
+          "line": 25,
+          "circuit": "claim",
+          "message": "Ledger data uses an upgrade-unstable transient primitive. claim constructs a terminal modeled ledger operand using transientHash. The standard library does not guarantee this primitive remains stable across upgrades and recommends persistent primitives for state derivation. Review whether this state must remain reproducible across upgrades; intentional version-bound data and compiler tests can match. Wrapping a transient digest in a persistent hash does not stabilize the inner computation.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "discarded-shielded-send-result",
+          "severity": "info",
+          "native": "info/high",
+          "line": 27,
+          "circuit": null,
+          "message": "Shielded mint metadata is discarded. The canonical shielded mint result is discarded by this source use. Review whether the caller needs the returned coin metadata; wallet or transaction machinery may retain metadata independently.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "unprotected-value-transfer",
+          "severity": "low",
+          "native": "low/low",
+          "line": 27,
+          "circuit": "claim",
+          "message": "Token operation has no required caller-input constraint. claim reaches mintShieldedToken on modeled successful histories with the same recorded public conditions that collectively impose no required private-input predicate. This is limited to recorded predicates; implicit arithmetic and transaction checks still apply. Public minting, payment and faucet behavior may be intentional. Standard-library recipient and change branches are excluded. Review the application policy.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/keyring-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/keyring-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable",
+      "findings": []
+    },
+    {
+      "id": "zoo/payband-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "zoo/raffle-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 14,
+          "circuit": null,
+          "message": "write only ledger. Ledger field drawn is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/raffle-leaky.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": [
+        {
+          "rule": "write-only-ledger",
+          "severity": "info",
+          "native": "info/high",
+          "line": 15,
+          "circuit": null,
+          "message": "write only ledger. Ledger field drawn is written but never read by Compact code in this compilation unit. A stored configuration value may not affect circuit behavior; external readers can intentionally consume it.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
+    },
+    {
+      "id": "zoo/reserve-fixed.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/reserve-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-fixed.compact",
+      "status": "incomplete",
+      "note": "profile compact-0.31.1-zkir2; membership-identity-evidence: Predicate or collection operand history unavailable; domain-review-evidence-unavailable: Published native hash preimage contains opaque, transformed or unavailable components",
+      "findings": []
+    },
+    {
+      "id": "zoo/vault-leaky.compact",
+      "status": "complete",
+      "note": "profile compact-0.31.1-zkir2",
+      "findings": [
+        {
+          "rule": "unconstrained-witness-to-state",
+          "severity": "medium",
+          "native": "medium/low",
+          "line": 19,
+          "circuit": "claim",
+          "message": "Raw witness value reaches ledger state without a value-specific assertion. claim writes raw output of secretKey into owner on a modeled successful history without an assertion depending on that witness leaf. Disclosure permits publication; it does not validate the value. An unrelated caller guard or a witness attestation about the value supplies no circuit validation. Public registration and prover-chosen metadata can be intentional; review the required application relation.",
+          "quantity": null,
+          "privacy": false
+        },
+        {
+          "rule": "spoofable-authorization",
+          "severity": "high",
+          "native": "high/high",
+          "line": 23,
+          "circuit": "withdraw",
+          "message": "Raw witness check gates a privileged effect. withdraw requires raw witness data from secretKey to equal ledger owner on every modeled successful reach. The guard covers 1 effect site: ledger-write withdrawals. Sole-gate coverage is unproven: another condition or implicit check is unclassified. At least one history lacks a modeled private-preimage check against preexisting ledger data. Equality alone does not demonstrate possession of a secret; review the intended authentication and protocol role.",
+          "quantity": null,
+          "privacy": false
+        }
+      ]
     }
   ],
-  "seconds": 116,
+  "seconds": 23,
   "corpus": {
     "sets": [
       "zoo",

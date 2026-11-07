@@ -13,6 +13,7 @@ if (!fs.existsSync(src)) {
 const scores = JSON.parse(fs.readFileSync(src, 'utf8'));
 const NAMES = {
   tell: 'Tell',
+  'tell-policy': 'Tell, with a one-line tell.json',
   nightshade: 'Nightshade, default',
   'nightshade-all': 'Nightshade, every rule',
   'nightshade-policy': 'Nightshade, secrets policy',
@@ -38,6 +39,7 @@ const rows = Object.entries(scores).map(([id, s]) => {
   };
 });
 const stat = fs.statSync(src);
+const commit = String(scores.tell?.version ?? '').match(/\(([0-9a-f]{7,})\)/)?.[1] ?? 'unknown commit';
 fs.writeFileSync(
   out,
   JSON.stringify(
@@ -45,14 +47,13 @@ fs.writeFileSync(
       source: 'bench/RESULTS.md',
       generatedFrom: 'bench/results/scores.json',
       runAt: stat.mtime.toISOString().slice(0, 10),
-      // which Tell engine produced the numbers (set by hand when the benchmark is re-run)
-      engine: process.env.TELL_BENCH_ENGINE ?? 'Wave 2 engine (d3a9104)',
-      engineNote:
-        process.env.TELL_BENCH_ENGINE_NOTE ??
-        "Tell's numbers come from the Wave 2 engine; a re-run with the Wave 3 engine (constructors, Ledger 9, token rules) is in progress and will replace them.",
+      // which Tell engine produced the numbers: the commit in the Tell row's version
+      engine: `${process.env.TELL_BENCH_ENGINE ?? 'Wave 3 engine'} (${commit})`,
+      engineNote: `Tell's row comes from the ${process.env.TELL_BENCH_ENGINE ?? 'Wave 3 engine'} (commit ${commit}). The first run, on the Wave 2 engine (d3a9104), is kept under History in bench/RESULTS.md.`,
+      alsoRun: 'Tell also ran on Nightshade’s published regression corpus: 465 contracts, 443 analysed, 0 crashes (bench/RESULTS.md).',
       caveat:
-        "Tell's author wrote this benchmark, the leak zoo is Tell's own development set, and the 30 cases were written knowing what Tell looks for. Read the labelled numbers as 'does each tool handle these patterns', not as a population accuracy. Most of the other tools also check things this benchmark does not measure.",
-      corpus: '69 Compact files: the Wave 2 leak zoo (10: 5 leaky, 5 fixed), 30 cases written for the benchmark (16 leaky, 13 safe, 1 non-privacy bug), 29 contracts from Midnight’s official examples',
+        "Tell's author wrote this benchmark, the leak zoo is Tell's own development set, and the 30 cases were written knowing what Tell looks for; three of Tell's gains since the first run (L11, L12, L16) come from rules added after that run showed the misses. Read the labelled numbers as 'does each tool handle these patterns', not as a population accuracy. Most of the other tools also check things this benchmark does not measure.",
+      corpus: '79 Compact files: Tell’s leak zoo (20: 10 leaky, 10 fixed), 30 cases written for the benchmark (15 leaky, 13 safe, 1 non-privacy bug, 1 value that is never public), 29 contracts from Midnight’s official examples',
       rows,
     },
     null,

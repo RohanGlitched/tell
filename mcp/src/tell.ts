@@ -9,10 +9,12 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { findCompilers, findContracts, scanFile, type Compiler, type ContractResult, type Finding, type Grade, type Severity } from '@tell/engine';
+import { findCompilers, findContracts, parsePolicy, scanFile, type Compiler, type ContractResult, type Finding, type Grade, type Policy, type ScanOptions, type Severity } from '@tell/engine';
 import { SEVERITY_ORDER, transcript, transcriptFor } from './format.js';
 
-export type ScanInput = { source?: string; path?: string; compiler?: string };
+// policy: declared intent, the same object a tell.json holds. Without it, a scan by `path` uses the
+// nearest tell.json or .tellrc.json above the contract, and a scan of bare source text uses none.
+export type ScanInput = { source?: string; path?: string; compiler?: string; policy?: Policy };
 
 // Compilers are probed once per process (each probe runs the binary twice).
 let probed: Promise<Compiler[]> | null = null;
@@ -37,6 +39,9 @@ export async function scan(input: ScanInput): Promise<ContractResult[]> {
   const comp = await compilersFor(input.compiler);
   const label = input.path ?? 'contract.compact';
   if (!comp.ok) return [{ file: label, compiler: null, language: null, ok: false, error: comp.error }];
+  // Validate an inline policy the same way a file is validated (a typo must not pass silently).
+  const policy = input.policy === undefined ? undefined : parsePolicy(JSON.stringify(input.policy), 'policy');
+  const opts: ScanOptions = policy ? { policy } : {};
 
   if (input.source === undefined) {
     if (!input.path) throw new Error('Give the contract as `source` (Compact text) or `path` (a .compact file or a directory).');
@@ -44,7 +49,7 @@ export async function scan(input: ScanInput): Promise<ContractResult[]> {
     if (!fs.existsSync(p)) throw new Error(`No such file or directory: ${p}`);
     const files = findContracts(p);
     const out: ContractResult[] = [];
-    for (const f of files) out.push(await scanFile(f, comp.list));
+    for (const f of files) out.push(await scanFile(f, comp.list, opts));
     return out;
   }
 
@@ -55,7 +60,7 @@ export async function scan(input: ScanInput): Promise<ContractResult[]> {
   const file = path.join(dir, nextTo ? `.tell-${crypto.randomBytes(4).toString('hex')}-${path.basename(input.path!)}` : 'contract.compact');
   fs.writeFileSync(file, input.source);
   try {
-    const r = await scanFile(file, comp.list);
+    const r = await scanFile(file, comp.list, policy ? opts : nextTo ? {} : { policyFile: null });
     return [{ ...r, file: label }];
   } finally {
     if (nextTo) fs.rmSync(file, { force: true });

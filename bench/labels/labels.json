@@ -426,6 +426,107 @@
     },
     "nightshade|cases/S13-separate-key-domain.compact|declared-secret-publication|22": {
       "label": "false-alarm"
+    },
+    "tell|cases/L06-branch-unbalanced.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|cases/L09-secret-returned.compact|secret-published|18": {
+      "label": "real-other"
+    },
+    "tell|cases/L13-preimage-published.compact|published|20": {
+      "label": "intended"
+    },
+    "tell|cases/S05-branch-balanced.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|cases/S11-constructor-hash.compact|linkable|24": {
+      "label": "intended"
+    },
+    "tell|cases/S12-public-fact.compact|published|20": {
+      "label": "intended"
+    },
+    "tell|cases/S07-key-hashed.compact|linkable|19": {
+      "label": "intended"
+    },
+    "tell|zoo/club-fixed.compact|published|26": {
+      "label": "intended"
+    },
+    "tell|zoo/club-fixed.compact|linkable|37": {
+      "label": "intended"
+    },
+    "tell|zoo/club-leaky.compact|published|24": {
+      "label": "intended"
+    },
+    "tell|zoo/deposit-fixed.compact|linkable|34": {
+      "label": "intended"
+    },
+    "tell|zoo/deposit-fixed.compact|published|22": {
+      "label": "intended"
+    },
+    "tell|zoo/keyring-fixed.compact|linkable|27": {
+      "label": "intended"
+    },
+    "tell|zoo/payband-fixed.compact|published|22": {
+      "label": "intended"
+    },
+    "tell|zoo/payband-leaky.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|zoo/raffle-fixed.compact|published|34": {
+      "label": "intended"
+    },
+    "tell|zoo/raffle-leaky.compact|published|34": {
+      "label": "intended"
+    },
+    "tell|zoo/reserve-fixed.compact|published|21": {
+      "label": "intended"
+    },
+    "tell|zoo/reserve-leaky.compact|published|24": {
+      "label": "intended"
+    },
+    "tell|examples/examples/private-tip-jar/contract/private-tip-jar.compact|shielded-coin|135": {
+      "label": "real-privacy",
+      "leak": "tip-jar-withdraw-recipient"
+    },
+    "tell|examples/examples/shielded-chips/contract/roulette.compact|shielded-coin|287": {
+      "label": "real-privacy",
+      "leak": "roulette-sweep-recipient"
+    },
+    "nightshade|zoo/faucet-fixed.compact|discarded-shielded-send-result|21": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/faucet-leaky.compact|discarded-shielded-send-result|27": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/club-fixed.compact|merkle-insert-without-dedupe|26": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/faucet-fixed.compact|unprotected-value-transfer|21": {
+      "label": "intended"
+    },
+    "nightshade|zoo/faucet-leaky.compact|unprotected-value-transfer|27": {
+      "label": "intended"
+    },
+    "nightshade|zoo/faucet-leaky.compact|transient-digest-to-ledger|25": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/raffle-fixed.compact|write-only-ledger|14": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/raffle-leaky.compact|write-only-ledger|15": {
+      "label": "real-other"
+    },
+    "nightshade|cases/L09-secret-returned.compact|declared-secret-publication|20": {
+      "label": "real-other"
+    },
+    "nightshade|zoo/club-fixed.compact|declared-secret-publication|34": {
+      "label": "false-alarm"
+    },
+    "nightshade|zoo/keyring-fixed.compact|declared-secret-publication|27": {
+      "label": "false-alarm"
+    },
+    "compact-guard|zoo/raffle-leaky.compact|CG002|21": {
+      "label": "tp"
     }
   }
 }

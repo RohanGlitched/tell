@@ -1,0 +1,46 @@
+pragma language_version 0.23;
+import CompactStandardLibrary;
+// A public key whose private scalar is a value the contract publishes (and look-alikes that are fine).
+export ledger accountId: Bytes<32>;
+export ledger encKey: JubjubPoint;
+export ledger shareKey: JubjubPoint;
+export ledger ownerTag: Bytes<32>;
+export ledger ownerKey: JubjubPoint;
+export ledger safeId: Bytes<32>;
+export ledger safeKey: JubjubPoint;
+export ledger lastCheck: JubjubPoint;
+witness seed(): Bytes<32>;
+witness secretKey(): Bytes<32>;
+witness otherSeed(): Bytes<32>;
+
+// leak: the scalar is the published id itself
+export circuit register(): [] {
+  const id = persistentHash<Vector<1, Bytes<32>>>([seed()]);
+  accountId = disclose(id);
+  encKey = disclose(ecMulGenerator(degradeToTransient(id)));
+}
+
+// leak: the scalar is a public function of the published id (anyone can hash it again)
+export circuit share(): [] {
+  const id = persistentHash<Vector<1, Bytes<32>>>([seed()]);
+  const k = persistentHash<Vector<2, Bytes<32>>>([pad(32, "share:key"), id]);
+  shareKey = disclose(ecMulGenerator(degradeToTransient(k)));
+}
+
+// fine: the private key is the secret itself; only a hash of it is published
+export circuit own(): [] {
+  ownerTag = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "own:tag"), secretKey()]));
+  ownerKey = disclose(ecMulGenerator(degradeToTransient(secretKey())));
+}
+
+// fine: separate domains for the id and the key
+export circuit separate(): [] {
+  safeId = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:id"), otherSeed()]));
+  const k = persistentHash<Vector<2, Bytes<32>>>([pad(32, "acct:enc"), otherSeed()]);
+  safeKey = disclose(ecMulGenerator(degradeToTransient(k)));
+}
+
+// fine: a verification step multiplies a public key by a public challenge
+export circuit check(c: Field): [] {
+  lastCheck = disclose(ecMul(encKey, c));
+}

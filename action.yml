@@ -36,8 +36,12 @@ inputs:
     description: 'Lowest severity that gets an inline comment: critical, high, medium or low'
     required: false
     default: 'medium'
+  policy:
+    description: 'A Tell policy file (declared intent: secret and public inputs, one-time circuits, intended disclosures). Default: the nearest tell.json or .tellrc.json above each contract; "none" ignores policy files'
+    required: false
+    default: ''
   github-token:
-    description: 'Token used to post pull request comments'
+    description: 'Token used to post pull request comments and to read the Compact release list'
     required: false
     default: ${{ github.token }}
 
@@ -55,9 +59,20 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: '22'
+    # The compiler install asks the GitHub API for the release list, which a shared runner is
+    # sometimes refused: the token authenticates those calls, and install-compact.sh retries with
+    # backoff, then downloads the release zip directly.
     - uses: midnightntwrk/setup-compact-action@v1
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       with:
         compact-version: ${{ inputs.compact-version }}
+    - name: Compact ${{ inputs.compact-version }}, retried
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: bash "${{ github.action_path }}/.github/scripts/install-compact.sh" "${{ inputs.compact-version }}"
     - name: Install Tell
       shell: bash
       run: |
@@ -68,6 +83,7 @@ runs:
       shell: bash
       env:
         TELL_SUGGEST: ${{ inputs.suggest-fixes }}
+        TELL_POLICY: ${{ inputs.policy }}
       run: |
         out="$RUNNER_TEMP/tell.sarif"
         json="$RUNNER_TEMP/tell.json"
@@ -75,6 +91,7 @@ runs:
         args=(--sarif "$out" --json-out "$json")
         if [ "$fail" != "none" ]; then args+=(--fail-on "$fail"); fi
         if [ "$TELL_SUGGEST" = "true" ]; then args+=(--fix-dry-run); fi
+        if [ "$TELL_POLICY" = "none" ]; then args+=(--no-policy); elif [ -n "$TELL_POLICY" ]; then args+=(--policy "$TELL_POLICY"); fi
         set +e
         read -r -a paths <<< "${{ inputs.path }}"
         npx --prefix "${{ github.action_path }}/engine" tsx "${{ github.action_path }}/engine/src/cli.ts" "${paths[@]}" "${args[@]}"
@@ -91,6 +108,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         TELL_COMMENT: ${{ inputs.comment }}
         TELL_SUGGEST: ${{ inputs.suggest-fixes }}
+        TELL_POLICY: ${{ inputs.policy }}
         TELL_COMMENT_ON: ${{ inputs.comment-on }}
         TELL_RESULTS: ${{ steps.scan.outputs.results }}
       run: |

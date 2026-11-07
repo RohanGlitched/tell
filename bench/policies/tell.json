@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "files": {
+    "S07-key-hashed.compact": {
+      "circuits": { "enroll": { "once": true } }
+    }
+  }
+}

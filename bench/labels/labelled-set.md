@@ -15,7 +15,19 @@ Principle used throughout: a finding counts as finding the leak only when what i
 | cases/S08, S13 | linkable info | intended | The returned id (S08) and the account id (S13) are meant to be stable public identifiers. |
 | zoo/board-fixed, payband-fixed; cases/L11, N01, S01, S02, S03, S06, S07, S10, S12 | published info on a circuit argument the source wraps in `disclose()` | intended | Item ids, question ids, employee ids, places, device ids, Merkle leaves and the close flag are public by design; Tell lists them at info as "written on purpose". |
 
-Tell's misses at medium and above: L06 and L10 are reported, but at low (Tell lowers a branch to low when nothing in the circuit identifies the caller); L11 is reported at info (the tag in `Set.member` is "linkable", not "identifies the member"); L12 (constructor) and L16 (published digest reused as a private scalar) have no finding.
+Tell's misses at medium and above in the first run (`d3a9104`): L06 and L10 are reported, but at low (Tell lowers a branch to low when nothing in the circuit identifies the caller); L11 is reported at info (the tag in `Set.member` is "linkable", not "identifies the member"); L12 (constructor) and L16 (published digest reused as a private scalar) have no finding.
+
+### Added for the current run (Tell `d62e618`, Nov 7)
+
+| File | Finding | Label | Reason |
+|---|---|---|---|
+| cases/L09 | secret-published low, line 18 (returned) | real-other | L09 is now `not-public`: the code does leave the proof, to the DApp or a calling contract, which the finding says; it is not on chain. |
+| cases/L06, L13, S05, S12; zoo payband-*, reserve-*, deposit-fixed (`ceiling`), raffle-* (`drawn`) | published info on a constructor or reveal argument wrapped in `disclose()` | intended | Constructor arguments (limits, owners, employers, reserves, hashes) and the revealed raffle number are public by design; the constructor is now analysed, so they are listed at info. |
+| cases/S11 | linkable info, line 24 (the admin tag set in the constructor) | intended | The S11 design: the constructor stores hash(admin secret), a stable public identifier. |
+| cases/S07 | linkable info, line 19 (`tell-policy` run) | intended | With `enroll` declared once per device, the device key tag is reported as a stable tag at info, which is what it is. |
+| zoo/club-*, keyring-fixed, deposit-fixed | published info (`join` leaf), linkable info (claim nullifier, account id, public key, bidder tag) | intended | Leaves joined in the clear, a one-time nullifier, and per-user public identifiers by design. |
+
+Tell's misses at medium and above in the current run: L06 and L10 only, found at low by decision (see GAPS-FOR-TELL.md item 3). L11 is now medium, L12 and L16 critical, by rules added after the first run.
 
 ## Nightshade (all three configurations share labels)
 
@@ -32,6 +44,19 @@ Tell's misses at medium and above: L06 and L10 are reported, but at low (Tell lo
 | cases/S05, lines 26 and 28 | declared-secret-publication high: balance "influences `checks.insert`" | false-alarm | Both branches perform the same insert of a salted commitment; the implicit flow is not observable. |
 | cases/S13, line 22 | declared-secret-publication high: seed "influences `encKey`" | false-alarm | `encKey` is a public key derived from a separately tagged hash of the seed; publishing a public key is the point. The secrets policy used (allowed forms `hash`, `commitment`) classifies it as `derived`. |
 
+Added for the current run (the five new zoo pairs, and L09 relabelled):
+
+| File | Finding | Label | Reason |
+|---|---|---|---|
+| cases/L09 | declared-secret-publication high, line 20 (policy run) | real-other | The declared secret does reach the exported return, as reported; a return is not on chain, so it is not a public leak (L09 is now `not-public`). Same label as Tell's. |
+| zoo/club-fixed (line 34) | declared-secret-publication high: the member key and path "influence `members.checkRoot`" | false-alarm | The anonymous-membership pattern, as for board-fixed and S10. |
+| zoo/keyring-fixed (line 27) | declared-secret-publication high: the seed "influences `accounts.insert`" | false-alarm | Account id and public key come from separately tagged hashes of the seed, as in S13. |
+| zoo/club-fixed | merkle-insert-without-dedupe info | real-other | True: `join` does not check for a duplicate leaf. |
+| zoo/faucet-* | discarded-shielded-send-result info | real-other | True: the mint's coin result is not used in the circuit; harmless for a faucet that mints to the caller. |
+| zoo/faucet-* | unprotected-value-transfer low | intended | Anyone may claim: it is a faucet. |
+| zoo/faucet-leaky | transient-digest-to-ledger low | real-other | True: `evolveNonce` is built on a transient hash and its result is stored. |
+| zoo/raffle-* | write-only-ledger info (`drawn`) | real-other | True; the field is there for observers. |
+
 Matched automatically and checked by hand: `predictable-commitment-randomness` on L04, `ledger-bound-preimage-publication` on L13, `low-entropy-hash-disclosure` on L15, and `declared-secret-publication` (policy run) on zoo ballot, payband, reserve, vault and cases L06, L08, L09, L10, L12, L13, L16. On L16 the policy finding is at the `encKey` write, which is where the leak lands. `published-digest-generator-scalar-review` (info, opt-in) on L16 is the rule written for exactly this leak.
 
 ## compact-guard
@@ -43,6 +68,7 @@ Matched automatically and checked by hand: `predictable-commitment-randomness` o
 | cases/L01, L02, L03, L14, L15 | CG006 low (no domain tag in the hash) | real-other | True: these hashes have no domain-separation prefix. It is hygiene, not what leaks; a domain tag does not stop guessing a small preimage. |
 | cases/L16 | CG006 low, line 20 | tp | Here the missing domain separation *is* the leak: the public id and the private scalar are the same unseparated hash. The rule's advice ("review domain separation") is the fix. Counted at low severity. |
 | cases/N01 | CG005 low, line 27 | real-other | The planted non-privacy bug (Merkle path not bound to the leaf). Correct. |
+| zoo/raffle-leaky | CG002 medium, line 21 (`seal`) | tp | Reported at the helper; its entry circuits include `<constructor>`, which seals the winning number (a `Uint<16>`) with it. That is the planted leak, as with ballot-leaky's helper. |
 
 Matched automatically: CG002 on L02, L14, L15; CG003 (review = low) on L04 and L05, the only tool other than Tell to see the public-ledger nonce in L05.
 

@@ -1,5 +1,6 @@
 // Browser tests for the website. Runs against a dev server on port 3211 (started if none is
-// running), or against any deployment with PW_BASE_URL=https://….
+// running), against the production build with PW_SERVER=start (after `npm run build -w web`;
+// what CI does), or against any deployment with PW_BASE_URL=https://….
 //   npx playwright install chromium   # once
 //   npm run e2e -w web
 //   SHOTS=1 npm run e2e -w web -- screenshots   # also writes e2e/screenshots/*.png
@@ -20,7 +21,7 @@ export default defineConfig({
   webServer: process.env.PW_BASE_URL
     ? undefined
     : {
-        command: `npx next dev -p ${PORT}`,
+        command: process.env.PW_SERVER === 'start' ? `npx next start -p ${PORT}` : `npx next dev -p ${PORT}`,
         url: BASE,
         reuseExistingServer: true,
         timeout: 180_000,

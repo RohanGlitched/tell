@@ -1,0 +1,39 @@
+// Tell leak zoo: club, fixed.
+// Copyright (C) 2026 Rohan Borade
+// SPDX-License-Identifier: Apache-2.0
+//
+// Members join a Merkle tree. A claim proves that some leaf of the tree is the
+// caller's, without saying which (the path stays private, only the root is
+// checked), and spends a one-time nullifier from a different hash domain so a
+// member cannot claim twice. Nothing in a claim matches a leaf.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger members: MerkleTree<10, Bytes<32>>;
+export ledger spent: Set<Bytes<32>>;
+export ledger claims: Counter;
+
+witness memberKey(): Bytes<32>;
+witness memberPath(leaf: Bytes<32>): MerkleTreePath<10, Bytes<32>>;
+
+export pure circuit memberLeaf(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:member"), sk]);
+}
+
+export circuit join(leaf: Bytes<32>): [] {
+  members.insert(disclose(leaf));
+}
+
+export circuit claim(): [] {
+  const sk = memberKey();
+  const leaf = memberLeaf(sk);
+  const path = memberPath(leaf);
+  assert(path.leaf == leaf, "path is not for this member");
+  assert(members.checkRoot(disclose(merkleTreePathRoot<10, Bytes<32>>(path))), "members only");
+  const nul = disclose(persistentHash<Vector<2, Bytes<32>>>([pad(32, "club:claim"), sk]));
+  assert(!spent.member(nul), "already claimed");
+  spent.insert(nul);
+  claims.increment(1);
+}

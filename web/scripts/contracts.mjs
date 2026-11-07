@@ -46,6 +46,12 @@ if (deskDep) {
   // stays off the site until it is revealed on chain, when anyone can read it there anyway.
   const dep = JSON.parse(fs.readFileSync(deskDep, 'utf8'));
   for (const r of Object.values(dep.reports ?? {})) if (!r.revealed) delete r.digest;
+  // Outreach seals: publish only how many and their ids (public on chain anyway). The record keys
+  // them by note, and a key may name the team a note went to, so keys stay off the site.
+  if (dep.outreach) dep.outreach = { sealed: Object.keys(dep.outreach).length, ids: Object.values(dep.outreach).map((o) => o.id).sort() };
+  for (const s of dep.steps ?? []) if (s.step.startsWith('seal outreach ')) s.step = 'seal outreach note';
+  // Only what the site shows: drop anything else a record might carry.
+  for (const k of Object.keys(dep)) if (!['network', 'contract', 'version', 'previous', 'address', 'deployTx', 'attesterHash', 'embargoSeconds', 'rulesVersion', 'maintainers', 'steps', 'reports', 'outreach', 'grades'].includes(k)) delete dep[k];
   fs.writeFileSync(path.resolve(here, '../data/desk-deployment.json'), JSON.stringify(dep, null, 2) + '\n');
 }
 else if (!fs.existsSync(path.resolve(here, '../data/desk-deployment.json'))) fs.writeFileSync(path.resolve(here, '../data/desk-deployment.json'), '{}\n');

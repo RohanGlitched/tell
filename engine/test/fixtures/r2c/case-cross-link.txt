@@ -1,0 +1,45 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.8 () (Kernel)))
+  (public-ledger-declaration
+    ((%plain.5 (0) (Set (tbytes 32)))
+      (%tagged.7 (1) (Set (tbytes 32)))
+      (%scoped.6 (2) (Set (tbytes 32)))
+      (%notes.4 (3) (Set (tbytes 32)))))
+  (native
+    %persistentHash.9
+    ((%value.10 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (native
+    %persistentHash.11
+    ((%value.12 (tbytes 32)))
+    (tbytes 32))
+  (witness %secretKey.13 () (tbytes 32))
+  (witness %docHash.14 () (tbytes 32))
+  (circuit %joinPlain.0 () (ttuple) (= #t %t.19 (call %secretKey.13))
+    (= #t %tmp.15 (call %persistentHash.11 %t.19))
+    (= #t %t.20 (public-ledger %plain.5 (0) insert %tmp.15))
+    (= #t %t.21 (tuple)) %t.21)
+  (circuit %joinTagged.2 () (ttuple) (= #t %t.22 (call %secretKey.13))
+    (= #t
+       %t.23
+       (tuple
+         #vu8(97 112 112 58 109 101 109 98 101 114 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.22))
+    (= #t %tmp.16 (call %persistentHash.9 %t.23))
+    (= #t %t.24 (public-ledger %tagged.7 (1) insert %tmp.16))
+    (= #t %t.25 (tuple)) %t.25)
+  (circuit %joinScoped.1 () (ttuple)
+    (= #t %t.26 (public-ledger %kernel.8 () self))
+    (= #t %t.27 (elt-ref %t.26 bytes))
+    (= #t %t.28 (call %secretKey.13))
+    (= #t %t.29 (tuple %t.27 %t.28))
+    (= #t %tmp.17 (call %persistentHash.9 %t.29))
+    (= #t %t.30 (public-ledger %scoped.6 (2) insert %tmp.17))
+    (= #t %t.31 (tuple)) %t.31)
+  (circuit %note.3 () (ttuple) (= #t %t.32 (call %docHash.14))
+    (= #t %tmp.18 (call %persistentHash.11 %t.32))
+    (= #t %t.33 (public-ledger %notes.4 (3) insert %tmp.18))
+    (= #t %t.34 (tuple)) %t.34))
+tell-constructor:
+(constructor () (tuple))

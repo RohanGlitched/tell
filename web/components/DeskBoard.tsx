@@ -66,8 +66,9 @@ export default function DeskLive() {
         .
       </p>
 
-      <dl className="grid gap-5 sm:grid-cols-4">
+      <dl className="grid gap-5 sm:grid-cols-3 lg:grid-cols-5">
         {[
+          [data.maintainerCredentials, 'maintainer credentials: the set an answer hides in'],
           [data.sealedCount, 'reports sealed'],
           [data.reports.filter((r) => r.status === 'fixed').length, 'marked fixed by a maintainer'],
           [revealed.length, 'revealed and checkable'],
@@ -79,6 +80,14 @@ export default function DeskLive() {
           </div>
         ))}
       </dl>
+
+      <p className="max-w-[72ch] text-[14.5px] text-[var(--graphite)]" data-testid="desk-credentials">
+        {data.maintainerCredentials} maintainer credential{data.maintainerCredentials === 1 ? '' : 's'} registered
+        {data.maintainerRepos.length > 0 ? <> ({data.maintainerRepos.map((r) => canonicalRepo(r).replace(/^github\.com\//, '')).join(', ')})</> : null}. An
+        acknowledgement or fix proves only that one of them answered, not which one; with a single credential that would say who. Every demo
+        transaction is still submitted by Tell’s one house wallet, so an observer sees one operator in every role.
+        {data.outreachIds.length > 0 ? ` ${data.outreachIds.length} of the sealed reports are leak notes Tell sent to teams; their texts and projects stay private.` : ''}
+      </p>
 
       <div>
         <h3 className="font-[family-name:var(--serif)] text-[21px] font-medium">Sealed reports</h3>
@@ -138,7 +147,8 @@ export default function DeskLive() {
         <h3 className="font-[family-name:var(--serif)] text-[21px] font-medium">The grade registry</h3>
         <p className="mt-1 max-w-[64ch] text-[14.5px] text-[var(--graphite)]">
           Grades are keyed by code hash: SHA-256 over every circuit’s name and verifier key. A wallet computes it from any contract address and reads the grade
-          here. Tell’s attestations come first; a maintainer’s self-report is flagged.
+          here. Tell’s attestations come first. A maintainer’s self-report is flagged and names its project; each project has its own slot for a
+          code hash, so no one can take another team’s.
         </p>
         <GradeTable grades={[...data.grades, ...data.selfGrades]} />
         <GradeLookup empty={data.grades.length + data.selfGrades.length === 0} />
@@ -172,7 +182,7 @@ function GradeTable({ grades }: { grades: DeskGrade[] }) {
         </thead>
         <tbody>
           {grades.map((g) => (
-            <tr key={g.codeHash + String(g.selfReported)} className="border-t border-[var(--rule)]">
+            <tr key={g.codeHash + String(g.selfReported) + (g.project ?? '')} className="border-t border-[var(--rule)]">
               <td className="px-4 py-2.5">{g.contract ?? <span className="text-[var(--faint)]">unnamed</span>}</td>
               <td className="mono px-4 py-2.5" title={g.codeHash}>
                 {short(g.codeHash)}
@@ -180,7 +190,18 @@ function GradeTable({ grades }: { grades: DeskGrade[] }) {
               <td className="px-4 py-2">
                 <GradeSeal grade={g.grade} size={30} caption={null} />
               </td>
-              <td className="px-4 py-2.5">{g.selfReported ? <span className="status" data-status="planned">self-reported</span> : <span className="status" data-status="done">attested by Tell</span>}</td>
+              <td className="px-4 py-2.5">
+                {g.selfReported ? (
+                  <>
+                    <span className="status" data-status="planned">self-reported</span>
+                    <span className="mt-1 block text-[12.5px] text-[var(--graphite)]" title={g.project}>
+                      by {g.repo ? canonicalRepo(g.repo) : `project ${short(g.project ?? '')}`}
+                    </span>
+                  </>
+                ) : (
+                  <span className="status" data-status="done">attested by Tell</span>
+                )}
+              </td>
               <td className="num px-4 py-2.5 text-[var(--graphite)]">
                 {g.rules}, #{g.scan}
               </td>
@@ -201,7 +222,7 @@ const EXAMPLES = [
 function GradeLookup({ empty }: { empty: boolean }) {
   const [address, setAddress] = useState(EXAMPLES[0].address);
   const [busy, setBusy] = useState(false);
-  const [out, setOut] = useState<{ codeHash: string; grade: DeskGrade | null } | { error: string } | null>(null);
+  const [out, setOut] = useState<{ codeHash: string; grade: DeskGrade | null; selfReports?: DeskGrade[] } | { error: string } | null>(null);
   const look = async (a: string) => {
     setBusy(true);
     setOut(null);
@@ -263,18 +284,26 @@ function GradeLookup({ empty }: { empty: boolean }) {
         </p>
       )}
       {out && !('error' in out) && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-[14px]">
-          {out.grade ? <GradeSeal grade={out.grade.grade} size={40} caption={null} /> : null}
-          <p>
-            Code hash <code>{short(out.codeHash)}</code>:{' '}
-            {out.grade
-              ? out.grade.selfReported
-                ? `grade ${out.grade.grade}, self-reported by its maintainer`
-                : `grade ${out.grade.grade}, attested by Tell`
-              : empty
-                ? 'the contract was found and its code hash computed, but the registry holds no grades yet. Grades are being recorded by the second Desk deployment; this lookup will answer once they are.'
-                : 'no grade recorded for this code.'}
-          </p>
+        <div className="mt-4 grid gap-3 text-[14px]">
+          <div className="flex flex-wrap items-center gap-4">
+            {out.grade ? <GradeSeal grade={out.grade.grade} size={40} caption={null} /> : null}
+            <p>
+              Code hash <code>{short(out.codeHash)}</code>: {out.grade
+                ? `grade ${out.grade.grade}, attested by Tell.`
+                : empty
+                  ? 'the contract was found and its code hash computed, but the registry holds no grades yet. Grades are being recorded by the second Desk deployment; this lookup will answer once they are.'
+                  : 'no grade from Tell for this code.'}
+            </p>
+          </div>
+          {(out.selfReports ?? []).length > 0 && (
+            <ul className="grid gap-1 text-[13.5px] text-[var(--graphite)]">
+              {(out.selfReports ?? []).map((s) => (
+                <li key={s.project}>
+                  Self-reported grade {s.grade} by {s.repo ? canonicalRepo(s.repo) : <span className="mono">project {short(s.project ?? '')}</span>}: a claim by that project, one slot per project.
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </form>

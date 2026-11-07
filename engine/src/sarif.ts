@@ -33,6 +33,11 @@ const RULES: Record<FindingKind, { name: string; short: string; help: string }> 
     short: 'A yes/no fact about a private value is written to the public ledger',
     help: 'Usually intended. Use assert() when the chain does not need to store the fact.',
   },
+  'derivable-secret': {
+    name: 'PublicPrivateKey',
+    short: 'A public key is made from a private scalar the contract also publishes',
+    help: 'ecMulGenerator(k) is a public key with private key k. If k is a published hash, or a public function of one, anyone holds the private key. Derive k from the secret under its own domain separator.',
+  },
   'shielded-coin': {
     name: 'GuessableCoinCommitment',
     short: 'A shielded coin is minted or sent with a nonce anyone can compute',

@@ -2,7 +2,7 @@
 
 Every finding at medium or above, from every tool and configuration, labelled by hand against the source. Line numbers are the tool's own. Labels: `real-privacy` (private data becomes public in a way the contract does not intend or document), `intended` (a correct observation of a disclosure the contract makes on purpose, usually with a comment saying so), `real-other` (true, not about privacy), `false-alarm`. Keys are in `labels.json`.
 
-Low and info findings on the examples are counted but not labelled (Tell 155, compact-guard 75, Nightshade with every rule 63).
+Low and info findings on the examples are counted but not labelled (first run: Tell 155, compact-guard 75, Nightshade with every rule 63; current run: Tell 218).
 
 ## Tell
 
@@ -10,6 +10,8 @@ Low and info findings on the examples are counted but not labelled (Tell 155, co
 |---|---|---|---|
 | election | branch medium, line 100 (`revealVote`) | real-privacy (`election-reveal-links-vote`) | `revealVote` inserts the voter's persistent key into `revealedVoters` and then increments `candidate0VoteCounter` or `candidate1VoteCounter` depending on the vote, in the same transaction. The counter that moved is public, so each voter's choice is tied to the key they registered with. Revealing the tally is the design; tying each vote to its voter is not stated anywhere. Tell's own test suite already records this one. |
 | roulette | branch medium, line 148 (`claimWinnings`) | false-alarm | The branch is inside the standard library's `sendShielded` (change or no change), driven by the escrowed coin's value. That value is already public (`betValues.insert(pubPlayer, disclose(coin.value))` in `betColor`), and here the full value is sent, so the branch always goes the same way. The line number points into `houseDeposit` because of inlining. |
+| private-tip-jar | shielded-coin medium, line 135 (`withdraw`), current run only | real-privacy (`tip-jar-withdraw-recipient`) | The owner withdraws a pot coin with `sendShielded(coin, left(ownPublicKey()), …)`. The pot coin's nonce, color and value are public ledger state, and the new coin's nonce is derived from the stored one, so the output commitment can be recomputed for each candidate wallet key: anyone with a list of keys can confirm which wallet the owner withdrew to. Low impact (the recipient is the contract's own officer), but it ties the owner's shielded wallet to the contract. From the Wave 3 token rules, not in the first run. |
+| roulette | shielded-coin medium, line 287 (`houseClaimMatch`), current run only | real-privacy (`roulette-sweep-recipient`) | The same pattern: the house sweeps a contract-held coin to `ownPublicKey()`, so the house's wallet can be confirmed against candidate keys. |
 
 ## compact-guard
 
@@ -59,3 +61,5 @@ Policy: every witness is secret, allowed forms `hash` and `commitment` (the shap
 ## Not labelled, worth a look
 
 Tell (info, "argument `nonce` is published") and Nightshade with every rule (`exported-shielded-descriptor`, info) both point at `chips.mint`, which returns the minted `ShieldedCoinInfo`, nonce included, from an exported circuit. The source says the nonce "is a circuit argument, so it is never published, which is what keeps the recipient private". Whether an exported circuit's result is public depends on how the application handles it: Tell treats it as part of the public transaction, Nightshade calls it an application-output boundary, "not necessarily a public ledger". If the result is public, the recipient can be recovered by trying candidate keys against the coin commitment. This needs confirmation from Midnight before anyone reports it.
+
+Resolved for the current run: a contract call carries only a communication commitment (a randomized commitment to the inputs and outputs), so the result is not on chain and the nonce stays private, as the source says. Tell no longer reports the mint (see GAPS-FOR-TELL.md item 5).

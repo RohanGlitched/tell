@@ -3,7 +3,8 @@
 //
 // Tell Desk in the simulator: the disclosure lifecycle, every rejection the contract
 // must make, and an attacker who reads only public data (ledger state and the public
-// part of every transaction) and tries to link, recover or identify.
+// part of every transaction: its circuit and public transcript) and tries to link,
+// recover or identify.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
@@ -14,6 +15,7 @@ import {
   witnesses,
   readDesk,
   gradeFor,
+  selfGradesFor,
   verifyReveal,
   projectId,
   reportDigest,
@@ -56,7 +58,8 @@ function atoms(x: unknown, out: string[] = [], seen = new Set<unknown>()): strin
   return out;
 }
 
-// Everything public: the whole encoded contract state plus the public part of every transaction.
+// Everything public: the whole encoded contract state plus the public part of every transaction
+// (its public transcript; a call's inputs and outputs travel only inside a hiding commitment).
 function publicAtoms(sim: DeskSimulator): string[] {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const s = sim.publicState as any;
@@ -87,10 +90,14 @@ async function world(opts: { witnesses?: Partial<typeof witnesses> } = {}) {
   const maintainerB: DeskPrivateState = { maintainerSecret: randomBytes32(), openings: {} };
   const projectA = await projectId(REPO_A);
   const projectB = await projectId(REPO_B);
-  const leafA = pureCircuits.maintainerLeaf(maintainerA.maintainerSecret!, projectA);
-  const leafB = pureCircuits.maintainerLeaf(maintainerB.maintainerSecret!, projectB);
-  sim.call(tell, 'registerMaintainer', leafA);
-  sim.call(tell, 'registerMaintainer', leafB);
+  // Each maintainer hands Tell only their key, a hash of their secret; Tell checks off chain
+  // that the key's holder controls the repository and registers (key, project).
+  const pkA = pureCircuits.maintainerKey(maintainerA.maintainerSecret!);
+  const pkB = pureCircuits.maintainerKey(maintainerB.maintainerSecret!);
+  const leafA = pureCircuits.maintainerLeaf(pkA, projectA);
+  const leafB = pureCircuits.maintainerLeaf(pkB, projectB);
+  sim.call(tell, 'registerMaintainer', pkA, projectA);
+  sim.call(tell, 'registerMaintainer', pkB, projectB);
   const now = () => BigInt(sim.time);
 
   // The researcher seals a report; the opening goes into their private state and,
@@ -105,7 +112,7 @@ async function world(opts: { witnesses?: Partial<typeof witnesses> } = {}) {
     if (to) to.openings[toHex(id)] = opening;
     return { id, opening };
   };
-  return { sim, tell, researcher, otherResearcher, maintainerA, maintainerB, projectA, projectB, leafA, leafB, now, seal };
+  return { sim, tell, researcher, otherResearcher, maintainerA, maintainerB, projectA, projectB, pkA, pkB, leafA, leafB, now, seal };
 }
 
 const report = (w: World, id: Uint8Array) => w.sim.ledger.reports.lookup(id);
@@ -183,7 +190,7 @@ describe('lifecycle', () => {
 
   it('a credential stays usable after more maintainers are registered (historic root)', async () => {
     const { id } = await w.seal(w.researcher, TEXT_1, REPO_A, w.maintainerA);
-    for (let i = 0; i < 5; i++) w.sim.call(w.tell, 'registerMaintainer', randomBytes32());
+    for (let i = 0; i < 5; i++) w.sim.call(w.tell, 'registerMaintainer', randomBytes32(), randomBytes32());
     w.sim.call(w.maintainerA, 'acknowledge', id, w.now());
     expect(report(w, id).status).toBe(Status.acknowledged);
     expect(w.sim.ledger.maintainers.firstFree()).toBe(7n);
@@ -202,24 +209,69 @@ describe('lifecycle', () => {
 
   it('a maintainer self-publishes a grade, flagged as self-reported and kept apart from Tell’s', () => {
     const code = randomBytes32();
+    const slot = pureCircuits.selfGradeKey(code, w.projectA);
     w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, gradeToNumber('B'), 4n, 1n);
-    expect(gradeFor(w.sim.publicState, code)).toMatchObject({ grade: 'B', selfReported: true, project: toHex(w.projectA) });
+    expect(gradeFor(w.sim.publicState, code, w.projectA)).toMatchObject({ codeHash: toHex(code), grade: 'B', selfReported: true, project: toHex(w.projectA) });
     expect(w.sim.ledger.grades.member(code)).toBe(false);
+    // a reader who names no project gets no self-report: it cannot know whose claim to trust
+    expect(gradeFor(w.sim.publicState, code)).toBeUndefined();
     // Tell's own attestation takes precedence for readers
     w.sim.call(w.tell, 'attest', code, gradeToNumber('D'), 4n, 1n);
-    expect(gradeFor(w.sim.publicState, code)).toMatchObject({ grade: 'D', selfReported: false });
-    expect(w.sim.ledger.selfGrades.lookup(code).grade).toBe(gradeToNumber('B'));
+    expect(gradeFor(w.sim.publicState, code, w.projectA)).toMatchObject({ grade: 'D', selfReported: false });
+    expect(w.sim.ledger.selfGrades.lookup(slot).grade).toBe(gradeToNumber('B'));
     // the same project can update its self-report with a later scan
     w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, gradeToNumber('A'), 4n, 2n);
-    expect(w.sim.ledger.selfGrades.lookup(code).grade).toBe(gradeToNumber('A'));
+    expect(w.sim.ledger.selfGrades.lookup(slot).grade).toBe(gradeToNumber('A'));
+    expect(readDesk(w.sim.publicState).selfGrades).toEqual([expect.objectContaining({ codeHash: toHex(code), grade: 'A', project: toHex(w.projectA) })]);
   });
 
-  it('the attester role can be handed over; the old key stops working', () => {
+  it('two projects shipping the same code each publish their own self-grade; neither locks out the other', () => {
+    // the same code hash under two projects (a shared example, a fork): A claims first
+    const code = randomBytes32();
+    w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, gradeToNumber('F'), 4n, 9n);
+    // B still publishes its own, in its own slot, even with an earlier scan number
+    w.sim.call(w.maintainerB, 'selfGrade', code, w.projectB, gradeToNumber('A'), 4n, 1n);
+    expect(gradeFor(w.sim.publicState, code, w.projectB)).toMatchObject({ grade: 'A', project: toHex(w.projectB) });
+    expect(gradeFor(w.sim.publicState, code, w.projectA)).toMatchObject({ grade: 'F', project: toHex(w.projectA) });
+    const all = selfGradesFor(w.sim.publicState, code);
+    expect(all.map((g) => g.project).sort()).toEqual([toHex(w.projectA), toHex(w.projectB)].sort());
+    // each slot moves only with its own project's later scans
+    w.sim.call(w.maintainerB, 'selfGrade', code, w.projectB, gradeToNumber('B'), 4n, 2n);
+    expect(gradeFor(w.sim.publicState, code, w.projectA)?.grade).toBe('F');
+    expect(gradeFor(w.sim.publicState, code, w.projectB)?.grade).toBe('B');
+  });
+
+  it('the attester role is handed over in two steps; the old key works until the new one accepts', () => {
     const next = randomBytes32();
+    const nextTell: DeskPrivateState = { attesterSecret: next, openings: {} };
     w.sim.call(w.tell, 'handOver', pureCircuits.attesterKey(next));
+    expect(readDesk(w.sim.publicState).pendingAttester).toBe(toHex(pureCircuits.attesterKey(next)));
+    // proposed, not yet accepted: the old key still works, the new one does not yet
+    w.sim.call(w.tell, 'attest', randomBytes32(), 0n, 1n, 1n);
+    expect(() => w.sim.call(nextTell, 'attest', randomBytes32(), 0n, 1n, 1n)).toThrow(/not the attester/);
+    w.sim.call(nextTell, 'acceptHandOver');
+    expect(toHex(w.sim.ledger.attester)).toBe(toHex(pureCircuits.attesterKey(next)));
+    expect(readDesk(w.sim.publicState).pendingAttester).toBeUndefined();
     expect(() => w.sim.call(w.tell, 'attest', randomBytes32(), 0n, 1n, 1n)).toThrow(/not the attester/);
-    w.sim.call({ attesterSecret: next, openings: {} }, 'attest', randomBytes32(), 0n, 1n, 1n);
+    w.sim.call(nextTell, 'attest', randomBytes32(), 0n, 1n, 1n);
+    expect(w.sim.ledger.grades.size()).toBe(2n);
+  });
+
+  it('a mistyped hand-over cannot lock the role away: it is never accepted and can be cancelled', () => {
+    w.sim.call(w.tell, 'handOver', randomBytes32()); // nobody holds the secret behind this key
+    expect(() => w.sim.call(w.tell, 'acceptHandOver')).toThrow(/not the proposed attester/);
+    w.sim.call(w.tell, 'handOver', new Uint8Array(32)); // cancel
+    expect(() => w.sim.call(w.tell, 'acceptHandOver')).toThrow(/no hand-over pending/);
+    w.sim.call(w.tell, 'attest', randomBytes32(), 0n, 1n, 1n);
     expect(w.sim.ledger.grades.size()).toBe(1n);
+  });
+
+  it('registration builds the leaf from the key and project Tell checked', () => {
+    expect(w.sim.ledger.maintainers.findPathForLeaf(w.leafA)).toBeDefined();
+    expect(w.sim.ledger.registered.member(w.leafA)).toBe(true);
+    expect(readDesk(w.sim.publicState).maintainerCredentials).toBe(2);
+    // the leaf for any other project and the same key is not in the tree
+    expect(w.sim.ledger.maintainers.findPathForLeaf(pureCircuits.maintainerLeaf(w.pkA, w.projectB))).toBeUndefined();
   });
 
   it('project ids are canonical: URL spellings of one repository agree', async () => {
@@ -248,6 +300,43 @@ describe('the contract rejects', () => {
     const stranger: DeskPrivateState = { maintainerSecret: randomBytes32(), openings: { [toHex(id)]: w.researcher.openings[toHex(id)] } };
     expect(() => w.sim.call(stranger, 'acknowledge', id, w.now())).toThrow(/not registered/);
     expect(() => w.sim.call(w.maintainerA, 'acknowledge', id, w.now())).toThrow(/no opening/);
+  });
+
+  it('a maintainer verified for project A acting for project B, in every circuit that needs a credential', async () => {
+    // Version 1 took a leaf from the maintainer, so A could have handed Tell a leaf built for
+    // project B. Now Tell registers (key, project) after checking that A controls project A only.
+    const forB = await w.seal(w.researcher, TEXT_2, REPO_B, w.maintainerB);
+    w.maintainerA.openings[toHex(forB.id)] = forB.opening; // A even holds the opening
+    expect(() => w.sim.call(w.maintainerA, 'acknowledge', forB.id, w.now())).toThrow(/not registered/);
+    w.sim.call(w.maintainerB, 'acknowledge', forB.id, w.now());
+    expect(() => w.sim.call(w.maintainerA, 'markFixed', forB.id, w.now())).toThrow(/not registered/);
+    expect(() => w.sim.call(w.maintainerA, 'selfGrade', randomBytes32(), w.projectB, 0n, 1n, 1n)).toThrow(/not registered/);
+    expect(report(w, forB.id).status).toBe(Status.acknowledged);
+    // nor does a dishonest prover get through by inventing a path to its own leaf for B
+    const evil = await world({
+      witnesses: {
+        maintainerPath: ({ privateState }, leaf) => [privateState, { leaf, path: Array.from({ length: 10 }, () => ({ sibling: { field: 0n }, goes_left: true })) }] as never,
+      },
+    });
+    const forB2 = await evil.seal(evil.researcher, TEXT_2, REPO_B, evil.maintainerA);
+    expect(() => evil.sim.call(evil.maintainerA, 'acknowledge', forB2.id, evil.now())).toThrow(/not a registered maintainer/);
+  });
+
+  it('registering the same credential twice', () => {
+    expect(() => w.sim.call(w.tell, 'registerMaintainer', w.pkA, w.projectA)).toThrow(/already registered/);
+    expect(w.sim.ledger.maintainers.firstFree()).toBe(2n);
+    // the same maintainer key for a second project is a different credential
+    w.sim.call(w.tell, 'registerMaintainer', w.pkA, w.projectB);
+    expect(w.sim.ledger.registered.size()).toBe(3n);
+  });
+
+  it('a status change dated before the report’s last change', async () => {
+    const { id } = await w.seal(w.researcher, TEXT_1, REPO_A, w.maintainerA);
+    w.sim.advance(600);
+    // inside the two-hour window, but earlier than the seal
+    expect(() => w.sim.call(w.maintainerA, 'acknowledge', id, w.now() - 1200n)).toThrow(/before the report's last change/);
+    w.sim.call(w.maintainerA, 'acknowledge', id, w.now() - 300n);
+    expect(report(w, id).updatedAt).toBe(w.now() - 300n);
   });
 
   it('a dishonest prover passing another maintainer’s tree path', async () => {
@@ -341,8 +430,9 @@ describe('the contract rejects', () => {
   it('anyone but the attester attesting, registering maintainers or handing over', () => {
     const impostor: DeskPrivateState = { attesterSecret: randomBytes32(), openings: {} };
     expect(() => w.sim.call(impostor, 'attest', randomBytes32(), 0n, 1n, 1n)).toThrow(/not the attester/);
-    expect(() => w.sim.call(impostor, 'registerMaintainer', randomBytes32())).toThrow(/not the attester/);
+    expect(() => w.sim.call(impostor, 'registerMaintainer', randomBytes32(), randomBytes32())).toThrow(/not the attester/);
     expect(() => w.sim.call(impostor, 'handOver', randomBytes32())).toThrow(/not the attester/);
+    expect(() => w.sim.call(impostor, 'acceptHandOver')).toThrow(/no hand-over pending/);
     expect(() => w.sim.call(w.maintainerA, 'attest', randomBytes32(), 0n, 1n, 1n)).toThrow(/attester secret/);
     expect(w.sim.ledger.grades.isEmpty()).toBe(true);
     expect(w.sim.ledger.maintainers.firstFree()).toBe(2n);
@@ -353,12 +443,14 @@ describe('the contract rejects', () => {
     expect(() => w.sim.call(w.maintainerA, 'selfGrade', randomBytes32(), w.projectA, 7n, 1n, 1n)).toThrow(/A, B, C, D or F/);
   });
 
-  it('a self-grade from an unregistered project, or replacing another project’s self-grade', () => {
+  it('a self-grade for a project the maintainer is not registered for, or replacing another project’s', () => {
     const code = randomBytes32();
     expect(() => w.sim.call(w.maintainerA, 'selfGrade', code, w.projectB, 0n, 1n, 1n)).toThrow(/not registered/);
     w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, 2n, 1n, 1n);
-    expect(() => w.sim.call(w.maintainerB, 'selfGrade', code, w.projectB, 0n, 1n, 2n)).toThrow(/another project/);
+    // B's only way into A's slot is to prove a credential for project A, which it does not hold
+    expect(() => w.sim.call(w.maintainerB, 'selfGrade', code, w.projectA, 0n, 1n, 2n)).toThrow(/not registered/);
     expect(() => w.sim.call(w.maintainerA, 'selfGrade', code, w.projectA, 0n, 1n, 1n)).toThrow(/later scan/);
+    expect(gradeFor(w.sim.publicState, code, w.projectA)?.grade).toBe('C');
   });
 });
 
@@ -376,6 +468,17 @@ describe('an attacker reading only public data', () => {
     expect(appears(id, pub)).toBe(true);
     expect(appears(report(w, id).tag, pub)).toBe(true);
     expect(appears(w.leafA, pub)).toBe(true); // registration publishes the credential leaf
+  });
+
+  it('learns only the leaf from a registration: neither the maintainer key nor the project', () => {
+    const reg = w.sim.transactions.filter((t) => t.circuit === 'registerMaintainer');
+    expect(reg).toHaveLength(2);
+    const pub = publicAtoms(w.sim);
+    for (const x of [w.pkA, w.pkB, w.projectA, w.projectB]) expect(appears(x, pub)).toBe(false);
+    expect(appears(w.leafA, pub) && appears(w.leafB, pub)).toBe(true);
+    // control: the key and the project are the circuit's inputs, which only the prover sees
+    expect(appears(w.projectA, atoms(reg[0].prover))).toBe(true);
+    expect(appears(w.pkA, atoms(reg[0].prover))).toBe(true);
   });
 
   it('cannot link two reports by the same researcher', async () => {

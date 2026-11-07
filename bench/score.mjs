@@ -15,10 +15,10 @@ import { fileURLToPath } from 'node:url';
 
 const BENCH = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.dirname(BENCH);
-const TOOLS = ['tell', 'nightshade', 'nightshade-all', 'nightshade-policy', 'compact-guard', 'compact-lint', 'oz-detectors'];
+const TOOLS = ['tell', 'tell-policy', 'nightshade', 'nightshade-all', 'nightshade-policy', 'compact-guard', 'compact-lint', 'oz-detectors'];
 const SEV = ['critical', 'high', 'medium', 'low', 'info'];
 const atLeast = (s, t) => SEV.indexOf(s) <= SEV.indexOf(t);
-const family = (t) => (t.startsWith('nightshade') ? 'nightshade' : t);
+const family = (t) => (t.startsWith('nightshade') ? 'nightshade' : t.startsWith('tell') ? 'tell' : t);
 
 const truthZoo = JSON.parse(fs.readFileSync(path.join(BENCH, 'truth.json'), 'utf8')).zoo;
 const labels = JSON.parse(fs.readFileSync(path.join(BENCH, 'labels/labels.json'), 'utf8'));

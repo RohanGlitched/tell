@@ -61,11 +61,11 @@ Compared with the Wave 2 submission (tag [`v1.0.0`](https://github.com/RohanGlit
 7. **Radar**: a source-free privacy scan of 329 Preprod contracts from chain data alone ([`radar/`](radar)).
 8. **MCP server** for coding agents and a **VS Code extension** ([`mcp/`](mcp), [`vscode/`](vscode)).
 9. **Leak zoo: 5 pairs to 9** (raffle with a constructor leak, faucet with a public coin nonce, deposit paid in the clear, a Ledger 9 poll that emits its vote hash), with 18 attack tests, up from 10.
-10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 69 files ([`bench/`](bench)).
+10. **Benchmark** against Nightshade, compact-guard, compact-lint and OpenZeppelin's Compact detectors on 79 files, and Tell on Nightshade's own published corpus ([`bench/`](bench)).
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
 12. **Outreach**: 11 teams were each sent a public GitHub issue naming the file, the line and the kind of finding, and asking where to send the details; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot talks requested with two audit firms.
 
-Tests went from 97 in two workspaces (87 engine, 10 zoo) to 337 in six ([Setup and tests](#setup-and-tests)).
+Tests went from 97 in two workspaces (87 engine, 10 zoo) to 407 in six ([Setup and tests](#setup-and-tests)).
 
 ## Try it
 
@@ -128,6 +128,24 @@ Some disclosures are the point. Mark the line once and Tell stops reporting it, 
 seeds.insert(slot, s); // tell:allow published
 ```
 
+### Declared intent (`tell.json`)
+
+Tell guesses intent from shape and names. Where you know better, say so once in a `tell.json` (or `.tellrc.json`) next to your contracts or at the repository root; the CLI, the Action and the MCP server pick up the nearest one (`--policy <file>` to choose one, `--no-policy` to ignore them):
+
+```json
+{
+  "witnesses": { "deviceKey": "secret", "now": "public" },
+  "arguments": { "vote.choice": "secret" },
+  "circuits": { "enroll": { "once": true }, "check": { "caller": "identified" } },
+  "intended": [{ "kind": "published", "field": "winner", "reason": "the draw result is public" }]
+}
+```
+
+- `secret`: private data whatever its name (published in the clear it is a secret leak; an argument ranks like a witness). `public`: an observer knows it already, so it adds nothing to a hash.
+- `once`: each holder runs the circuit once (an enrolment), so the tag it stores does not line up repeated actions.
+- `caller`: `identified` when transactions can be tied to their sender outside the circuit; branches and membership lookups then rate as for an identified caller. The default, `anonymous`, is what Midnight gives by itself (see Limits).
+- `intended`: findings that match are kept in the JSON and SARIF, marked suppressed with the reason. `files` holds per-file overrides. A typo is an error, never a silent no-op.
+
 ## What it finds
 
 | Line | Compiler | Tell |
@@ -142,15 +160,18 @@ seeds.insert(slot, s); // tell:allow published
 | Finding | Severity | Example |
 |---|---|---|
 | Guessable hash | critical / high | `ballots.insert(tag, persistentHash(choice))` after `assert(choice < 4)`: 2 bits, four guesses |
-| Secret in the clear | critical / high | `owner = disclose(secretKey())`; a value hashed as a key in one circuit and written raw in another; a secret returned from a circuit |
+| Secret in the clear | critical / high | `owner = disclose(secretKey())`; a value hashed as a key in one circuit and written raw in another |
+| Public value used as a private key | critical | `accountId = disclose(id); encKey = disclose(ecMulGenerator(id))`: the published id is the encryption key's private scalar |
 | Secret-dependent branch | medium | writing `qualified` or `belowReserve` depending on a hidden bid; count leaks in fixed-size loops; a branch that decides which contract is called |
 | Same tag on every action | medium | every post stores `hash(memberKey)`, so one identified post unmasks the rest |
 | Private value as a public token amount | medium | `receiveUnshielded(color, disclose(bidAmount()))`; also minted amounts and the amount fields of standard events |
 | Shielded coin with a public nonce | medium / low | `mintShieldedToken(d, 100, evolveNonce(n, ledgerNonce), left(ownPublicKey()))`: nonce, color and amount are public, so anyone with a list of wallet keys can tell who received the coin |
 | Wallet key published | medium | `ownPublicKey()`, or a `ZswapCoinPublicKey` from private state, stored or emitted, names the wallet |
 | Private bytes or personal data in the clear | medium | a seed or private key written as-is; a salary or a location written to a map |
-| Linkable tag | low / info | the same `hash(sk)` in register, commit and reveal |
+| Membership shown by a lookup | medium | `assert(members.member(disclose(hash(key))))`: the lookup key is public, so every "anonymous" claim names its member |
+| Linkable tag | low / info | the same `hash(sk)` in register, commit and reveal; a key tag with no domain separator and no contract address, the same in any contract that hashes the secret this way |
 | Published value / yes-no fact | info | values written on purpose, listed so nothing is hidden |
+| Value returned from a circuit | low / info | a secret returned to the DApp: it leaves the proof, but it is not on chain (see Limits) |
 
 These apply wherever a value becomes public: ledger writes, **the constructor** (the initial state, readable the moment the contract is deployed), **events** (`emit`, Ledger 9) and **cross-contract call arguments** (Ledger 9).
 
@@ -177,9 +198,9 @@ Tell starts where `disclose()` stops. It works on the compiler's own output, so 
 Finding a leak is half the job; telling the team without telling everyone else is the other half. [**Tell Desk**](desk) is a Compact contract for private, provable responsible disclosure, and the on-chain registry of Tell's grades.
 
 - **Seal.** A researcher seals a finding. The public ledger keeps `persistentCommit({digest, project}, nonce)` as the report id, a researcher tag that differs on every report, and the time. Not the content, not the project, not the researcher.
-- **Acknowledge and fix.** The maintainer proves in zero knowledge that they hold a credential registered for the project the sealed report is about (a Merkle membership proof) and that they hold this report's opening. The chain shows that some registered maintainer answered; not which one, not which project.
+- **Acknowledge and fix.** The maintainer proves in zero knowledge that they hold a credential registered for the project the sealed report is about (a Merkle membership proof) and that they hold this report's opening. The chain shows that one of the registered maintainers answered (the version 2 demo registers five credentials, so an answer hides among five; with one it would say who); not which one, not which project. Tell registers a credential from the maintainer's key (a hash of their secret) and the project it checked off chain; the circuit builds the leaf, so a credential checked for one project works for no other.
 - **Reveal.** After the fix, or after a 90-day embargo, either side opens the seal. Anyone with the published text can check it against the digest: the finding existed, in this form, when it was sealed.
-- **Grades.** Tell's attester key records `code hash → grade, rules version, scan`; a wallet computes the code hash from any contract's state and reads the grade. Maintainers can publish their own, stored apart and flagged as self-reported.
+- **Grades.** Tell's attester key records `code hash → grade, rules version, scan`; a wallet computes the code hash from any contract's state and reads the grade. Maintainers can publish their own, stored apart, flagged as self-reported, and keyed by code hash and project, so no project can take another's slot.
 
 ### Public ledger and private state
 
@@ -193,7 +214,8 @@ Midnight gives every contract two ledgers: the public one everyone replicates, a
 | Researcher secret | researcher's private state | authorship |
 | Researcher tag = `persistentHash("tell-desk:researcher", secret, id)` | public | lets the researcher retract without a stable identifier: every report's tag differs |
 | Maintainer secret | maintainer's private state | the credential |
-| Credential leaf = `persistentHash("tell-desk:maintainer", secret, project)` | public, as a Merkle tree leaf | hides the secret and the project |
+| Maintainer key = `persistentHash("tell-desk:maintainer-key", secret)` | the maintainer and Tell, off chain | what Tell checks against the repository and registers |
+| Credential leaf = `persistentHash("tell-desk:maintainer", key, project)` | public, as a Merkle tree leaf | built by the circuit; hides the key and the project |
 | Merkle path | maintainer's device | a witness; only the root it leads to is disclosed |
 | Status, seal time, last change | public | the point of the desk: anyone can see a report was answered and fixed |
 | Grades | public | a registry wallets read |
@@ -209,11 +231,11 @@ Midnight gives every contract two ledgers: the public one everyone replicates, a
 | `seal` | the researcher tag | keyed by a 256-bit secret and different per report: unlinkable |
 | `acknowledge`, `markFixed`, `retract` | `id` | an argument that is public already |
 | `reveal` | `id`, opening | the reveal step of a commit-reveal |
-| `registerMaintainer` | credential leaf | a hash of a 256-bit secret and the project |
+| `registerMaintainer` | credential leaf | a hash of the maintainer key and the project; both stay private inputs |
 | `attest`, `selfGrade` | code hash, grade, rules, scan | a public registry; a self-report names its project |
-| `handOver` | new attester hash | configuration |
+| `handOver` | proposed attester hash | configuration; it takes effect when the proposed key accepts |
 
-No branch depends on a secret. Tell scans Desk at grade **A** (10 circuits, 27 findings, all info: arguments written on purpose), and CI fails if anything at low or above appears. The attacker tests in [`desk/test`](desk/test) read only public data (ledger state and every transaction's public transcript) and show that two reports by one researcher share no public value, that the digest and the project id appear nowhere before the reveal, and that two acknowledgements by one maintainer share only the tree root every maintainer uses. Threat model and what Desk does not hide (timing, the submitting wallet): [`desk/README.md`](desk/README.md).
+No branch depends on a secret. Tell scans Desk at grade **A** (11 circuits, 26 findings, all info: arguments written on purpose), and CI fails if anything at low or above appears. The attacker tests in [`desk/test`](desk/test) read only public data (ledger state and every transaction's public transcript) and show that two reports by one researcher share no public value, that the digest and the project id appear nowhere before the reveal, and that two acknowledgements by one maintainer share only the tree root every maintainer uses. Threat model and what Desk does not hide (timing, the submitting wallet): [`desk/README.md`](desk/README.md).
 
 ### Desk on Preprod
 
@@ -247,31 +269,34 @@ Read honestly: the brute force found nothing outside Tell's own leaky contract, 
 
 ## How Tell compares
 
-[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 69 Compact files: the Wave 2 leak zoo (10 files: 5 leaky, 5 fixed), 30 cases written for the benchmark (16 leaky, 13 safe, 1 non-privacy bug) and 29 contracts from Midnight's official examples. Zoo and cases together are the labelled set: 21 planted leaks (16 + 5) and 19 files without one (13 + 5 + the non-privacy bug). Numbers from [`bench/RESULTS.md`](bench/RESULTS.md) as of November 7, 2026, measured on the **Wave 2 engine** (`d3a9104`); a re-run with the Wave 3 engine is in progress and will update that file.
+[`bench/`](bench) runs Tell, [Nightshade](https://github.com/DicksonWu654/nightshade) (three configurations), [compact-guard](https://github.com/KAMEVETRICS/compact-guard), [compact-lint](https://github.com/wbaxterh/compact-lint) and [OpenZeppelin's Compact Security Detectors](https://github.com/OpenZeppelin/compact-security-detectors-sdk) on 79 Compact files: Tell's leak zoo (20 files: 10 leaky, 10 fixed), 30 cases written for the benchmark (15 leaky, 13 safe, 1 non-privacy bug, 1 value that is never public) and 29 contracts from Midnight's official examples. Zoo and cases together are the labelled set: 25 planted leaks (15 + 10). Numbers from [`bench/RESULTS.md`](bench/RESULTS.md), November 7, 2026, with the Wave 3 engine (`d62e618`); the first run (Wave 2 engine, `d3a9104`) is kept there under History.
 
-**Bias, stated first:** Tell's author wrote the benchmark, the zoo is Tell's own development set, and the cases were written knowing what Tell looks for. Read the labelled-set numbers as "does each tool handle these patterns", not as accuracy. The examples set has no planted leaks and is the less biased half.
+**Bias, stated first:** Tell's author wrote the benchmark, the zoo is Tell's own development set, and the cases were written knowing what Tell looks for; three of Tell's gains (L11, L12, L16) come from rules added after the first run showed those misses. Read the labelled-set numbers as "does each tool handle these patterns", not as accuracy. The less biased parts are Midnight's examples and Nightshade's own corpus, below.
 
-| Labelled set, medium and above | Leaks found (of 21) | False alarms | Leak quantified |
+| Labelled set, medium and above | Leaks found (of 25) | False alarms | Leak quantified |
 |---|---|---|---|
-| Tell | 16 | 1 | 14 of 16, in bits |
+| Tell | 23 | 1 | 16 of 23, in bits |
+| Tell with a one-line `tell.json` | 23 | 0 | 16 of 23 |
 | Nightshade, default rules | 3 | 0 | 1 of 3 |
-| Nightshade, generic secrets policy | 13 | 9 | 1 of 13 |
-| compact-guard | 4 | 1 | 4 of 4, domain size |
+| Nightshade, generic secrets policy | 14 | 12 | 1 of 14 |
+| compact-guard | 5 | 1 | 5 of 5, domain size |
 | compact-lint | 0 | 0 | not a privacy tool |
 | OpenZeppelin detectors | 0 | 0 | not a privacy tool |
 
-On Midnight's 29 examples, one real privacy leak was found at medium or above, by two tools: the election example ties each revealed vote to the voter's registration key. Tell and Nightshade with a secrets policy both report it (we filed it as [midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90)). Tell gave 2 findings at medium or above on the examples; Nightshade with a generic policy gave 59, 51 of them intended disclosures.
+On the 20 leaks both runs share, Tell went from 15 to 18 found at medium or above. One case was relabelled against Tell: L09 (a secret *returned* from a circuit) assumed results are public; a contract call carries only a randomized commitment to its inputs and outputs, so it is not a public leak, and Tell now rates returns low.
 
-Where Tell does better: hashes that are small because of an `assert` bound or because the other inputs are public in the same call (only Tell finds these); the same tag on every action; a commitment whose nonce is a public counter; a number for each leak; attack tests that read the secret back.
+On Midnight's 29 examples Tell gives 4 findings at medium or above, 3 real: the election example ties each revealed vote to the voter's registration key (also found by Nightshade with a secrets policy; filed as [midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90)), and two shielded sweeps to `ownPublicKey()` (private-tip-jar, roulette) whose recipient can be confirmed. Nightshade with a generic policy gives 59, 51 of them intended disclosures.
+
+**On someone else's corpus.** Nightshade's 300-root evaluation set is private, so Tell was run on Nightshade's published regression corpus (465 contracts, written by Nightshade's author): 443 analysed, 0 crashes, 30 findings at medium or above (23 real, 4 intended, 3 false alarms from one name rule, since fixed). Of Nightshade's 14 privacy positives Tell finds 9; the other 5 are returned values, which Tell rates low on purpose. Details: [`bench/labels/nightshade-corpus.md`](bench/labels/nightshade-corpus.md).
+
+Where Tell does better: hashes that are small because of an `assert` bound or because the other inputs are public in the same call (only Tell finds these); the same tag on every action and membership shown by a lookup; constructors, token amounts and coin nonces; a number for each leak; attack tests that read the secret back (10 zoo leaks).
 
 Where the others do better:
 
-- **Constructors** (case L12): in this run only Nightshade with a secrets policy found it. The Wave 3 engine analyses constructors and the zoo's raffle tests it; the benchmark re-run will show whether L12 is now caught.
-- **A published hash reused as a private key** (L16): Nightshade has a rule for it, compact-guard flags the missing domain separation; Tell reports nothing.
-- **Branches when nothing identifies the caller** (L06, L10): Tell rates these low on purpose; if the transaction does identify the caller, that is too low.
-- **Precision of defaults:** Nightshade's default rules raised no false alarm on any of the 69 files; Tell raised one at medium (a per-device key tag read as "the same tag on every action").
+- **Branches when nothing identifies the caller** (L06, L10): Tell rates these low on purpose, because a Midnight transaction does not name its sender by itself (fees are shielded DUST), and says so in the finding; `"caller": "identified"` in `tell.json` rates them medium. Nightshade's policy run reports them high.
+- **Precision of defaults:** Nightshade's default rules raised no false alarm on any file; Tell's default run raised one at medium (S07, a per-device key tag), which a one-line `tell.json` removes.
 - **Non-privacy bugs:** spoofable authorization, unbound Merkle paths, unbounded mints. Tell is silent on these by design; Nightshade covers 96 rules, most of them not about privacy.
-- **Speed and no compiler:** the others work from source text in about a second per file or less; Tell compiled every file (594 s for all 69) and cannot analyse code the compiler rejects (3 experimental examples).
+- **Speed and no compiler:** the others work from source text in about a second per file or less; Tell compiles every file (675 s for all 79) and cannot analyse code the compiler rejects (3 experimental examples).
 
 Midnight's own `midnight-expert` `/audit-compact` command (an LLM reviewer) was not run: it needs a paid model.
 
@@ -280,7 +305,7 @@ Midnight's own `midnight-expert` `/audit-compact` command (an LLM reviewer) was 
 - **Leak zoo** ([`zoo/`](zoo)): nine leaky contracts and their fixes, eight on Ledger 8 and one on Ledger 9 (Compact 0.36). Each leak is carried out by an attack test that reads only public data (initial state, ledger state, transaction effects, events) and recovers the secret; each fix stops it. 24 tests: 18 attack tests (16 on Ledger 8, 2 on the Ledger 9 poll) and 6 that apply Tell's verified fixes to the original five leaky contracts and run the attacks again. CI also runs the Action on the zoo (every leaky contract must fail at medium, every fixed one pass) and checks the zoo contract by contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36.
 - **Precision tests** ([`engine/test`](engine/test)): 199 tests (152 for the analyzer, 23 for the fixer, 24 for the pull-request review). Every zoo leak reported once, nothing above low on the fixes, regression cases from review, Ledger 9 and constructor cases, the fixer and the pull-request review.
 - **Survey** ([`engine/scripts/survey.ts`](engine/scripts/survey.ts), results in [`web/data/survey.json`](web/data/survey.json), run October 11 with the Wave 2 engine): every public repository linked from the buildathon on AKINDO: 111 repositories, 365 contracts found, 248 compiled with the compiler each one's pragma asks for, 96 projects analysed. 15 projects had a finding at medium or worse; 44 had linkable tags. Every medium-or-worse finding was read by hand. Results are in aggregate; no team is named. A re-run after the outreach is pending ([`web/data/survey-rerun.json`](web/data/survey-rerun.json)).
-- **Tell Desk tests** ([`desk/test`](desk/test)): 33 tests in a simulator that runs the compiled contract: lifecycle, rejections (forged proofs, wrong openings, out-of-order steps) and an attacker who reads only public data.
+- **Tell Desk tests** ([`desk/test`](desk/test)): 40 tests in a simulator that runs the compiled contract: lifecycle, rejections (forged proofs, wrong openings, out-of-order steps) and an attacker who reads only public data.
 - **Radar** ([`radar/test`](radar/test)): 18 tests, including the hash encoding checked against `@midnight-ntwrk/compact-runtime` and the 6-of-6 recovery from a cached Preprod snapshot.
 - **Integrations**: 39 MCP server tests (an MCP client calls every tool against the zoo) and 24 VS Code extension tests (including the packaged bundle and the real compiler).
 
@@ -397,15 +422,15 @@ Counts from a run on November 7, 2026 (Node 24, WSL), one suite at a time with `
 
 | Workspace | Test files | Tests | Result |
 |---|---|---|---|
-| `engine` | 3 | 199 | all pass |
-| `zoo` | 4 | 24 | all pass |
-| `desk` | 1 | 33 | all pass |
-| `mcp` | 1 | 39 | all pass |
-| `vscode` | 2 | 24 | all pass |
+| `engine` | 4 | 257 | all pass |
+| `zoo` | 5 | 28 | all pass |
+| `desk` | 1 | 40 | all pass |
+| `mcp` | 1 | 40 | all pass |
+| `vscode` | 2 | 24 | 23 pass, 1 skipped (the bundle test needs `npm run build -w vscode` first) |
 | `radar` | 3 | 18 | all pass |
-| **Total** | 14 | **337** | |
+| **Total** | 16 | **407** | |
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. The website has Playwright tests (`npm run e2e -w web`).
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites, scans the zoo and Desk with the Action itself, and checks every zoo contract under Compact 0.30, 0.31.1, 0.34, 0.35 and 0.36. It also compiles and tests Desk under 0.35 and 0.36 ([`desk/compat`](desk/compat)), builds Desk's proving keys and runs its offline dry run, and builds the website and runs its Playwright suite (`npm run e2e -w web`, browser and API tests) against `next start`. Compiler installs are retried, then fetched from the release page ([`install-compact.sh`](.github/scripts/install-compact.sh)); one job forces that fallback. A daily workflow ([`smoke.yml`](.github/workflows/smoke.yml)) reads the live site's Preprod APIs: 6 of 6 votes recovered from the leaky ballot, 0 of 6 from the fixed one, and Tell Desk's state decoding.
 
 ## Limits
 
@@ -414,8 +439,9 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the same suites
 - It treats cross-contract call arguments as public, as the compiler does; whether a callee publishes them depends on the callee, which Tell analyses separately.
 - It needs the compiler the pragma asks for, and cannot analyse code the compiler rejects.
 - It does not look for non-privacy bugs (authorization, Merkle binding, mint caps); use Nightshade or compact-lint for those.
-- Branches where nothing identifies the caller are rated low; if the transaction itself identifies the caller, that is too low.
-- Verified fixes cover guessable hashes, secrets in the clear, same-tag-on-every-action, branches (outside loops) and personal values; wallet keys, returned secrets and token operations are manual. A branch fix changes behaviour (the other path is rejected), and the comment says so.
+- **A circuit's result is not public.** A contract call in a transaction carries its address, entry point, public transcripts, proof and a *communication commitment*, a randomized commitment to the call's inputs and outputs (ledger `ContractCall`; `communicationCommitment(input, output, rand)` in the runtime). Midnight's guide says the same: a return value "is not written to the ledger or readable in the transaction". A value returned from an exported circuit goes to the DApp, or to the calling contract in a cross-contract call, which may publish it; Tell reports it at low, as a value leaving the proof. (Some tutorials list returns among public outputs; Tell follows the ledger structure.)
+- **A transaction does not name its sender by itself.** Fees are paid in DUST, a shielded resource spent by nullifier (a `DustSpend` holds the fee, a nullifier, a new commitment and a proof), and a contract call carries no wallet key unless the circuit or the wallet adds one. So a branch on a private value in a circuit that publishes nothing identifying rates low: each call still leaks its outcome, not whose it is. Timing, network metadata, an unshielded payment in the same transaction or an app that submits for its users can identify callers; declare `"caller": "identified"` in `tell.json` and those branches rate medium.
+- Verified fixes cover guessable hashes, secrets in the clear, same-tag-on-every-action, branches (outside loops, including those rated low because no caller is identified) and personal values; wallet keys, returned secrets and token operations are manual, and so is a branch Tell cannot rewrite (in a loop, an `else if` chain or a `c ? a : b` expression), with the reason in the fix text. A commitment with a constant or public salt gets its salt replaced, reusing a salt witness the contract already declares (so a one-line pull request gets a one-click suggestion). A branch fix changes behaviour (the other path is rejected), and the comment says so.
 - Tell Desk: maintainer credentials cannot be revoked yet; nothing limits spam seals; the Preprod demo runs every role from one house wallet.
 - Radar only breaks small domains, only searches a few hash shapes, decodes each contract's last 100 calls, and covers the last 14 days plus contracts named in buildathon repositories, not Preprod's whole history.
 - See also [what Tell cannot see](https://tell-midnight.vercel.app/how#limits).

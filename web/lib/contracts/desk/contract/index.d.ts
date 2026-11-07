@@ -12,10 +12,11 @@ export type Report = { tag: Uint8Array;
                        updatedAt: bigint
                      };
 
-export type Grade = { grade: bigint;
+export type Grade = { codeHash: Uint8Array;
+                      project: Uint8Array;
+                      grade: bigint;
                       rules: bigint;
                       scan: bigint;
-                      project: Uint8Array;
                       selfReported: boolean
                     };
 
@@ -49,7 +50,8 @@ export type ImpureCircuits<PS> = {
          id_0: Uint8Array,
          opening_0: Opening): __compactRuntime.CircuitResults<PS, []>;
   registerMaintainer(context: __compactRuntime.CircuitContext<PS>,
-                     leaf_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                     pk_0: Uint8Array,
+                     project_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   attest(context: __compactRuntime.CircuitContext<PS>,
          codeHash_0: Uint8Array,
          grade_0: bigint,
@@ -57,6 +59,7 @@ export type ImpureCircuits<PS> = {
          scan_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   handOver(context: __compactRuntime.CircuitContext<PS>,
            newAttesterHash_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  acceptHandOver(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   selfGrade(context: __compactRuntime.CircuitContext<PS>,
             codeHash_0: Uint8Array,
             project_0: Uint8Array,
@@ -80,7 +83,8 @@ export type ProvableCircuits<PS> = {
          id_0: Uint8Array,
          opening_0: Opening): __compactRuntime.CircuitResults<PS, []>;
   registerMaintainer(context: __compactRuntime.CircuitContext<PS>,
-                     leaf_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                     pk_0: Uint8Array,
+                     project_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   attest(context: __compactRuntime.CircuitContext<PS>,
          codeHash_0: Uint8Array,
          grade_0: bigint,
@@ -88,6 +92,7 @@ export type ProvableCircuits<PS> = {
          scan_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   handOver(context: __compactRuntime.CircuitContext<PS>,
            newAttesterHash_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  acceptHandOver(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   selfGrade(context: __compactRuntime.CircuitContext<PS>,
             codeHash_0: Uint8Array,
             project_0: Uint8Array,
@@ -99,8 +104,10 @@ export type ProvableCircuits<PS> = {
 export type PureCircuits = {
   sealOf(o_0: Opening): Uint8Array;
   researcherTag(sk_0: Uint8Array, id_0: Uint8Array): Uint8Array;
-  maintainerLeaf(sk_0: Uint8Array, project_0: Uint8Array): Uint8Array;
+  maintainerKey(sk_0: Uint8Array): Uint8Array;
+  maintainerLeaf(pk_0: Uint8Array, project_0: Uint8Array): Uint8Array;
   attesterKey(sk_0: Uint8Array): Uint8Array;
+  selfGradeKey(codeHash_0: Uint8Array, project_0: Uint8Array): Uint8Array;
 }
 
 export type Circuits<PS> = {
@@ -108,10 +115,14 @@ export type Circuits<PS> = {
   researcherTag(context: __compactRuntime.CircuitContext<PS>,
                 sk_0: Uint8Array,
                 id_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+  maintainerKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
   maintainerLeaf(context: __compactRuntime.CircuitContext<PS>,
-                 sk_0: Uint8Array,
+                 pk_0: Uint8Array,
                  project_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
   attesterKey(context: __compactRuntime.CircuitContext<PS>, sk_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
+  selfGradeKey(context: __compactRuntime.CircuitContext<PS>,
+               codeHash_0: Uint8Array,
+               project_0: Uint8Array): __compactRuntime.CircuitResults<PS, Uint8Array>;
   seal(context: __compactRuntime.CircuitContext<PS>, now_0: bigint): __compactRuntime.CircuitResults<PS, Uint8Array>;
   acknowledge(context: __compactRuntime.CircuitContext<PS>,
               id_0: Uint8Array,
@@ -126,7 +137,8 @@ export type Circuits<PS> = {
          id_0: Uint8Array,
          opening_0: Opening): __compactRuntime.CircuitResults<PS, []>;
   registerMaintainer(context: __compactRuntime.CircuitContext<PS>,
-                     leaf_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                     pk_0: Uint8Array,
+                     project_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   attest(context: __compactRuntime.CircuitContext<PS>,
          codeHash_0: Uint8Array,
          grade_0: bigint,
@@ -134,6 +146,7 @@ export type Circuits<PS> = {
          scan_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   handOver(context: __compactRuntime.CircuitContext<PS>,
            newAttesterHash_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  acceptHandOver(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   selfGrade(context: __compactRuntime.CircuitContext<PS>,
             codeHash_0: Uint8Array,
             project_0: Uint8Array,
@@ -144,6 +157,7 @@ export type Circuits<PS> = {
 
 export type Ledger = {
   readonly attester: Uint8Array;
+  readonly nextAttester: Uint8Array;
   readonly embargo: bigint;
   maintainers: {
     isFull(): boolean;
@@ -153,6 +167,12 @@ export type Ledger = {
     pathForLeaf(index_0: bigint, leaf_0: Uint8Array): __compactRuntime.MerkleTreePath<Uint8Array>;
     findPathForLeaf(leaf_0: Uint8Array): __compactRuntime.MerkleTreePath<Uint8Array> | undefined;
     history(): Iterator<__compactRuntime.MerkleTreeDigest>
+  };
+  registered: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(elem_0: Uint8Array): boolean;
+    [Symbol.iterator](): Iterator<Uint8Array>
   };
   reports: {
     isEmpty(): boolean;

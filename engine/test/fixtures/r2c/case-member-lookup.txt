@@ -1,0 +1,62 @@
+reduce-to-circuit:
+(program (kernel-declaration (%kernel.10 () (Kernel)))
+  (public-ledger-declaration
+    ((%members.4 (0) (Set (tbytes 32))) (%claims.2 (1) (Counter)) (%admins.0 (2) (Set (tbytes 32)))
+      (%paused.6 (3) (__compact_Cell (tboolean)))
+      (%spent.9 (4) (Set (tbytes 32)))
+      (%redeemed.8 (5) (Counter))))
+  (native
+    %persistentHash.11
+    ((%value.12 (tvector 2 (tbytes 32))))
+    (tbytes 32))
+  (witness %memberKey.13 () (tbytes 32))
+  (witness %adminKey.14 () (tbytes 32))
+  (witness %voucherKey.15 () (tbytes 32))
+  (circuit %join.3 ((%leaf.16 (tbytes 32))) (ttuple)
+    (= #t %t.22 (public-ledger %members.4 (0) insert %leaf.16))
+    (= #t %t.23 (tuple)) %t.23)
+  (circuit %claim.1 () (ttuple) (= #t %t.24 (call %memberKey.13))
+    (= #t
+       %t.25
+       (tuple
+         #vu8(99 108 117 98 58 109 101 109 98 101 114 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.24))
+    (= #t %tag.17 (call %persistentHash.11 %t.25))
+    (= #t %t.26 (public-ledger %members.4 (0) member %tag.17))
+    (= #t %t.27 (select #t %t.26 #t))
+    (assert %t.27 "members only") (= #t %t.28 (tuple))
+    (= #t %t.29 (public-ledger %claims.2 (1) increment 1))
+    (= #t %t.30 (tuple)) %t.30)
+  (circuit %pause.5 () (ttuple) (= #t %t.31 (call %adminKey.14))
+    (= #t
+       %t.32
+       (tuple
+         #vu8(99 108 117 98 58 97 100 109 105 110 0 0 0 0 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.31))
+    (= #t %tag.18 (call %persistentHash.11 %t.32))
+    (= #t %t.33 (public-ledger %admins.0 (2) member %tag.18))
+    (= #t %t.34 (select #t %t.33 #t))
+    (assert %t.34 "admins only") (= #t %t.35 (tuple))
+    (= #t %t.36 (public-ledger %paused.6 (3) write #t))
+    (= #t %t.37 (tuple)) %t.37)
+  (circuit %redeem.7 () (ttuple) (= #t %t.38 (call %voucherKey.15))
+    (= #t
+       %t.39
+       (tuple
+         #vu8(99 108 117 98 58 118 111 117 99 104 101 114 0 0 0 0 0 0
+              0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+         %t.38))
+    (= #t %nul.19 (call %persistentHash.11 %t.39))
+    (= #t %t.40 (public-ledger %spent.9 (4) member %nul.19))
+    (= #t %t.41 (select %t.40 #t #f))
+    (= #t %t.42 (select %t.40 #f #t))
+    (= #t %t.43 (select %t.40 #f #t))
+    (= #t %t.44 (select #t %t.43 #t))
+    (assert %t.44 "already redeemed") (= #t %t.45 (tuple))
+    (= #t %t.46 (public-ledger %spent.9 (4) insert %nul.19))
+    (= #t %t.47 (public-ledger %redeemed.8 (5) increment 1))
+    (= #t %t.48 (tuple)) %t.48))
+tell-constructor:
+(constructor () (tuple))
