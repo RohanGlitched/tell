@@ -21,7 +21,6 @@ const KIND_TEXT: Record<OutreachRow['kind'], string> = { issue: 'GitHub issue', 
 
 export default function AdoptionPage() {
   const a = adoption;
-  const teams = a.outreach.filter((o) => !o.official);
   const official = a.outreach.filter((o) => o.official);
   const fetched = a.fetchedAt ? `${fmtDate(a.fetchedAt)}, ${new Date(a.fetchedAt).toISOString().slice(11, 16)} UTC` : 'not yet';
 
@@ -30,7 +29,7 @@ export default function AdoptionPage() {
       <PageHead kicker={`Read from GitHub on ${fetched}`} title="Who uses Tell">
         <p>
           The numbers below are as small as they are. A script reads them from GitHub’s public API and the page shows them with the date. Teams we wrote to
-          are never named here: they appear as Project A, Project B, with their sector. Midnight’s own example repositories are named and linked.
+          are never named or listed one by one here: only the totals are shown. Midnight’s own example repositories are named and linked.
         </p>
       </PageHead>
 
@@ -52,12 +51,15 @@ export default function AdoptionPage() {
         note="Outreach"
         noteText="Teams are never named here. Findings are theirs to fix."
         title="Outreach to teams"
-        intro="Teams whose contracts had a finding in the survey that we confirmed by hand get a private note: the line, what it gives away, and the fix. Here is where each note stands."
+        intro="Teams whose contracts had a finding in the survey that we confirmed by hand got a public GitHub issue naming the file and the kind of finding, asking where they would like the details and the fix sent. Only the totals are shown here, so the page cannot be matched to a team."
       >
-        <OutreachTable rows={teams} />
-        <p className="mt-3 text-[14px] text-[var(--graphite)]">
-          {a.totals.contacted} contacted · {a.totals.replied} replied · {a.totals.fixed} fixed · {a.totals.open} still open. Replies count comments from anyone other than us.
-        </p>
+        <dl className="grid gap-6 sm:grid-cols-4" data-testid="outreach-totals">
+          <Stat n={a.teams.contacted} label="teams contacted" />
+          <Stat n={a.teams.replied} label="replied" />
+          <Stat n={a.teams.fixed} label="fixed" />
+          <Stat n={a.teams.open} label="issues still open" />
+        </dl>
+        <p className="mt-3 text-[14px] text-[var(--graphite)]">Replies count comments from anyone other than us.</p>
       </Section>
 
       <Section id="examples" tone="mist" note="Upstream" noteText="Midnight's own examples may be named and linked." title="Midnight’s own examples" intro="Findings in the official example repositories, filed as public issues.">
