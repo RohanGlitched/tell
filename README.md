@@ -63,7 +63,7 @@ Compared with the Wave 2 submission (tag [`v1`](https://github.com/RohanGlitched
 11. **Website** redesigned, with new pages for Wave 3, Tell Desk, users and pricing, and adoption.
 12. **Outreach**: 11 teams sent an issue naming the file and the kind of finding, with the details offered privately; one public issue on [midnightntwrk/midnight-examples#90](https://github.com/midnightntwrk/midnight-examples/issues/90), pilot requests to two audit firms.
 
-Tests went from 97 in two workspaces (87 engine, 10 zoo) to 344 in six ([Setup and tests](#setup-and-tests)).
+Tests went from 97 in two workspaces (87 engine, 10 zoo) to 407 in six ([Setup and tests](#setup-and-tests)).
 
 ## Try it
 
