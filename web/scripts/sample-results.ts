@@ -29,7 +29,7 @@ for (const s of samples) {
     for (const s of plan.suggestions) {
       if (!s.patch || !s.verification?.ok) continue;
       const f = r.report.findings.find((g) => g.circuit === s.finding.circuit && g.kind === s.finding.kind && g.field === s.finding.field && g.severity === s.finding.severity && (g.line ?? 0) === (s.finding.line ?? 0));
-      if (f) Object.assign(f, { patch: { diff: rename(s.patch.diff), verified: true, gradeAfter: s.verification.gradeAfter ?? undefined, text: s.summary, rule: s.rule ?? '' } });
+      if (f) Object.assign(f, { patch: { diff: rename(s.patch.diff), verified: true, gradeAfter: s.verification.gradeAfter ?? undefined, text: s.summary, rule: s.rule ?? '', notes: s.notes, behaviourChange: s.rule === 'assert-branch' } });
     }
     if (plan.combined) Object.assign(r, { fixes: { diff: rename(plan.combined.diff), applied: plan.combined.applied.length, gradeBefore: plan.combined.verification.gradeBefore, gradeAfter: plan.combined.verification.gradeAfter } });
   }

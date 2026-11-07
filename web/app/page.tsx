@@ -23,7 +23,7 @@ const COMPILER_ROWS = [
 ];
 
 const STEPS = [
-  ['Compile', 'Runs the Compact compiler your `pragma` asks for, preferring 0.31.1, the ledger live today.'],
+  ['Compile', 'Runs the Compact compiler your `pragma` asks for, preferring 0.31.1 for Ledger 8 and 0.36.0 for Ledger 9 (mainnet since November 6).'],
   ['Read the circuits', 'Uses the compiler’s `reduce-to-circuit` form: helpers inlined, loops unrolled, every step a guarded binding.'],
   ['Trace and count', 'Follows each witness and argument through hashes, casts and branches to every public write, counting the bits that survive.'],
   ['Grade and report', 'A to F per contract and a fix per finding, as text, JSON, SARIF or a report you can share.'],

@@ -10,7 +10,8 @@ import type { Compiler, ContractResult } from '@tell/engine';
 import { planFixes, type FilePlan, type Suggestion } from '@/vendor/engine/fix';
 
 // What the API adds to a finding with a verified patch (lib/types.ts VerifiedFix).
-type Patch = { diff: string; verified: true; gradeAfter?: string; text: string; rule: string };
+// behaviourChange: the rewrite rejects calls the original accepted (assert-branch); notes say how.
+type Patch = { diff: string; verified: true; gradeAfter?: string; text: string; rule: string; notes: string[]; behaviourChange: boolean };
 
 // What the API adds to a contract: every verified patch applied together, verified as a whole.
 export type CombinedFix = { diff: string; applied: number; gradeBefore: string | null; gradeAfter: string | null };
@@ -35,7 +36,7 @@ export async function attachFixes(result: ContractResult, compilers: Compiler[],
     if (!s.patch || !s.verification?.ok) continue;
     const f = result.report.findings.find((g) => sameFinding(g, s.finding));
     if (!f) continue;
-    const patch: Patch = { diff: rename(s.patch.diff, shownName), verified: true, gradeAfter: s.verification.gradeAfter ?? undefined, text: s.summary, rule: s.rule ?? '' };
+    const patch: Patch = { diff: rename(s.patch.diff, shownName), verified: true, gradeAfter: s.verification.gradeAfter ?? undefined, text: s.summary, rule: s.rule ?? '', notes: s.notes, behaviourChange: s.rule === 'assert-branch' };
     (f as unknown as { patch: Patch }).patch = patch;
   }
   if (plan.combined)

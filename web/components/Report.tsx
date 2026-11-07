@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Transcript from './Transcript';
 import { plain, Ticks } from './Ticks';
 import { GradeSeal, Sev } from './brand';
-import { fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type CircuitReport, type ContractResult, type Finding, type Grade, type ScanResponse, type VerifiedFix } from '@/lib/types';
+import { behaviourOf, fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type CircuitReport, type ContractResult, type Finding, type Grade, type ScanResponse, type VerifiedFix } from '@/lib/types';
 import { shareHash } from '@/lib/share';
 import { downloadText, reportName, toJson, toMarkdown, toSarif } from '@/lib/report';
 import { badgeMarkdown, badgeSvg } from '@/lib/badge';
@@ -194,7 +194,7 @@ function ContractReport({ c, ci, list, result, source, onFix }: { c: ContractRes
             <code className="mono block break-all text-[0.74em]">{c.file}</code>
             {headline(c.grade!)}
           </h2>
-          <p className="mt-2.5 max-w-[56ch] text-[15.5px] text-[var(--graphite)]">{summary(c, major, minor, firstPatch)}</p>
+          <p className="mt-2.5 max-w-[56ch] text-[15.5px] text-[var(--graphite)]">{summary(c, major, minor, firstPatch, showInfo)}</p>
         </div>
         <div className="max-sm:order-1">
           <GradeSeal grade={c.grade!} size={84} />
@@ -239,7 +239,7 @@ function ContractReport({ c, ci, list, result, source, onFix }: { c: ContractRes
       <LeakMap c={c} />
 
       {major.map((f) => (
-        <FindingSection key={f.id} f={f} ci={ci} lines={lines} href={lineHref(f.line)} circuits={circuits} onFix={onFix} file={c.file} />
+        <FindingSection key={f.id} f={f} ci={ci} lines={lines} href={lineHref(f.line)} circuits={circuits} onFix={onFix} file={c.file} others={major.filter((o) => o.id !== f.id)} />
       ))}
 
       {shownMinor.length > 0 && (
@@ -294,13 +294,22 @@ function headline(g: Grade): string {
   }[g];
 }
 
-function summary(c: ContractResult, major: Numbered[], minor: Numbered[], patch?: VerifiedFix | null): string {
-  if (major.length === 0) return `${GRADE_TEXT[c.grade!]} ${minor.length ? `${minor.length} lower-severity note${minor.length === 1 ? '' : 's'} below, each with its fix.` : ''}`.trim();
+// The summary counts only what the reader can see: info-level disclosures are hidden until the
+// box under the findings is ticked, so they are named as hidden, not as notes "below".
+function summary(c: ContractResult, major: Numbered[], minor: Numbered[], patch: VerifiedFix | null | undefined, showInfo: boolean): string {
+  if (major.length === 0) {
+    const shown = minor.filter((f) => showInfo || f.severity !== 'info').length;
+    const hidden = minor.length - shown;
+    const notes = shown ? `${shown} lower-severity note${shown === 1 ? '' : 's'} below, each with its fix.` : '';
+    const info = hidden ? `${hidden} info-level disclosure${hidden === 1 ? '' : 's'} (values published on purpose) ${hidden === 1 ? 'is' : 'are'} hidden; tick the box under the findings to show ${hidden === 1 ? 'it' : 'them'}.` : '';
+    return `${GRADE_TEXT[c.grade!]} ${notes} ${info}`.replace(/\s+/g, ' ').trim();
+  }
   const worst = major[0];
   const circuits = [...new Set(major.map((f) => f.circuit))];
   const n = major.filter((f) => f.severity === worst.severity).length;
   const lead = `${n} ${worst.severity} finding${n === 1 ? '' : 's'} in circuit${circuits.length === 1 ? '' : 's'} ${circuits.join(', ')}.`;
-  return patch ? `${lead} The verified fix below brings the contract to grade ${patch.gradeAfter}.` : `${lead} Each finding below comes with its fix.`;
+  if (!patch) return `${lead} Each finding below comes with its fix.`;
+  return `${lead} The verified fix below brings the contract to grade ${patch.gradeAfter}${behaviourOf(patch) ? ', and changes behaviour: read the note before applying it' : ''}.`;
 }
 
 function Fact({ k, v, first }: { k: string; v: string; first?: boolean }) {
@@ -354,7 +363,7 @@ function guesses(f: Finding): string {
   return '–';
 }
 
-function FindingSection({ f, ci, lines, href, circuits, onFix, file }: { f: Numbered; ci: number; lines?: string[]; href?: string; circuits: CircuitReport[]; onFix?: (fix: VerifiedFix) => void; file: string }) {
+function FindingSection({ f, ci, lines, href, circuits, onFix, file, others }: { f: Numbered; ci: number; lines?: string[]; href?: string; circuits: CircuitReport[]; onFix?: (fix: VerifiedFix) => void; file: string; others: Numbered[] }) {
   const { text, patch } = fixOf(f);
   const sources = f.sources ?? [];
   const excerpt = f.line && lines ? lines.slice(Math.max(0, f.line - 5), f.line + 1).map((t, i) => ({ n: Math.max(1, f.line! - 4) + i, t })) : null;
@@ -398,7 +407,7 @@ function FindingSection({ f, ci, lines, href, circuits, onFix, file }: { f: Numb
       <Transcript circuits={circuits} only={f.circuit} />
 
       <SubHead title={patch ? (patch.verified ? 'Verified fix' : 'Proposed fix') : 'Fix'} note={patch ? file : undefined} />
-      <FixView text={text} patch={patch} onFix={onFix} file={file} />
+      <FixView text={text} patch={patch} onFix={onFix} file={file} others={others} />
       {f.fields && f.fields.length > 1 && <p className="mono mt-3 text-[12.5px] text-[var(--graphite)]">touches {f.fields.join(', ')}</p>}
       {href && f.line && (
         <p className="mt-3 text-[13px]">
@@ -433,7 +442,22 @@ function SubHead({ title, note }: { title: string; note?: string }) {
 
 // The fix in words; with a patch from the engine, the diff, whether a re-scan verified it, and
 // a button that applies it to the pasted contract and scans again.
-function FixView({ text, patch, onFix, file }: { text: string; patch: VerifiedFix | null; onFix?: (fix: VerifiedFix) => void; file: string }) {
+// The grade a finding's severity sets on its own (GRADE_TEXT): critical F, high D, medium C, low B.
+const SEV_GRADE: Record<string, Grade> = { critical: 'F', high: 'D', medium: 'C', low: 'B', info: 'A' };
+
+// Why a verified patch leaves the grade where it is: the other findings that set it.
+function gradeReason(after: Grade | undefined, others: Numbered[]): string | null {
+  if (!after || GRADES.indexOf(after) < GRADES.indexOf('C')) return null;
+  const setting = others.filter((o) => SEV_GRADE[o.severity] === after);
+  if (setting.length === 0) return null;
+  const sev = setting[0].severity;
+  const what = setting.map((o) => `${o.id} ${KIND_LABEL[o.kind].toLowerCase()} in ${o.circuit}`).join('; ');
+  return setting.length === 1 ? `another ${sev} finding remains: ${what}.` : `${setting.length} other ${sev} findings remain: ${what}.`;
+}
+
+function FixView({ text, patch, onFix, file, others = [] }: { text: string; patch: VerifiedFix | null; onFix?: (fix: VerifiedFix) => void; file: string; others?: Numbered[] }) {
+  const behaviour = patch ? behaviourOf(patch) : null;
+  const reason = patch?.verified ? gradeReason(patch.gradeAfter, others) : null;
   return (
     <div data-testid="fix-view">
       <p className="text-[14.5px]">
@@ -449,9 +473,26 @@ function FixView({ text, patch, onFix, file }: { text: string; patch: VerifiedFi
               <span className="stamp">Compiles</span>
               <span className="stamp">Finding gone</span>
               {patch.gradeAfter && <span className="stamp solid">Grade after: {patch.gradeAfter}</span>}
+              {behaviour && (
+                <span className="stamp warn" data-testid="behaviour-change">
+                  Changes behaviour
+                </span>
+              )}
             </div>
           ) : (
             <p className="mt-3 text-[13px] text-[var(--graphite)]">Not verified by a re-scan yet: review it before use.</p>
+          )}
+          {behaviour && (
+            <p className="mt-2.5 max-w-[64ch] text-[13.5px] text-[var(--marker-ink)]">
+              <span className="font-semibold">Changes behaviour: </span>
+              <Ticks text={behaviour} /> Apply it only if those calls should fail.
+            </p>
+          )}
+          {reason && (
+            <p className="mt-2.5 max-w-[64ch] text-[13.5px] text-[var(--graphite)]" data-testid="grade-reason">
+              <span className="font-semibold text-[var(--ink)]">Why the grade after is still {patch.gradeAfter}: </span>
+              {reason}
+            </p>
           )}
           <div className="no-print mt-4 flex flex-wrap gap-2">
             {onFix && (
@@ -630,12 +671,23 @@ function Rail({
       ? { c: singleAt.c, patch: fixOf(singleAt.f).patch!, count: 1 }
       : null;
   const patch = patchAt?.patch ?? null;
-  const shareUrl = () => `${window.location.origin}/scan${result.kind === 'repo' && result.repo ? shareHash({ kind: 'repo', repo: result.repo }) : shareHash({ kind: 'source', source })}`;
-  const canShare = result.kind === 'repo' ? !!result.repo : !!source;
-  const [shown, setShown] = useState('');
-  useEffect(() => {
-    if (canShare) setShown(shareUrl());
-  }, [result, source]);
+  // The link is computed while rendering (the rail only renders in the browser, after a scan), so
+  // it always matches what was scanned: after "Apply fix", the fixed source; the original keeps
+  // its own link below.
+  const origin = typeof window === 'undefined' ? SITE : window.location.origin;
+  const linkFor = (src: string) => `${origin}/scan${shareHash({ kind: 'source', source: src })}`;
+  const share = useMemo(
+    () => (result.kind === 'repo' ? (result.repo ? `${origin}/scan${shareHash({ kind: 'repo', repo: result.repo })}` : '') : source ? linkFor(source) : ''),
+    [result, source, origin],
+  );
+  const original = useMemo(() => (compare?.original && compare.original !== source ? linkFor(compare.original) : ''), [compare, source, origin]);
+  const canShare = !!share;
+  // with every patch applied, the grade can stay put because a finding has no verified patch
+  const unpatched = patchAt ? lists[result.contracts.indexOf(patchAt.c)].filter((f) => MAJOR.has(f.severity) && !fixOf(f).patch) : [];
+  const stuck = patch?.gradeAfter && patchAt && GRADES.indexOf(patch.gradeAfter) >= GRADES.indexOf('C') ? unpatched : [];
+  // a branch rewritten as an assert rejects the other path: say so before anyone applies it
+  const branchFix = patchAt ? lists[result.contracts.indexOf(patchAt.c)].map((f) => fixOf(f).patch).find((p) => p && behaviourOf(p)) : null;
+  const changesBehaviour = branchFix ? behaviourOf(branchFix) : null;
 
   return (
     <aside className="report-rail grid content-start gap-3.5 self-start sm:grid-cols-2 lg:sticky lg:top-24 lg:grid-cols-1" aria-label="Report actions">
@@ -664,6 +716,17 @@ function Rail({
               ? `${patchAt.count === 1 ? 'One verified patch' : `${patchAt.count} verified patches`}: compiled with the same compiler and scanned again${result.contracts.length > 1 ? ` (${patchAt.c.file})` : ''}.`
               : 'Not verified yet: review the diff first.'}
           </p>
+          {changesBehaviour && (
+            <p className="mt-2 text-[12.5px] text-[var(--marker-ink)]" data-testid="rail-behaviour">
+              <span className="stamp warn mr-1.5">Changes behaviour</span>
+              <Ticks text={changesBehaviour} />
+            </p>
+          )}
+          {stuck.length > 0 && (
+            <p className="mt-2 text-[12.5px] text-[var(--graphite)]" data-testid="rail-stuck">
+              Grade after stays {patch.gradeAfter}: {stuck.length === 1 ? 'one finding has' : `${stuck.length} findings have`} no verified patch ({stuck.map((f) => `${f.id}, ${f.severity}`).join('; ')}). Its fix is in words, in the report.
+            </p>
+          )}
           <div className="mt-3 grid gap-2">
             {onFix && (
               <button type="button" data-testid="apply-fix" disabled={busy} onClick={() => onFix(patch, patchAt.c.grade!)} className="btn btn-pri btn-sm w-full">
@@ -692,13 +755,19 @@ function Rail({
       )}
 
       {canShare && (
-        <Card title="Share">
-          <div className="mono truncate rounded-md bg-[var(--mist)] px-2.5 py-2 text-[12px] text-[var(--graphite)]" title={shown}>
-            {shown.replace(/^https?:\/\//, '')}
+        <Card title="Share" testId="share-card">
+          {compare && result.kind === 'source' && <p className="mb-1.5 text-[12.5px] font-semibold text-[var(--ink)]">The fixed contract, as it is in the editor</p>}
+          <div className="mono truncate rounded-md bg-[var(--mist)] px-2.5 py-2 text-[12px] text-[var(--graphite)]" title={share} data-testid="share-link">
+            {share.replace(/^https?:\/\//, '')}
           </div>
           <div className="mt-2">
-            <CopyButton text={shareUrl} label="Copy share link" testId="copy-share" full />
+            <CopyButton text={() => share} label={compare ? 'Copy link to the fixed contract' : 'Copy share link'} testId="copy-share" full />
           </div>
+          {original && (
+            <div className="mt-2">
+              <CopyButton text={() => original} label="Copy link to the original" testId="copy-share-original" full />
+            </div>
+          )}
           <p className="mt-2 text-[12.5px] text-[var(--faint)]">
             {result.kind === 'source' ? 'The contract travels inside the link, after the #. Nothing is stored on a server.' : 'Opens this repository and scans it again.'}
           </p>

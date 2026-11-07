@@ -32,7 +32,26 @@ export type VerifiedFix = {
   gradeAfter?: Grade;
   text?: string; // the rewrite in words, when the patch carries it
   rule?: string; // the engine's rewrite rule (commit-hash, hash-key, one-time-tag, assert-branch, commit-value)
+  notes?: string[]; // the engine's notes on the rewrite (engine/src/fix.ts Suggestion.notes)
+  behaviourChange?: boolean; // the patched contract rejects calls the original accepted
 };
+
+// One line on how a patch changes what the contract accepts, or null when it does not. The
+// engine's assert-branch rewrite turns a branch on a private value into an assert, so calls that
+// took the other path are now rejected. Read from the patch's notes or flag when the API sends
+// them, else from the rule and the assert line in the diff (precomputed samples carry only these).
+export function behaviourOf(p: VerifiedFix): string | null {
+  if (!(p.behaviourChange ?? p.rule === 'assert-branch')) return null;
+  const note = p.notes?.find((n) => /^This changes behaviour/.test(n));
+  if (note) return note.replace(/^This changes behaviour:\s*/, '').replace(/^./, (c) => c.toUpperCase()).split(/(?<=\.)\s/)[0];
+  const m = p.diff.match(/^\+\s*assert\((.+), "this call does not meet the condition"\);/m);
+  if (m) {
+    const negated = /^!\(.*\)$/.test(m[1]);
+    const cond = negated ? m[1].slice(2, -1) : m[1];
+    return `Calls where \`${cond}\` is ${negated ? 'true' : 'false'} are now rejected instead of taking the other path.`;
+  }
+  return 'Calls that took the other branch are now rejected instead of being accepted.';
+}
 
 // The fix in words and the patch, whichever shape the API sent.
 export function fixOf(f: Finding): { text: string; patch: VerifiedFix | null } {

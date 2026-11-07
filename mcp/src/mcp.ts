@@ -20,7 +20,7 @@ const compilerArg = z
   .string()
   .regex(/^\d+\.\d+(\.\d+)?$/, 'a version such as 0.31.1')
   .optional()
-  .describe('Compact compiler version, for example "0.31.1". Default: the version the pragma accepts, preferring 0.31.1 (the ledger live today).');
+  .describe('Compact compiler version, for example "0.31.1". Default: the version the pragma accepts, preferring 0.31.1 for Ledger 8 and 0.36.0 for Ledger 9 (mainnet since Nov 6, 2026).');
 
 const RULE_IDS = RULES.map((r) => r.id) as [string, ...string[]];
 

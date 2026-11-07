@@ -5,7 +5,7 @@
 // same rule ids as the CLI's engine/src/sarif.ts) or Markdown (for a review or an issue).
 // Browser-side, so nothing is sent anywhere to make the file.
 
-import { fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type FindingKind, type ScanResponse, type Severity } from './types';
+import { behaviourOf, fixOf, GRADE_TEXT, KIND_LABEL, SEVERITY_ORDER, type FindingKind, type ScanResponse, type Severity } from './types';
 
 const SITE = 'https://tell-midnight.vercel.app';
 
@@ -96,6 +96,8 @@ export function toMarkdown(result: ScanResponse, now = new Date()): string {
       out.push(`### ${f.severity.toUpperCase()} · ${KIND_LABEL[f.kind]} · \`${f.circuit}\`${f.bits > 0 ? ` · ${f.bits} bit${f.bits === 1 ? '' : 's'}` : ''}${where ? ` · ${where}` : ''}`, '');
       out.push(f.title, '', f.detail, '', `**Fix:** ${text}`);
       if (patch) out.push('', `Proposed patch${patch.verified ? `, verified by re-scan${patch.gradeAfter ? ` (grade after: ${patch.gradeAfter})` : ''}` : ''}:`, '', '```diff', patch.diff.trim(), '```');
+      const behaviour = patch ? behaviourOf(patch) : null;
+      if (behaviour) out.push('', `**Changes behaviour:** ${behaviour}`);
       out.push('');
     }
   }

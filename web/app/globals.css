@@ -344,6 +344,12 @@ code {
   background: var(--sealed);
   color: #fff;
 }
+/* a verified patch that changes what the contract accepts */
+.stamp.warn {
+  color: var(--marker-ink);
+  border-color: var(--marker);
+  transform: none;
+}
 
 /* ---- legacy helpers, restyled ------------------------------------------------------------ */
 .sheet {
