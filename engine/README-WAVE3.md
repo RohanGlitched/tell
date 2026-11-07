@@ -24,8 +24,10 @@ Existing rows now also cover three new places a value can go public:
 Severity rules for the new cases:
 
 - Shielded coin: the commitment is `hash(nonce, color, value, recipient)`. If no private input with at least 112 unknown bits reaches the nonce (wallet keys do not count: they are identifiers, not secrets), each private input to the value or recipient is exposed. Medium if any of them comes from private state (a witness, `ownPublicKey()`); low if all are the caller's own arguments. A coin minted to the contract itself with a public amount exposes nothing and is not reported.
-- Public token amount: a witness value used as the amount of `mintShielded`, `mintUnshielded`, an unshielded send or receive, or a standard token event is medium. Arguments stay info (the caller chose them).
-- Wallet key from private state written publicly: medium, low in officer fields (`owner`, `admin`, …) and in the constructor. From an argument: info.
+- Public token amount: a witness value used as the amount of `mintShielded`, `mintUnshielded`, an unshielded send or receive, or a standard token event is medium when the contract keeps that value hidden somewhere else (inside a published hash or commitment) or its name says it is personal (salary, income, …). Witnesses also fetch public data and arithmetic hints, so other witness amounts stay low, and arguments stay info.
+- Wallet key from private state written to the ledger or an event: medium, low in officer fields (`owner`, `admin`, …) and in the constructor. From an argument: info. The recipient of an unshielded transfer is public by design and is not reported as a leak.
+- A hash whose other inputs are already public counts only its private part: `hash(tag, vote)` with `tag` on the ledger (in this call or any other circuit) is a hash of the vote.
+- A secret-dependent branch is dropped only when every operation it touches looks the same on both paths (before, only the first operation was compared).
 
 ## "How it works", step 1 and 2
 

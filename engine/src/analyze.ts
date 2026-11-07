@@ -284,7 +284,8 @@ function analyzeCircuit(
     let strong = false;
     for (const [k, f] of l) {
       const s = sources.get(k)!;
-      if (known.has(s.name) || isPublicTag(f)) continue;
+      // A guard only decides whether the hash is computed; the branch rule reports that.
+      if (known.has(s.name) || isPublicTag(f) || f.via === 'guard') continue;
       if (f.flow === 'hidden') {
         bits += 256;
         strong = true;
@@ -318,7 +319,7 @@ function analyzeCircuit(
     for (const [k, f] of all) {
       if (known.has(sources.get(k)!.name)) continue; // already public in this call
       // A published tag inside: its value is known, but it still carries its holder's identity.
-      if (isPublicTag(f)) {
+      if (isPublicTag(f) || f.via === 'guard') {
         out.set(k, f);
         continue;
       }
@@ -885,7 +886,8 @@ function analyzeCircuit(
     const v = val(expr);
     if (g.size) {
       const lab = union(v);
-      for (const [k, f] of withFlow(g, (f) => (f.flow === 'hidden' && !f.tag ? f : { flow: 'predicate', via: 'branch' }))) lab.set(k, mergeFact(lab.get(k), f));
+      // via 'guard': the value is only computed on this path; it does not encode the condition.
+      for (const [k, f] of withFlow(g, (f) => (f.flow === 'hidden' && !f.tag ? f : { flow: 'predicate', via: 'guard' }))) lab.set(k, mergeFact(lab.get(k), f));
       env.set(target, { label: lab });
     } else env.set(target, v);
   }
