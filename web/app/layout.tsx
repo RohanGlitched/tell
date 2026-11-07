@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Mono, Schibsted_Grotesk, Source_Serif_4 } from 'next/font/google';
+import localFont from 'next/font/local';
 import Link from 'next/link';
 import './globals.css';
 import { BrandMark } from '@/components/brand';
 import SiteNav from '@/components/SiteNav';
 
-const serif = Source_Serif_4({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-source-serif', display: 'swap' });
-const sans = Schibsted_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-schibsted', display: 'swap' });
-const mono = DM_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-dm-mono', display: 'swap' });
+// Self-hosted (SIL Open Font License, see app/fonts/README.md): the build no longer depends on
+// reaching Google Fonts.
+const serif = localFont({ src: './fonts/source-serif-4-latin.woff2', weight: '400 600', variable: '--font-source-serif', display: 'swap' });
+const sans = localFont({ src: './fonts/schibsted-grotesk-latin.woff2', weight: '400 700', variable: '--font-schibsted', display: 'swap' });
+const mono = localFont({
+  src: [
+    { path: './fonts/dm-mono-400-latin.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/dm-mono-500-latin.woff2', weight: '500', style: 'normal' },
+  ],
+  variable: '--font-dm-mono',
+  display: 'swap',
+});
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tell-midnight.vercel.app';
 
